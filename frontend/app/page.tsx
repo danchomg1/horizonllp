@@ -2,6 +2,8 @@ import Link from 'next/link';
 import Button from './components/Button';
 import Header from './components/Header';
 import { client, urlFor } from './lib/sanity'; 
+export const dynamic = 'force-dynamic';
+
 async function getData() {
   const [homeData, latestNews] = await Promise.all([
     client.fetch(`*[_type == "home"][0]`),

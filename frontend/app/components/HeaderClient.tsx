@@ -1,6 +1,5 @@
 'use client';
 
-// 1. Импорт хука навигации
 import { usePathname } from 'next/navigation';
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -41,28 +40,42 @@ export default function HeaderClient({
   logo 
 }: HeaderClientProps) {
   
-  // 2. Получаем текущий адрес страницы
   const pathname = usePathname();
+  // Проверяем, главная ли это страница
+  const isHomePage = pathname === '/';
+  
+  // Высота, на которой стоит шапка изначально (в пикселях)
+  const INITIAL_TOP_OFFSET = 500;
 
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [isSticky, setIsSticky] = useState(false); // Состояние "Прилипла ли шапка?"
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // 3. ВАЖНОЕ УСЛОВИЕ:
-  // Если мы находимся в админке (/studio), мы не рендерим шапку вообще.
-  // Это стоит делать после объявления хуков, но перед логикой рендера.
+  // 1. Прячем шапку в админке
   if (pathname && pathname.startsWith('/studio')) {
     return null;
   }
 
+  // 2. Логика скролла и прилипания
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      const scrollY = window.scrollY;
+
+      if (isHomePage) {
+        // НА ГЛАВНОЙ: Прилипаем только когда доскроллили до места старта шапки (500px)
+        setIsSticky(scrollY >= INITIAL_TOP_OFFSET);
+      } else {
+        // НА ДРУГИХ: Прилипаем почти сразу (эффект сжатия)
+        setIsSticky(scrollY > 20);
+      }
     };
+
+    // Запускаем проверку сразу и при скролле
+    handleScroll();
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [isHomePage]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -88,7 +101,10 @@ export default function HeaderClient({
 
   const MenuItem = ({ label, name, isLink }: { label: string, name?: string, isLink?: boolean }) => {
     const isOpen = name ? activeMenu === name : false;
-
+    
+    // Цвет текста меняется: если шапка "липкая" (белая полоса) - текст всегда черный
+    // Если шапка прозрачная (в начале) - можно настроить иначе, но пока оставим черный/синий для читаемости
+    
     if (isLink) {
       return (
         <div className="h-full flex items-center px-3 xl:px-4 cursor-pointer hover:text-[#0B0073] transition-colors font-medium text-[13px] xl:text-sm whitespace-nowrap">
@@ -110,16 +126,42 @@ export default function HeaderClient({
     );
   };
 
+  // --- ВЫЧИСЛЕНИЕ КЛАССОВ ПОЗИЦИОНИРОВАНИЯ ---
+  
+  // Базовые классы
+  let headerClasses = "left-0 right-0 z-50 w-full flex justify-center transition-all duration-300 ease-in-out pointer-events-none";
+  
+  if (isHomePage) {
+    if (isSticky) {
+      // Главная, проскроллили > 500px -> ФИКСИРУЕМ НАВЕРХУ
+      headerClasses += " fixed top-0 px-0";
+    } else {
+      // Главная, в начале -> АБСОЛЮТНОЕ ПОЗИЦИОНИРОВАНИЕ НА 500px
+      // Она едет вверх вместе со скроллом
+      headerClasses += ` absolute top-[${INITIAL_TOP_OFFSET}px] px-4`;
+    }
+  } else {
+    // Не главная -> Всегда фиксирована сверху (с анимацией сжатия)
+    headerClasses += isSticky ? " fixed top-0 px-0" : " fixed top-4 md:top-8 px-4";
+  }
+
   return (
-    <header className="fixed top-4 md:top-8 left-0 right-0 z-50 w-full flex justify-center px-4 transition-all pointer-events-none">
+    <header className={headerClasses}>
       
       <div 
         ref={containerRef}
-        className="relative pointer-events-auto w-full max-w-[1250px]"
+        className={`
+          relative pointer-events-auto w-full transition-all duration-500 ease-in-out
+          ${isSticky ? 'max-w-full' : 'max-w-[1250px]'}
+        `}
       >
         
         {/* ЛОГОТИП СЛЕВА (DESKTOP) */}
-        <div className="absolute top-0 right-full mr-[15px] h-full hidden lg:flex items-center justify-end pointer-events-auto">
+        {/* Показываем его, если шапка НЕ "прилипла" (начальное состояние) */}
+        <div className={`
+            absolute top-0 right-full mr-[15px] h-full hidden lg:flex items-center justify-end pointer-events-auto transition-opacity duration-300
+            ${isSticky ? 'opacity-0 pointer-events-none' : 'opacity-100'} 
+        `}>
             <Link href="/" className="block">
                 <div className="w-[91px] h-[22px] relative flex items-center justify-center">
                     {logo ? (
@@ -131,11 +173,16 @@ export default function HeaderClient({
             </Link>
         </div>
 
-        {/* САМА ШАПКА */}
+        {/* САМА ПОЛОСКА МЕНЮ */}
         <div className="relative z-50 h-[50px] px-4 md:px-6 flex items-center justify-between">
-            <div className="absolute inset-0 bg-white/60 backdrop-blur-[10px] rounded-[15px] border border-white/20 shadow-sm -z-10" />
+            {/* ФОН */}
+            <div className={`
+                absolute inset-0 bg-white/80 backdrop-blur-[10px] border border-white/20 shadow-sm -z-10 transition-all duration-500
+                ${isSticky ? 'rounded-none border-b-gray-200' : 'rounded-[15px]'}
+            `} />
 
-            <div className="lg:hidden flex items-center">
+            {/* Логотип внутри полоски (для мобильных ИЛИ когда шапка прилипла на десктопе) */}
+            <div className={`flex items-center transition-all duration-300 ${isSticky ? 'lg:flex' : 'lg:hidden'}`}>
                 <Link href="/" className="block">
                     <div className="w-[80px] h-[20px] relative">
                           {logo ? (
@@ -147,7 +194,8 @@ export default function HeaderClient({
                 </Link>
             </div>
 
-            <nav className="hidden lg:flex w-full justify-between items-center h-full">
+            {/* НАВИГАЦИЯ */}
+            <nav className={`hidden lg:flex w-full justify-between items-center h-full ${isSticky ? 'pl-8' : ''}`}>
               <MenuItem label="О нас" name="about" />
               <MenuItem label="Международные курсы" name="courses" />
               <MenuItem label="Консалтинг" name="consulting" />
@@ -166,14 +214,14 @@ export default function HeaderClient({
             </button>
         </div>
 
-        {/* КНОПКА СПРАВА (DESKTOP) */}
+        {/* КНОПКА СПРАВА */}
         <div className={`
             hidden lg:flex
             absolute top-0 left-full ml-[15px] h-full items-center
-            transition-all duration-700 ease-in-out z-40
-            ${isScrolled 
-               ? 'opacity-100 translate-x-0 pointer-events-auto' 
-               : 'opacity-0 -translate-x-4 pointer-events-none'
+            transition-all duration-500 ease-in-out z-40
+            ${isSticky 
+               ? 'opacity-0 pointer-events-none translate-x-[-20px]' 
+               : 'opacity-100 translate-x-0 pointer-events-auto'
             }
         `}>
              <Button className="!w-[50px] !px-0 flex items-center justify-center">
@@ -181,8 +229,8 @@ export default function HeaderClient({
              </Button>
         </div>
 
-        {/* DROPDOWNS (DESKTOP) */}
-        <div className="hidden lg:block absolute top-full left-0 w-full pt-4 z-40">
+        {/* DROPDOWNS */}
+        <div className={`hidden lg:block absolute top-full left-0 w-full pt-4 z-40 transition-all duration-300 ${isSticky ? 'max-w-[1250px] mx-auto left-0 right-0' : ''}`}>
            {activeMenu === 'about' && <div className="relative w-full"><AboutDropdown items={aboutItems} /></div>}
            {activeMenu === 'courses' && <div className="relative w-full"><CoursesDropdown categories={categories} /></div>}
            {activeMenu === 'consulting' && <div className="relative w-full"><ConsultingDropdown items={consultingItems} /></div>}
