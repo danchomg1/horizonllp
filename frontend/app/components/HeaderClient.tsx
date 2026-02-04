@@ -359,6 +359,7 @@ function MobileAccordion({ label, children }: { label: string, children: React.R
             <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[1000px] opacity-100 mb-4' : 'max-h-0 opacity-0'}`}>
                 {children}
             </div>
-        </div>
+            </div>
     );
-}
+} 
+// fix vercel trigger
