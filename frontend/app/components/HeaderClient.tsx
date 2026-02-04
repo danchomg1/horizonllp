@@ -1,5 +1,7 @@
 'use client';
 
+// 1. Импорт хука навигации
+import { usePathname } from 'next/navigation';
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { ChevronDown, Send, Menu, X } from 'lucide-react'; 
@@ -39,10 +41,20 @@ export default function HeaderClient({
   logo 
 }: HeaderClientProps) {
   
+  // 2. Получаем текущий адрес страницы
+  const pathname = usePathname();
+
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // 3. ВАЖНОЕ УСЛОВИЕ:
+  // Если мы находимся в админке (/studio), мы не рендерим шапку вообще.
+  // Это стоит делать после объявления хуков, но перед логикой рендера.
+  if (pathname && pathname.startsWith('/studio')) {
+    return null;
+  }
 
   useEffect(() => {
     const handleScroll = () => {
@@ -99,7 +111,6 @@ export default function HeaderClient({
   };
 
   return (
-    // ГЛАВНОЕ ИЗМЕНЕНИЕ: fixed вместо sticky
     <header className="fixed top-4 md:top-8 left-0 right-0 z-50 w-full flex justify-center px-4 transition-all pointer-events-none">
       
       <div 
@@ -127,11 +138,11 @@ export default function HeaderClient({
             <div className="lg:hidden flex items-center">
                 <Link href="/" className="block">
                     <div className="w-[80px] h-[20px] relative">
-                         {logo ? (
-                            <img src={urlFor(logo).url()} alt="Logo" className="w-full h-full object-contain" />
-                         ) : (
+                          {logo ? (
+                             <img src={urlFor(logo).url()} alt="Logo" className="w-full h-full object-contain" />
+                          ) : (
                             <span className="text-xs font-bold text-gray-500">LOGO</span>
-                         )}
+                          )}
                     </div>
                 </Link>
             </div>
@@ -239,7 +250,7 @@ export default function HeaderClient({
                         </div>
                     ))}
                 </MobileAccordion>
-                {/* ... остальные аккордеоны (без изменений) ... */}
+                
                 <MobileAccordion label="Консалтинг">
                     {consultingItems?.map((item: any) => (
                         <Link key={item._id} href={`/${item.slug?.current}`} onClick={() => setIsMobileMenuOpen(false)} className="block py-2 pl-4 text-sm text-gray-600 border-l-2 border-gray-100 hover:text-[#0B0073]">

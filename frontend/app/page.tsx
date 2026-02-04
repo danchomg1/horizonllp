@@ -2,7 +2,6 @@ import Link from 'next/link';
 import Button from './components/Button';
 import Header from './components/Header';
 import { client, urlFor } from './lib/sanity'; 
-
 async function getData() {
   const [homeData, latestNews] = await Promise.all([
     client.fetch(`*[_type == "home"][0]`),
@@ -135,4 +134,4 @@ export default async function Home() {
       </main>
     </div>
   );
-} 
+}  
