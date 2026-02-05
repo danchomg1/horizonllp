@@ -41,37 +41,33 @@ export default function HeaderClient({
 }: HeaderClientProps) {
   
   const pathname = usePathname();
-  // Проверяем, главная ли это страница
   const isHomePage = pathname === '/';
   
-  // Высота, на которой стоит шапка изначально (в пикселях)
+  // ВЫСОТА, ГДЕ СТОИТ ШАПКА НА ГЛАВНОЙ (500px)
   const INITIAL_TOP_OFFSET = 500;
 
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
-  const [isSticky, setIsSticky] = useState(false); // Состояние "Прилипла ли шапка?"
+  const [isSticky, setIsSticky] = useState(false); 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // 1. Прячем шапку в админке
   if (pathname && pathname.startsWith('/studio')) {
     return null;
   }
 
-  // 2. Логика скролла и прилипания
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
 
       if (isHomePage) {
-        // НА ГЛАВНОЙ: Прилипаем только когда доскроллили до места старта шапки (500px)
+        // На главной прилипаем, когда проскроллили 500px
         setIsSticky(scrollY >= INITIAL_TOP_OFFSET);
       } else {
-        // НА ДРУГИХ: Прилипаем почти сразу (эффект сжатия)
+        // На остальных страницах прилипаем почти сразу
         setIsSticky(scrollY > 20);
       }
     };
 
-    // Запускаем проверку сразу и при скролле
     handleScroll();
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -101,10 +97,7 @@ export default function HeaderClient({
 
   const MenuItem = ({ label, name, isLink }: { label: string, name?: string, isLink?: boolean }) => {
     const isOpen = name ? activeMenu === name : false;
-    
-    // Цвет текста меняется: если шапка "липкая" (белая полоса) - текст всегда черный
-    // Если шапка прозрачная (в начале) - можно настроить иначе, но пока оставим черный/синий для читаемости
-    
+
     if (isLink) {
       return (
         <div className="h-full flex items-center px-3 xl:px-4 cursor-pointer hover:text-[#0B0073] transition-colors font-medium text-[13px] xl:text-sm whitespace-nowrap">
@@ -126,27 +119,31 @@ export default function HeaderClient({
     );
   };
 
-  // --- ВЫЧИСЛЕНИЕ КЛАССОВ ПОЗИЦИОНИРОВАНИЯ ---
+  // --- ЛОГИКА ПОЗИЦИОНИРОВАНИЯ ---
+  // Мы используем inline style для top, чтобы Tailwind не тупил с переменными
   
-  // Базовые классы
-  let headerClasses = "left-0 right-0 z-50 w-full flex justify-center transition-all duration-300 ease-in-out pointer-events-none";
-  
+  let positionClass = "";
+  let topStyle = {};
+
   if (isHomePage) {
     if (isSticky) {
-      // Главная, проскроллили > 500px -> ФИКСИРУЕМ НАВЕРХУ
-      headerClasses += " fixed top-0 px-0";
+       // Главная + Прилипла
+       positionClass = "fixed top-0 px-0";
     } else {
-      // Главная, в начале -> АБСОЛЮТНОЕ ПОЗИЦИОНИРОВАНИЕ НА 500px
-      // Она едет вверх вместе со скроллом
-      headerClasses += ` absolute top-[${INITIAL_TOP_OFFSET}px] px-4`;
+       // Главная + Стоит внизу (500px)
+       positionClass = "absolute px-4";
+       topStyle = { top: `${INITIAL_TOP_OFFSET}px` }; // Прямое задание стиля
     }
   } else {
-    // Не главная -> Всегда фиксирована сверху (с анимацией сжатия)
-    headerClasses += isSticky ? " fixed top-0 px-0" : " fixed top-4 md:top-8 px-4";
+    // Не главная
+    positionClass = isSticky ? "fixed top-0 px-0" : "fixed top-4 md:top-8 px-4";
   }
 
   return (
-    <header className={headerClasses}>
+    <header 
+        className={`left-0 right-0 z-50 w-full flex justify-center transition-all duration-300 ease-in-out pointer-events-none ${positionClass}`}
+        style={topStyle} // Применяем стиль здесь
+    >
       
       <div 
         ref={containerRef}
@@ -157,7 +154,6 @@ export default function HeaderClient({
       >
         
         {/* ЛОГОТИП СЛЕВА (DESKTOP) */}
-        {/* Показываем его, если шапка НЕ "прилипла" (начальное состояние) */}
         <div className={`
             absolute top-0 right-full mr-[15px] h-full hidden lg:flex items-center justify-end pointer-events-auto transition-opacity duration-300
             ${isSticky ? 'opacity-0 pointer-events-none' : 'opacity-100'} 
@@ -181,7 +177,7 @@ export default function HeaderClient({
                 ${isSticky ? 'rounded-none border-b-gray-200' : 'rounded-[15px]'}
             `} />
 
-            {/* Логотип внутри полоски (для мобильных ИЛИ когда шапка прилипла на десктопе) */}
+            {/* Лого внутри (для моб или прилипшей шапки) */}
             <div className={`flex items-center transition-all duration-300 ${isSticky ? 'lg:flex' : 'lg:hidden'}`}>
                 <Link href="/" className="block">
                     <div className="w-[80px] h-[20px] relative">
@@ -194,7 +190,6 @@ export default function HeaderClient({
                 </Link>
             </div>
 
-            {/* НАВИГАЦИЯ */}
             <nav className={`hidden lg:flex w-full justify-between items-center h-full ${isSticky ? 'pl-8' : ''}`}>
               <MenuItem label="О нас" name="about" />
               <MenuItem label="Международные курсы" name="courses" />
@@ -245,7 +240,7 @@ export default function HeaderClient({
            )}
         </div>
 
-        {/* МОБИЛЬНОЕ МЕНЮ */}
+        {/* МОБИЛЬНОЕ МЕНЮ (без изменений) */}
         <div className={`
             fixed inset-0 z-[100] bg-white transition-transform duration-300 ease-in-out lg:hidden flex flex-col
             ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}
@@ -359,7 +354,6 @@ function MobileAccordion({ label, children }: { label: string, children: React.R
             <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[1000px] opacity-100 mb-4' : 'max-h-0 opacity-0'}`}>
                 {children}
             </div>
-            </div>
+        </div>
     );
-} 
-// fix vercel trigger
+}
