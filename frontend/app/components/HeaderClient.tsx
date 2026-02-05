@@ -43,8 +43,7 @@ export default function HeaderClient({
   const pathname = usePathname();
   const isHomePage = pathname === '/';
   
-  // НАСТРОЙКА: На какой высоте стоит шапка изначально (в пикселях).
-  // Если 500 слишком низко - поменяй это число на 300 или 200.
+  // НАСТРОЙКА: Высота старта шапки на главной
   const INITIAL_TOP_OFFSET = 500; 
 
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
@@ -52,6 +51,7 @@ export default function HeaderClient({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Прячем шапку в админке
   if (pathname && pathname.startsWith('/studio')) {
     return null;
   }
@@ -61,11 +61,10 @@ export default function HeaderClient({
       const scrollY = window.scrollY;
 
       if (isHomePage) {
-        // На главной: переключаемся в "липкий" режим, ТОЛЬКО когда доскроллили до верха
-        // То есть когда прокрутка больше или равна нашей стартовой позиции
+        // На главной: переключаемся в "липкий" режим, когда доскроллили до верха
         setIsSticky(scrollY >= INITIAL_TOP_OFFSET);
       } else {
-        // На остальных страницах: всегда липкая (или почти сразу)
+        // На остальных страницах: всегда липкая (сразу)
         setIsSticky(scrollY > 0);
       }
     };
@@ -121,24 +120,22 @@ export default function HeaderClient({
     );
   };
 
-  // --- ЛОГИКА ПОЗИЦИОНИРОВАНИЯ (БЕЗ АНИМАЦИЙ) ---
+  // --- ЛОГИКА ПОЗИЦИОНИРОВАНИЯ ---
   
-  let headerClass = "left-0 right-0 z-50 w-full flex justify-center pointer-events-none"; // Базовые классы
+  let headerClass = "left-0 right-0 z-50 w-full flex justify-center pointer-events-none"; 
   let topStyle = {};
 
   if (isHomePage) {
     if (isSticky) {
        // ВАРИАНТ 1: Главная, прилипла к верху
-       // fixed top-0, БЕЗ отступов
        headerClass += " fixed top-0";
     } else {
        // ВАРИАНТ 2: Главная, стоит внизу
-       // absolute, жестко задаем top
        headerClass += " absolute";
        topStyle = { top: `${INITIAL_TOP_OFFSET}px` };
     }
   } else {
-    // ВАРИАНТ 3: Не главная (всегда сверху, с небольшим отступом для красоты)
+    // ВАРИАНТ 3: Не главная (всегда сверху)
     headerClass += " fixed top-4 md:top-8";
   }
 
@@ -150,11 +147,10 @@ export default function HeaderClient({
       
       <div 
         ref={containerRef}
-        // Убрали transition и смену max-w. Ширина ВСЕГДА 1250px.
         className="relative pointer-events-auto w-full max-w-[1250px] px-4"
       >
         
-        {/* ЛОГОТИП СЛЕВА (DESKTOP) - исчезает мгновенно при скролле */}
+        {/* ЛОГОТИП СЛЕВА (DESKTOP) */}
         <div className={`
             absolute top-0 right-full mr-[15px] h-full hidden lg:flex items-center justify-end pointer-events-auto
             ${isSticky ? 'hidden' : 'flex'} 
@@ -172,10 +168,10 @@ export default function HeaderClient({
 
         {/* САМА ПОЛОСКА МЕНЮ */}
         <div className="relative z-50 h-[50px] px-4 md:px-6 flex items-center justify-between">
-            {/* ФОН - Всегда скругленный, всегда белый */}
+            {/* ФОН */}
             <div className="absolute inset-0 bg-white/80 backdrop-blur-[10px] border border-white/20 shadow-sm rounded-[15px] -z-10" />
 
-            {/* Лого внутри (появляется мгновенно, если прилипли) */}
+            {/* Лого внутри */}
             <div className={`flex items-center ${isSticky ? 'lg:flex' : 'lg:hidden'}`}>
                 <Link href="/" className="block">
                     <div className="w-[80px] h-[20px] relative">
@@ -207,7 +203,7 @@ export default function HeaderClient({
             </button>
         </div>
 
-        {/* КНОПКА СПРАВА - исчезает мгновенно при скролле */}
+        {/* КНОПКА СПРАВА */}
         <div className={`
             hidden lg:flex
             absolute top-0 left-full ml-[15px] h-full items-center z-40
@@ -234,14 +230,15 @@ export default function HeaderClient({
            )}
         </div>
 
-        {/* МОБИЛЬНОЕ МЕНЮ (без изменений) */}
+        {/* МОБИЛЬНОЕ МЕНЮ (Ошибка была тут, теперь исправлена) */}
         <div className={`
             fixed inset-0 z-[100] bg-white transition-transform duration-300 ease-in-out lg:hidden flex flex-col
             ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}
         `}>
             <div className="h-[60px] px-4 flex items-center justify-between border-b border-gray-100 flex-shrink-0">
                 <div className="w-[100px]">
-                    {logo && <img src={urlFor(logo).url()} alt="Logo" className="w-full h-full object-contain" />
+                    {/* 👇 ВОТ ТУТ БЫЛА ОШИБКА, Я ДОБАВИЛ "}" В КОНЦЕ */}
+                    {logo && <img src={urlFor(logo).url()} alt="Logo" className="w-full h-full object-contain" />}
                 </div>
                 <button 
                     onClick={() => setIsMobileMenuOpen(false)}
