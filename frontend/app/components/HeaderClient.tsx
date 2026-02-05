@@ -43,8 +43,9 @@ export default function HeaderClient({
   const pathname = usePathname();
   const isHomePage = pathname === '/';
   
-  // ВЫСОТА, ГДЕ СТОИТ ШАПКА НА ГЛАВНОЙ (500px)
-  const INITIAL_TOP_OFFSET = 500;
+  // НАСТРОЙКА: На какой высоте стоит шапка изначально (в пикселях).
+  // Если 500 слишком низко - поменяй это число на 300 или 200.
+  const INITIAL_TOP_OFFSET = 500; 
 
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [isSticky, setIsSticky] = useState(false); 
@@ -60,11 +61,12 @@ export default function HeaderClient({
       const scrollY = window.scrollY;
 
       if (isHomePage) {
-        // На главной прилипаем, когда проскроллили 500px
+        // На главной: переключаемся в "липкий" режим, ТОЛЬКО когда доскроллили до верха
+        // То есть когда прокрутка больше или равна нашей стартовой позиции
         setIsSticky(scrollY >= INITIAL_TOP_OFFSET);
       } else {
-        // На остальных страницах прилипаем почти сразу
-        setIsSticky(scrollY > 20);
+        // На остальных страницах: всегда липкая (или почти сразу)
+        setIsSticky(scrollY > 0);
       }
     };
 
@@ -119,44 +121,43 @@ export default function HeaderClient({
     );
   };
 
-  // --- ЛОГИКА ПОЗИЦИОНИРОВАНИЯ ---
-  // Мы используем inline style для top, чтобы Tailwind не тупил с переменными
+  // --- ЛОГИКА ПОЗИЦИОНИРОВАНИЯ (БЕЗ АНИМАЦИЙ) ---
   
-  let positionClass = "";
+  let headerClass = "left-0 right-0 z-50 w-full flex justify-center pointer-events-none"; // Базовые классы
   let topStyle = {};
 
   if (isHomePage) {
     if (isSticky) {
-       // Главная + Прилипла
-       positionClass = "fixed top-0 px-0";
+       // ВАРИАНТ 1: Главная, прилипла к верху
+       // fixed top-0, БЕЗ отступов
+       headerClass += " fixed top-0";
     } else {
-       // Главная + Стоит внизу (500px)
-       positionClass = "absolute px-4";
-       topStyle = { top: `${INITIAL_TOP_OFFSET}px` }; // Прямое задание стиля
+       // ВАРИАНТ 2: Главная, стоит внизу
+       // absolute, жестко задаем top
+       headerClass += " absolute";
+       topStyle = { top: `${INITIAL_TOP_OFFSET}px` };
     }
   } else {
-    // Не главная
-    positionClass = isSticky ? "fixed top-0 px-0" : "fixed top-4 md:top-8 px-4";
+    // ВАРИАНТ 3: Не главная (всегда сверху, с небольшим отступом для красоты)
+    headerClass += " fixed top-4 md:top-8";
   }
 
   return (
     <header 
-        className={`left-0 right-0 z-50 w-full flex justify-center transition-all duration-300 ease-in-out pointer-events-none ${positionClass}`}
-        style={topStyle} // Применяем стиль здесь
+        className={headerClass}
+        style={topStyle}
     >
       
       <div 
         ref={containerRef}
-        className={`
-          relative pointer-events-auto w-full transition-all duration-500 ease-in-out
-          ${isSticky ? 'max-w-full' : 'max-w-[1250px]'}
-        `}
+        // Убрали transition и смену max-w. Ширина ВСЕГДА 1250px.
+        className="relative pointer-events-auto w-full max-w-[1250px] px-4"
       >
         
-        {/* ЛОГОТИП СЛЕВА (DESKTOP) */}
+        {/* ЛОГОТИП СЛЕВА (DESKTOP) - исчезает мгновенно при скролле */}
         <div className={`
-            absolute top-0 right-full mr-[15px] h-full hidden lg:flex items-center justify-end pointer-events-auto transition-opacity duration-300
-            ${isSticky ? 'opacity-0 pointer-events-none' : 'opacity-100'} 
+            absolute top-0 right-full mr-[15px] h-full hidden lg:flex items-center justify-end pointer-events-auto
+            ${isSticky ? 'hidden' : 'flex'} 
         `}>
             <Link href="/" className="block">
                 <div className="w-[91px] h-[22px] relative flex items-center justify-center">
@@ -171,14 +172,11 @@ export default function HeaderClient({
 
         {/* САМА ПОЛОСКА МЕНЮ */}
         <div className="relative z-50 h-[50px] px-4 md:px-6 flex items-center justify-between">
-            {/* ФОН */}
-            <div className={`
-                absolute inset-0 bg-white/80 backdrop-blur-[10px] border border-white/20 shadow-sm -z-10 transition-all duration-500
-                ${isSticky ? 'rounded-none border-b-gray-200' : 'rounded-[15px]'}
-            `} />
+            {/* ФОН - Всегда скругленный, всегда белый */}
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-[10px] border border-white/20 shadow-sm rounded-[15px] -z-10" />
 
-            {/* Лого внутри (для моб или прилипшей шапки) */}
-            <div className={`flex items-center transition-all duration-300 ${isSticky ? 'lg:flex' : 'lg:hidden'}`}>
+            {/* Лого внутри (появляется мгновенно, если прилипли) */}
+            <div className={`flex items-center ${isSticky ? 'lg:flex' : 'lg:hidden'}`}>
                 <Link href="/" className="block">
                     <div className="w-[80px] h-[20px] relative">
                           {logo ? (
@@ -209,15 +207,11 @@ export default function HeaderClient({
             </button>
         </div>
 
-        {/* КНОПКА СПРАВА */}
+        {/* КНОПКА СПРАВА - исчезает мгновенно при скролле */}
         <div className={`
             hidden lg:flex
-            absolute top-0 left-full ml-[15px] h-full items-center
-            transition-all duration-500 ease-in-out z-40
-            ${isSticky 
-               ? 'opacity-0 pointer-events-none translate-x-[-20px]' 
-               : 'opacity-100 translate-x-0 pointer-events-auto'
-            }
+            absolute top-0 left-full ml-[15px] h-full items-center z-40
+            ${isSticky ? 'hidden' : 'flex'}
         `}>
              <Button className="!w-[50px] !px-0 flex items-center justify-center">
                 <Send className="w-5 h-5 -ml-1 text-white" />
@@ -225,7 +219,7 @@ export default function HeaderClient({
         </div>
 
         {/* DROPDOWNS */}
-        <div className={`hidden lg:block absolute top-full left-0 w-full pt-4 z-40 transition-all duration-300 ${isSticky ? 'max-w-[1250px] mx-auto left-0 right-0' : ''}`}>
+        <div className="hidden lg:block absolute top-full left-0 w-full pt-4 z-40">
            {activeMenu === 'about' && <div className="relative w-full"><AboutDropdown items={aboutItems} /></div>}
            {activeMenu === 'courses' && <div className="relative w-full"><CoursesDropdown categories={categories} /></div>}
            {activeMenu === 'consulting' && <div className="relative w-full"><ConsultingDropdown items={consultingItems} /></div>}
@@ -247,7 +241,7 @@ export default function HeaderClient({
         `}>
             <div className="h-[60px] px-4 flex items-center justify-between border-b border-gray-100 flex-shrink-0">
                 <div className="w-[100px]">
-                    {logo && <img src={urlFor(logo).url()} alt="Logo" className="w-full h-full object-contain" />}
+                    {logo && <img src={urlFor(logo).url()} alt="Logo" className="w-full h-full object-contain" />
                 </div>
                 <button 
                     onClick={() => setIsMobileMenuOpen(false)}
