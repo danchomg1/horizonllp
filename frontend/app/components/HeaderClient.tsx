@@ -48,7 +48,7 @@ export default function HeaderClient({
   // =========================================================
   
   // 1. Высота, где шапка стоит изначально на главной (в пикселях)
-  const INITIAL_TOP_OFFSET = 180; 
+  const INITIAL_TOP_OFFSET = 140; 
 
   // 2. Отступ от самого верха экрана, когда шапка "прилипла"
   const STICKY_GAP = 10; 
