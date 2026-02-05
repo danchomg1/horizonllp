@@ -44,15 +44,10 @@ export default function HeaderClient({
   const isHomePage = pathname === '/';
   
   // =========================================================
-  // 👇 ЗДЕСЬ МЕНЯТЬ НАСТРОЙКИ
+  // 👇 НАСТРОЙКИ
   // =========================================================
-  
-  // 1. Высота, где шапка стоит изначально на главной (в пикселях)
-  const INITIAL_TOP_OFFSET = 140; 
-
-  // 2. Отступ от самого верха экрана, когда шапка "прилипла"
-  const STICKY_GAP = 10; 
-
+  const INITIAL_TOP_OFFSET = 180; // Высота старта на главной
+  const STICKY_GAP = 10;          // Зазор сверху при прилипании
   // =========================================================
 
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
@@ -69,13 +64,9 @@ export default function HeaderClient({
       const scrollY = window.scrollY;
 
       if (isHomePage) {
-        // Вычисляем момент прилипания:
-        // Если шапка стоит на 180px, а мы хотим зазор 10px,
-        // то прилипать надо, когда мы проскроллили (180 - 10) = 170px.
         const triggerPoint = INITIAL_TOP_OFFSET - STICKY_GAP;
         setIsSticky(scrollY >= triggerPoint);
       } else {
-        // На остальных страницах прилипаем почти сразу
         setIsSticky(scrollY > STICKY_GAP);
       }
     };
@@ -131,26 +122,27 @@ export default function HeaderClient({
     );
   };
 
-  // --- ЛОГИКА ПОЗИЦИОНИРОВАНИЯ ---
+  // --- ПОЗИЦИОНИРОВАНИЕ ---
   
   let headerClass = "left-0 right-0 z-50 w-full flex justify-center pointer-events-none"; 
   let topStyle = {};
 
   if (isHomePage) {
     if (isSticky) {
-       // ГЛАВНАЯ: ПРИЛИПЛА (фиксируем с зазором STICKY_GAP)
        headerClass += " fixed";
        topStyle = { top: `${STICKY_GAP}px` };
     } else {
-       // ГЛАВНАЯ: В НАЧАЛЕ (абсолютно на высоте INITIAL_TOP_OFFSET)
        headerClass += " absolute";
        topStyle = { top: `${INITIAL_TOP_OFFSET}px` };
     }
   } else {
-    // ДРУГИЕ СТРАНИЦЫ (всегда фиксированы с зазором)
     headerClass += " fixed";
     topStyle = { top: `${STICKY_GAP}px` };
   }
+
+  // Логика видимости для внешних элементов (Лого слева и Кнопка справа)
+  // Они видны ВСЕГДА, ЕСЛИ: (Мы НЕ на главной) ИЛИ (Мы на главной И шапка прилипла)
+  const showExternalElements = !isHomePage || isSticky;
 
   return (
     <header 
@@ -163,8 +155,15 @@ export default function HeaderClient({
         className="relative pointer-events-auto w-full max-w-[1250px] px-4"
       >
         
-        {/* ЛОГОТИП СЛЕВА (ВНЕШНИЙ) - Виден всегда */}
-        <div className="absolute top-0 right-full mr-[15px] h-full hidden lg:flex items-center justify-end pointer-events-auto">
+        {/* --- ЛОГОТИП СЛЕВА (ВНЕШНИЙ) --- */}
+        <div className={`
+            absolute top-0 right-full mr-[15px] h-full hidden lg:flex items-center justify-end pointer-events-auto
+            transition-all duration-500 ease-in-out
+            ${showExternalElements 
+                ? 'opacity-100 translate-x-0' // Виден: стоит на месте
+                : 'opacity-0 translate-x-4 pointer-events-none' // Скрыт: прозрачный и сдвинут вправо (к центру)
+            }
+        `}>
             <Link href="/" className="block">
                 <div className="w-[91px] h-[22px] relative flex items-center justify-center">
                     {logo ? (
@@ -176,12 +175,12 @@ export default function HeaderClient({
             </Link>
         </div>
 
-        {/* САМА ПОЛОСКА МЕНЮ */}
+        {/* --- САМА ПОЛОСКА МЕНЮ --- */}
         <div className="relative z-50 h-[50px] px-4 md:px-6 flex items-center justify-between">
             {/* ФОН */}
             <div className="absolute inset-0 bg-white/80 backdrop-blur-[10px] border border-white/20 shadow-sm rounded-[15px] -z-10" />
 
-            {/* Лого внутри (только мобилка) */}
+            {/* Лого внутри (только для мобильных) */}
             <div className="flex items-center lg:hidden">
                 <Link href="/" className="block">
                     <div className="w-[80px] h-[20px] relative">
@@ -215,14 +214,13 @@ export default function HeaderClient({
             </button>
         </div>
 
-        {/* КНОПКА СПРАВА (ВНЕШНЯЯ) */}
-        {/* Анимация: появляется только если isSticky = true */}
+        {/* --- КНОПКА СПРАВА (ВНЕШНЯЯ) --- */}
         <div className={`
             hidden lg:flex absolute top-0 left-full ml-[15px] h-full items-center z-40
             transition-all duration-500 ease-in-out
-            ${isSticky 
-                ? 'opacity-100 translate-x-0 pointer-events-auto' 
-                : 'opacity-0 -translate-x-4 pointer-events-none'
+            ${showExternalElements 
+                ? 'opacity-100 translate-x-0 pointer-events-auto' // Видна
+                : 'opacity-0 -translate-x-4 pointer-events-none' // Скрыта: сдвинута влево (к центру)
             }
         `}>
              <Button className="!w-[50px] !px-0 flex items-center justify-center">
