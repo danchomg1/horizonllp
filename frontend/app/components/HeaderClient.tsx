@@ -150,11 +150,9 @@ export default function HeaderClient({
         className="relative pointer-events-auto w-full max-w-[1250px] px-4"
       >
         
-        {/* ЛОГОТИП СЛЕВА (DESKTOP) */}
-        <div className={`
-            absolute top-0 right-full mr-[15px] h-full hidden lg:flex items-center justify-end pointer-events-auto
-            ${isSticky ? 'hidden' : 'flex'} 
-        `}>
+        {/* ЛОГОТИП СЛЕВА (ВНЕШНИЙ) */}
+        {/* Мы убрали условие hidden. Теперь он виден ВСЕГДА на десктопе */}
+        <div className="absolute top-0 right-full mr-[15px] h-full hidden lg:flex items-center justify-end pointer-events-auto">
             <Link href="/" className="block">
                 <div className="w-[91px] h-[22px] relative flex items-center justify-center">
                     {logo ? (
@@ -171,8 +169,9 @@ export default function HeaderClient({
             {/* ФОН */}
             <div className="absolute inset-0 bg-white/80 backdrop-blur-[10px] border border-white/20 shadow-sm rounded-[15px] -z-10" />
 
-            {/* Лого внутри */}
-            <div className={`flex items-center ${isSticky ? 'lg:flex' : 'lg:hidden'}`}>
+            {/* Лого внутри (ВНУТРЕННИЙ) */}
+            {/* lg:hidden - значит на десктопе он скрыт ВСЕГДА. Виден только на мобилке. */}
+            <div className="flex items-center lg:hidden">
                 <Link href="/" className="block">
                     <div className="w-[80px] h-[20px] relative">
                           {logo ? (
@@ -184,7 +183,8 @@ export default function HeaderClient({
                 </Link>
             </div>
 
-            <nav className={`hidden lg:flex w-full justify-between items-center h-full ${isSticky ? 'pl-8' : ''}`}>
+            {/* МЕНЮ */}
+            <nav className="hidden lg:flex w-full justify-between items-center h-full">
               <MenuItem label="О нас" name="about" />
               <MenuItem label="Международные курсы" name="courses" />
               <MenuItem label="Консалтинг" name="consulting" />
@@ -195,6 +195,7 @@ export default function HeaderClient({
               <MenuItem label="Контакты" name="contacts" />
             </nav>
 
+            {/* БУРГЕР (МОБИЛЬНЫЙ) */}
             <button 
                 onClick={() => setIsMobileMenuOpen(true)}
                 className="lg:hidden p-2 text-black hover:bg-black/5 rounded-lg transition-colors"
@@ -203,12 +204,9 @@ export default function HeaderClient({
             </button>
         </div>
 
-        {/* КНОПКА СПРАВА */}
-        <div className={`
-            hidden lg:flex
-            absolute top-0 left-full ml-[15px] h-full items-center z-40
-            ${isSticky ? 'hidden' : 'flex'}
-        `}>
+        {/* КНОПКА СПРАВА (ВНЕШНЯЯ) */}
+        {/* Убрали условие hidden. Видна ВСЕГДА на десктопе. */}
+        <div className="hidden lg:flex absolute top-0 left-full ml-[15px] h-full items-center z-40">
              <Button className="!w-[50px] !px-0 flex items-center justify-center">
                 <Send className="w-5 h-5 -ml-1 text-white" />
              </Button>
@@ -230,14 +228,13 @@ export default function HeaderClient({
            )}
         </div>
 
-        {/* МОБИЛЬНОЕ МЕНЮ (Ошибка была тут, теперь исправлена) */}
+        {/* МОБИЛЬНОЕ МЕНЮ */}
         <div className={`
             fixed inset-0 z-[100] bg-white transition-transform duration-300 ease-in-out lg:hidden flex flex-col
             ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}
         `}>
             <div className="h-[60px] px-4 flex items-center justify-between border-b border-gray-100 flex-shrink-0">
                 <div className="w-[100px]">
-                    {/* 👇 ВОТ ТУТ БЫЛА ОШИБКА, Я ДОБАВИЛ "}" В КОНЦЕ */}
                     {logo && <img src={urlFor(logo).url()} alt="Logo" className="w-full h-full object-contain" />}
                 </div>
                 <button 
