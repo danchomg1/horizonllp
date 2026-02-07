@@ -1,6 +1,5 @@
 import { Linkedin, Facebook, Instagram } from 'lucide-react';
-import { client } from '../lib/sanity';
-// Button больше не импортируем, так как удалили его
+import { client, urlFor } from '../lib/sanity'; // Добавил urlFor
 
 async function getFooterData() {
   return await client.fetch(`*[_type == "footer"][0]`);
@@ -17,15 +16,8 @@ export default async function Footer() {
 
   return (
     <div className="w-full flex justify-center mt-auto px-4 pb-4">
-      {/* Основной контейнер футера.
-         Теперь это просто один цельный блок.
-      */}
       <footer className="w-full max-w-[1300px]">
         
-        {/* Сплошной синий фон (#0B0073).
-           rounded-[20px] - скругляет все углы (и сверху, и снизу).
-           pt-12 - добавляем отступ сверху, так как "крышки" больше нет.
-        */}
         <div className="bg-[#0B0073] text-white rounded-[20px] pt-12 pb-10 px-4 md:px-12">
            
            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
@@ -33,8 +25,17 @@ export default async function Footer() {
               {/* 1. ЛОГОТИП */}
               <div className="md:col-span-2 flex flex-col justify-between">
                 <div>
-                  <div className="w-14 h-14 border border-white/30 flex items-center justify-center rounded mb-4">
-                      <span className="text-[10px] font-bold">LOGO</span>
+                  {/* Контейнер для логотипа */}
+                  <div className="w-14 h-14 border border-white/30 flex items-center justify-center rounded mb-4 overflow-hidden relative bg-white/5">
+                      {data?.logo ? (
+                        <img 
+                            src={urlFor(data.logo).url()} 
+                            alt="Footer Logo" 
+                            className="w-full h-full object-contain p-1"
+                        />
+                      ) : (
+                        <span className="text-[10px] font-bold">LOGO</span>
+                      )}
                   </div>
                 </div>
               </div>
@@ -66,17 +67,16 @@ export default async function Footer() {
                         </a>
                       )}
                       {data?.socials?.facebook && (
-                         <a href={data.socials.facebook} target="_blank" rel="noreferrer">
-                           <Facebook className="w-5 h-5 cursor-pointer hover:text-blue-300 transition-colors"/>
-                         </a>
+                          <a href={data.socials.facebook} target="_blank" rel="noreferrer">
+                            <Facebook className="w-5 h-5 cursor-pointer hover:text-blue-300 transition-colors"/>
+                          </a>
                       )}
                       {data?.socials?.instagram && (
-                         <a href={data.socials.instagram} target="_blank" rel="noreferrer">
-                           <Instagram className="w-5 h-5 cursor-pointer hover:text-blue-300 transition-colors"/>
-                         </a>
+                          <a href={data.socials.instagram} target="_blank" rel="noreferrer">
+                            <Instagram className="w-5 h-5 cursor-pointer hover:text-blue-300 transition-colors"/>
+                          </a>
                       )}
 
-                      {/* Заглушки, если нет данных */}
                       {!data?.socials && (
                         <>
                            <Linkedin className="w-5 h-5 opacity-50"/>
@@ -89,7 +89,7 @@ export default async function Footer() {
                   {/* Копирайт */}
                   <div className="whitespace-nowrap mt-8 md:mt-0 md:absolute md:bottom-10 md:right-16">
                       <p className="text-[10px] text-gray-400 font-sans">
-                         {data?.copyright || '© 2026 Horizon LLP Consulting'}
+                          {data?.copyright || '© 2026 Horizon LLP Consulting'}
                       </p>
                   </div>
               </div>

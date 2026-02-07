@@ -44,7 +44,7 @@ export default function Button({ children, className = '', onClick, type, noModa
         /* БАЗА И ПОЗИЦИОНИРОВАНИЕ */
         group relative flex items-center justify-center
         overflow-hidden /* Важно: обрезаем все, что вылезает за границы */
-        bg-[#0B0073] text-white font-medium text-[16px]
+        bg-horizon-blue text-white font-medium text-[16px]
         shadow-xl transition-all duration-300
         
         /* РАЗМЕРЫ (Фиксированные) */

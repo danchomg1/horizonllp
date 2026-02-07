@@ -6,6 +6,14 @@ export default defineType({
   type: 'document',
   fields: [
     defineField({
+      name: 'logo',
+      title: 'Логотип в футере',
+      type: 'image',
+      options: {
+        hotspot: true
+      }
+    }),
+    defineField({
       name: 'columns',
       title: 'Колонки меню',
       type: 'array',
