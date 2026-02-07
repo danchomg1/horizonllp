@@ -5,7 +5,7 @@ import Header from '../components/Header'; // Если Header нужен тут 
 // Функция загрузки данных (берем последние 40)
 async function getNews() {
   const query = `
-    *[_type == "news"] | order(publishedAt desc) [0...40] {
+    *[_type == "news" && defined(slug.current) && !(_id in path("drafts.**"))] | order(publishedAt desc) [0...40] {
       _id,
       title,
       slug,
@@ -14,10 +14,11 @@ async function getNews() {
       description
     }
   `;
-  const data = await client.fetch(query);
+  
+  // Добавляем revalidate: 10, чтобы новости обновлялись каждые 10 секунд (или 0 для мгновенно)
+  const data = await client.fetch(query, {}, { next: { revalidate: 10 } });
   return data;
 }
-
 export default async function NewsPage() {
   const news = await getNews();
 

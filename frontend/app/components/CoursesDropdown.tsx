@@ -52,14 +52,13 @@ export default function CoursesDropdown({ categories }: Props) {
 
   const glassLayerStyle = {
     backgroundColor: 'rgba(244, 244, 244, 0.65)',
-
     backdropFilter: 'blur(10px)',
-
     WebkitBackdropFilter: 'blur(10px)',
   };
 
   return (
-    <div className="absolute left-0 top-[0px] w-full h-[400px] flex gap-[15px] z-50 animate-in fade-in slide-in-from-top-2 duration-200 cursor-default">
+    // ИЗМЕНЕНИЕ 1: Увеличил высоту с 400px до 440px
+    <div className="absolute left-0 top-[0px] w-full h-[440px] flex gap-[15px] z-50 animate-in fade-in slide-in-from-top-2 duration-200 cursor-default">
       
       {/* --- БЛОК 1 и 2: ЛЕВОЕ ОКНО (Категории + Список курсов) --- */}
       <div className="w-[60%] relative rounded-[15px] shadow-2xl">
@@ -143,12 +142,7 @@ export default function CoursesDropdown({ categories }: Props) {
                         </p>
                       )}
                       
-                      <Link 
-                         href={activeCourse.slug?.current ? `/${activeCourse.slug.current}` : '#'}
-                         className="mt-4 inline-block text-[12px] font-bold text-[#0B0073] border-b border-[#0B0073] pb-0.5 hover:opacity-70 transition-opacity"
-                      >
-                        Подробнее о курсе →
-                      </Link>
+                      {/* ИЗМЕНЕНИЕ 2: Удалили кнопку "Подробнее о курсе" */}
                   </div>
                 </div>
             </div>

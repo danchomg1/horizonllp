@@ -13,7 +13,7 @@ export default async function Footer() {
     { title: 'Услуги', links: ['Инспекции', 'Консалтинг', 'Аудит', 'Обучение'] },
     { title: 'Инжиниринг', links: ['Проектирование', 'Надзор'] },
   ];
-
+ 
   return (
     <div className="w-full flex justify-center mt-auto px-4 pb-4">
       <footer className="w-full max-w-[1300px]">
@@ -22,19 +22,26 @@ export default async function Footer() {
            
            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
               
-              {/* 1. ЛОГОТИП */}
+             {/* 1. ЛОГОТИП */}
               <div className="md:col-span-2 flex flex-col justify-between">
                 <div>
-                  {/* Контейнер для логотипа */}
-                  <div className="w-14 h-14 border border-white/30 flex items-center justify-center rounded mb-4 overflow-hidden relative bg-white/5">
+                  {/* ИЗМЕНЕНИЯ:
+                      1. w-14 h-14 заменены на w-24 h-24 (увеличили размер примерно в 1.7 раза).
+                      2. Убраны классы: border, border-white/30, bg-white/5, rounded, p-1.
+                      3. Добавлен object-left (чтобы логотип ровнялся по левому краю, а не по центру).
+                  */}
+                  <div className="w-24 h-24 mb-4 relative">
                       {data?.logo ? (
                         <img 
                             src={urlFor(data.logo).url()} 
                             alt="Footer Logo" 
-                            className="w-full h-full object-contain p-1"
+                            className="w-full h-full object-contain object-left"
                         />
                       ) : (
-                        <span className="text-[10px] font-bold">LOGO</span>
+                        /* Заглушка осталась в рамочке, чтобы ее было видно, если лого нет */
+                        <div className="w-14 h-14 flex items-center justify-center border border-white/30 rounded bg-white/5">
+                            <span className="text-[10px] font-bold">LOGO</span>
+                        </div>
                       )}
                   </div>
                 </div>

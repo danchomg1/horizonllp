@@ -22,16 +22,15 @@ export default function ContactModal({ isOpen, onClose }: Props) {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
-      if (status === 'success' || status === 'error') {
-        setTimeout(() => setStatus('idle'), 300);
-      }
+      // Если открываем заново - сбрасываем статус
+      setStatus('idle');
       // Сбрасываем телефон при открытии
       setPhoneValue('');
     } else {
       document.body.style.overflow = 'unset';
     }
     return () => { document.body.style.overflow = 'unset'; };
-  }, [isOpen, status]);
+  }, [isOpen]); 
 
   // --- ЛОГИКА МАСКИ ТЕЛЕФОНА ---
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,13 +40,11 @@ export default function ContactModal({ isOpen, onClose }: Props) {
     let numbers = input.replace(/\D/g, '');
 
     // 2. Обработка начала ввода (чтобы всегда было +7)
-    // Если начали стирать и стерли всё, оставляем пусто
     if (numbers.length === 0) {
         setPhoneValue('');
         return;
     }
 
-    // Если первая цифра 7 или 8, или 9 (иногда пишут 8777...), обрезаем её, так как +7 мы добавим сами
     if (numbers.length > 0 && (numbers[0] === '7' || numbers[0] === '8')) {
         numbers = numbers.substring(1);
     }
@@ -80,7 +77,6 @@ export default function ContactModal({ isOpen, onClose }: Props) {
 
     const formData = new FormData(e.currentTarget);
     
-    // Важно: берем phoneValue из стейта, чтобы отправить отформатированный номер (или очищенный, если нужно)
     const data = {
         name: formData.get('name'),
         phone: phoneValue, 
@@ -98,7 +94,15 @@ export default function ContactModal({ isOpen, onClose }: Props) {
         });
 
         if (!res.ok) throw new Error('Ошибка отправки');
+        
+        // УСПЕХ!
         setStatus('success');
+
+        // Ждем 3 секунды и закрываем модалку автоматически
+        setTimeout(() => {
+            onClose(); 
+        }, 3000);
+
     } catch (error) {
         console.error(error);
         setStatus('error');
@@ -138,13 +142,14 @@ export default function ContactModal({ isOpen, onClose }: Props) {
                 </div>
                 <h3 className="text-2xl font-bold text-[#0B0073] mb-2">Спасибо!</h3>
                 <p className="text-gray-600 max-w-sm mb-8">
-                    Мы получили вашу заявку. Наш менеджер свяжется с вами в ближайшее рабочее время.
+                    Мы получили вашу заявку. <br/>
+                    Окно закроется автоматически через 3 секунды...
                 </p>
                 <button 
                     onClick={onClose}
-                    className="bg-[#0B0073] text-white px-8 py-3 rounded-[15px] hover:opacity-90 transition-opacity"
+                    className="bg-[#0B0073] text-white px-8 py-3 rounded-[15px] hover:opacity-90 transition-opacity text-sm"
                 >
-                    Отлично
+                    Закрыть сейчас
                 </button>
             </div>
         )}
@@ -153,7 +158,7 @@ export default function ContactModal({ isOpen, onClose }: Props) {
         {status !== 'success' && (
             <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-8 flex-grow">
                 
-                {/* ЛЕВАЯ КОЛОНКА (Фиксируем высоту, чтобы правая подстраивалась) */}
+                {/* ЛЕВАЯ КОЛОНКА */}
                 <div className="flex-1 flex flex-col gap-6">
                     
                     {/* Имя */}
@@ -162,7 +167,7 @@ export default function ContactModal({ isOpen, onClose }: Props) {
                         <input name="name" type="text" required placeholder="Как к Вам обращаться?" className="input-style" />
                     </div>
 
-                    {/* Телефон (С МАСКОЙ) */}
+                    {/* Телефон */}
                     <div className="flex flex-col gap-2">
                         <label className="text-[14px] text-black pl-1">Телефон*</label>
                         <input 
@@ -173,27 +178,30 @@ export default function ContactModal({ isOpen, onClose }: Props) {
                             className="input-style font-medium tracking-wide"
                             value={phoneValue}
                             onChange={handlePhoneChange}
-                            maxLength={18} // +7 (XXX) XXX-XX-XX = 18 символов
+                            maxLength={18} 
                         />
                     </div>
 
-                    {/* Вопрос */}
+                    {/* Вопрос (ОБНОВЛЕННЫЙ СПИСОК) */}
                     <div className="flex flex-col gap-2 relative">
                         <label className="text-[14px] text-black pl-1">По какому вопросу обращаетесь*</label>
                         <div className="relative">
                             <select name="question" required className="input-style appearance-none cursor-pointer" defaultValue="">
                                 <option value="" disabled hidden>Выберите из списка</option>
+                                
                                 <option value="Международные курсы">Международные курсы</option>
-                                <option value="Консалтинг">Консалтинг</option>
-                                <option value="Взрывозащита">Взрывозащита</option>
-                                <option value="Аварийное реагирование">Аварийное реагирование</option>
+                                <option value="Вакансии">Вакансии</option>
+                                {/* Объединенный пункт: */}
+                                <option value="Консалтинг и Технические услуги">Консалтинг и Технические услуги</option>
+                                <option value="СИЗ">СИЗ</option>
                                 <option value="Другое">Другое</option>
+
                             </select>
                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                         </div>
                     </div>
 
-                    {/* Сообщение об ошибке */}
+                    {/* Ошибка */}
                     {status === 'error' && (
                         <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg text-sm animate-in shake">
                             <AlertCircle className="w-4 h-4" />
@@ -201,10 +209,9 @@ export default function ContactModal({ isOpen, onClose }: Props) {
                         </div>
                     )}
 
-                    {/* Spacer чтобы кнопка была внизу */}
                     <div className="flex-grow md:hidden" />
 
-                    {/* КНОПКА ОТПРАВКИ (mt-auto прижимает её к низу в своей колонке, но мы хотим выровнять по высоте с комментарием) */}
+                    {/* КНОПКА ОТПРАВКИ */}
                     <button 
                         type="submit"
                         disabled={status === 'loading'}
@@ -233,10 +240,8 @@ export default function ContactModal({ isOpen, onClose }: Props) {
                         <input name="email" type="email" placeholder="Ваш e-mail для ответа" className="input-style" />
                     </div>
 
-                    {/* Комментарий - РАСТЯГИВАЕМСЯ */}
                     <div className="flex flex-col gap-2 flex-grow h-full">
                         <label className="text-[14px] text-black pl-1">Комментарий</label>
-                        {/* h-full заставляет textarea занять всё свободное место в колонке */}
                         <textarea 
                             name="comment" 
                             placeholder="Ваш вопрос или комментарий" 
@@ -261,7 +266,7 @@ export default function ContactModal({ isOpen, onClose }: Props) {
             transition: all 0.2s;
         }
         textarea.input-style {
-            height: auto; /* Для textarea переопределяем высоту */
+            height: auto;
         }
         .input-style:focus {
             outline: none;
