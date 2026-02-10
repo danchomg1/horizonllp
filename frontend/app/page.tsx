@@ -123,7 +123,7 @@ export default async function Home() {
                       <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400">Нет фото</div>
                     )}
                   </div>
-                  <h3 className="font-normal text-[14px] md:text-[15px] text-black leading-snug pr-2 opacity-90 group-hover:text-horizon-blue transition-colors line-clamp-3">
+                  <h3 className="font-normal text-[14px] md:text-[15px] text-black leading-snug pr-2 opacity-85 group-hover:text-horizon-blue transition-colors line-clamp-3">
                      {newsItem.title}
                   </h3>
                 </Link>
@@ -135,5 +135,5 @@ export default async function Home() {
         </section>
       </main>
     </div>
-  );
-}  
+  ); 
+}    
