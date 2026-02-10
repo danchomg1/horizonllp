@@ -1,6 +1,6 @@
+import { Metadata } from 'next'; // 1. Импортируем тип Metadata
 import { client, urlFor } from '../../lib/sanity'; 
 import { PortableText } from '@portabletext/react';
-// Импортируем ваши стандартизированные стили
 import { textComponents } from '../../components/RichTextComponents';
 
 interface NewsPost {
@@ -8,14 +8,17 @@ interface NewsPost {
   publishedAt: string;
   mainImage: any;
   body: any;
+  description?: string; // Добавил поле для SEO описания
 }
 
+// Запрос для получения контента страницы
 async function getPost(slug: string) {
   const query = `*[_type == "news" && slug.current == $slug][0] {
     title,
     publishedAt,
     mainImage,
-    body
+    body,
+    description // Пробуем достать описание, если есть
   }`;
   const data = await client.fetch(query, { slug }); 
   return data;
@@ -31,6 +34,39 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
+// --- 2. НОВАЯ ФУНКЦИЯ: ГЕНЕРАЦИЯ SEO ---
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const resolvedParams = await params;
+  
+  // Легкий запрос только для метаданных
+  const query = `*[_type == "news" && slug.current == $slug][0] {
+    title,
+    description,
+    mainImage
+  }`;
+  
+  const post = await client.fetch(query, { slug: resolvedParams.slug });
+
+  if (!post) {
+    return {
+      title: 'Новость не найдена | Horizon LLP',
+    }
+  }
+
+  return {
+    title: `${post.title} | Horizon LLP`,
+    // Если описания нет, формируем его автоматически
+    description: post.description || `Читайте новость: "${post.title}" на сайте учебного центра Horizon LLP.`,
+    openGraph: {
+      title: post.title,
+      description: post.description || `Читайте новость: "${post.title}"`,
+      images: post.mainImage ? [urlFor(post.mainImage).url()] : [],
+      type: 'article',
+    },
+  }
+}
+
+// --- ОСНОВНОЙ КОМПОНЕНТ ---
 export default async function NewsPostPage({ params }: PageProps) {
   const resolvedParams = await params; 
   const { slug } = resolvedParams;
@@ -86,7 +122,6 @@ export default async function NewsPostPage({ params }: PageProps) {
            </h1>
 
            {/* ТЕКСТ СТАТЬИ */}
-           {/* Убрал класс 'prose', чтобы ваши стили из RichTextComponents работали точно как задано */}
            <div className="w-full text-black/80">
               <PortableText 
                 value={post.body} 

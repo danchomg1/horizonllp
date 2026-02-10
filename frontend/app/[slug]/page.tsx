@@ -1,3 +1,4 @@
+import { Metadata } from 'next'; // 1. Импортируем тип для метаданных
 import { client, urlFor } from '../lib/sanity';
 import { PortableText } from '@portabletext/react';
 import TabsSection from '../components/TabsSection';
@@ -11,6 +12,7 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+// Запрос для получения контента страницы
 async function getData(slug: string) {
   const query = `
     *[_type in [
@@ -27,13 +29,51 @@ async function getData(slug: string) {
       introTitle,
       introText,
       introIcon,
-      pageTabs
+      pageTabs,
+      description // Добавил поле description, если оно есть в Sanity (для SEO)
     }
   `;
   const data = await client.fetch(query, { slug });
   return data;
 }
 
+// --- НОВАЯ ФУНКЦИЯ: ГЕНЕРАЦИЯ SEO (METADATA) ---
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const resolvedParams = await params;
+  const decodedSlug = decodeURIComponent(resolvedParams.slug);
+  
+  // Делаем легкий запрос только за заголовком и описанием
+  const query = `
+    *[_type in [
+      "consultingItem", "explosionItem", "emergencyItem", 
+      "engineeringItem", "ppeItem", "aboutItem", "course"
+    ] && slug.current == $slug][0] {
+      title,
+      description,
+      heroImage
+    }
+  `;
+  
+  const data = await client.fetch(query, { slug: decodedSlug });
+
+  if (!data) {
+    return {
+      title: 'Страница не найдена | Horizon LLP',
+    }
+  }
+
+  return {
+    title: `${data.title} | Horizon LLP`,
+    description: data.description || `Подробнее о ${data.title} - Horizon LLP`, // Если описания нет, ставим заглушку
+    openGraph: {
+      title: data.title,
+      description: data.description,
+      images: data.heroImage ? [urlFor(data.heroImage).url()] : [],
+    },
+  }
+}
+
+// --- ОСНОВНОЙ КОМПОНЕНТ СТРАНИЦЫ ---
 export default async function DynamicPage({ params }: Props) {
   const resolvedParams = await params;
   const decodedSlug = decodeURIComponent(resolvedParams.slug);
@@ -49,18 +89,10 @@ export default async function DynamicPage({ params }: Props) {
       {/* 1. HERO SECTION */}
       <div className="w-full flex justify-center relative z-0">
         
-        {/* ГЛАВНЫЙ КОНТЕЙНЕР:
-            - flex flex-col: На мобилках выстраиваем элементы в столбик (Картинка, потом Кнопка).
-            - lg:block: На ПК это обычный блок, чтобы работало absolute позиционирование.
-            - lg:h-[550px]: На ПК фиксируем высоту всего блока.
-            - px-4: Отступы по бокам на мобилке.
-        */}
+        {/* ГЛАВНЫЙ КОНТЕЙНЕР */}
         <div className="w-full max-w-[1300px] px-4 md:px-10 lg:px-0 relative lg:h-[350px] flex flex-col lg:block items-center">
             
             {/* А. БЛОК КАРТИНКИ */}
-            {/* - relative w-full h-[300px]: На мобилке блок имеет свою высоту и ширину.
-               - lg:absolute lg:inset-0: На ПК растягивается на весь родительский блок.
-            */}
             <div className="relative w-full h-[300px] md:h-[400px] lg:h-full lg:absolute lg:inset-0 rounded-[15px] lg:rounded-b-[30px] lg:rounded-t-none overflow-hidden shadow-sm lg:shadow-none">
                 {data.heroImage ? (
                 <img 
@@ -75,7 +107,7 @@ export default async function DynamicPage({ params }: Props) {
                 <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 pointer-events-none" />
             </div>
 
-            {/* Б. ВЫРЕЗ (Только Desktop, скрыт на мобилках) */}
+            {/* Б. ВЫРЕЗ (Только Desktop) */}
             <div className="hidden lg:block absolute bottom-0 left-1/2 -translate-x-1/2 w-[300px] h-[71px] z-10 pointer-events-none">
                  <img 
                     src="/hero-cutout.svg" 
@@ -85,11 +117,6 @@ export default async function DynamicPage({ params }: Props) {
             </div>
 
             {/* В. КНОПКА */}
-            {/* - mt-6: Отступ сверху ОТ картинки (на мобилке).
-               - lg:mt-0: На ПК отступ убираем.
-               - lg:absolute: На ПК включаем абсолютное позиционирование.
-               - lg:bottom-0: Прижимаем к низу (в вырез).
-            */}
             <div className="mt-6 lg:mt-0 lg:absolute lg:bottom-0 lg:left-1/2 lg:-translate-x-1/2 z-20 lg:translate-y-0">
                 <Button className="!w-[200px] !h-[50px] md:!h-[60px] !text-[16px]">
                    Оставить заявку
