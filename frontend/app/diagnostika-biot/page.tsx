@@ -20,7 +20,7 @@ export default function DiagnostikaPage() {
   return (
     <main className={`${montserrat.className} bg-[#F4F4F4] min-h-screen pb-20`}>
 {/* ==================== 1. HERO SECTION ==================== */}
-      <section className="w-full max-w-[1240px] mx-auto pt-[50px] px-4">
+      <section className="w-full max-w-[1280px] mx-auto pt-[80px] px-4">
         <div className="relative w-full h-[400px] lg:h-[450px] rounded-[15px] overflow-hidden">
           
           {/* 1. Сама картинка (полностью непрозрачная, на дне) */}
@@ -173,31 +173,31 @@ export default function DiagnostikaPage() {
         {/* 5 Карточек в ряд */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             
-            <div className="bg-white border border-black/10 rounded-[15px] p-6 hover:shadow-md transition-shadow">
+            <div className="bg-transparent border border-black/50 rounded-[15px] p-6 hover:shadow-md transition-shadow">
                 <img src="/assets/diag/icon-risk.png" className="w-10 h-10 mb-4 opacity-80" alt="Risk" />
                 <h3 className={`${TEXT_H3} mb-3`}>Управление ключевыми рисками</h3>
                 <p className="text-[11px] text-black/70 leading-relaxed">PTW, SIMOPS, LOTO, подрядчики, MOC, управление барьерами, готовность к авариям.</p>
             </div>
 
-            <div className="bg-white border border-black/10 rounded-[15px] p-6 hover:shadow-md transition-shadow">
+            <div className="bg-transparent border border-black/50 rounded-[15px] p-6 hover:shadow-md transition-shadow">
                 <img src="/assets/diag/icon-incident.png" className="w-10 h-10 mb-4 opacity-80" alt="Incident" />
                 <h3 className={`${TEXT_H3} mb-3`}>Инциденты и near miss</h3>
                 <p className="text-[11px] text-black/70 leading-relaxed">Качество расследований, причины недосообщения, обучение на событиях.</p>
             </div>
 
-            <div className="bg-white border border-black/10 rounded-[15px] p-6 hover:shadow-md transition-shadow">
+            <div className="bg-transparent border border-black/50 rounded-[15px] p-6 hover:shadow-md transition-shadow">
                 <img src="/assets/diag/icon-culture.png" className="w-10 h-10 mb-4 opacity-80" alt="Culture" />
                 <h3 className={`${TEXT_H3} mb-3`}>Лидерство и культура безопасности</h3>
                 <p className="text-[11px] text-black/70 leading-relaxed">Как руководители задают приоритеты, как принимаются решения, как работает обратная связь.</p>
             </div>
 
-            <div className="bg-white border border-black/10 rounded-[15px] p-6 hover:shadow-md transition-shadow">
+            <div className="bg-transparent border border-black/50 rounded-[15px] p-6 hover:shadow-md transition-shadow">
                 <img src="/assets/diag/icon-field.png" className="w-10 h-10 mb-4 opacity-80" alt="Field" />
                 <h3 className={`${TEXT_H3} mb-3`}>Полевые практики</h3>
                 <p className="text-[11px] text-black/70 leading-relaxed">Как люди реально выполняют работу, соответствие процедур фактическим условиям.</p>
             </div>
 
-            <div className="bg-white border border-black/10 rounded-[15px] p-6 hover:shadow-md transition-shadow">
+            <div className="bg-transparent border border-black/50 rounded-[15px] p-6 hover:shadow-md transition-shadow">
                 <img src="/assets/diag/icon-competence.png" className="w-10 h-10 mb-4 opacity-80" alt="Competence" />
                 <h3 className={`${TEXT_H3} mb-3`}>Компетенции и контроль</h3>
                 <p className="text-[11px] text-black/70 leading-relaxed">Обучение, допуски, наблюдение за работой, аудит — насколько они формальны.</p>
@@ -224,10 +224,10 @@ export default function DiagnostikaPage() {
             </div>
         </div>
 
-        {/* 4 Карточки результата */}
+     {/* 4 Карточки результата */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
             
-            <div className="bg-white border border-black/10 rounded-[15px] p-6 flex items-start gap-4 hover:shadow-md transition-shadow">
+            <div className="bg-transparent border border-black/50 rounded-[15px] p-6 flex items-start gap-4 hover:shadow-md transition-shadow">
                 <img src="/assets/diag/icon-map.png" className="w-8 h-8 shrink-0 opacity-80" alt="Map" />
                 <div>
                     <h4 className="text-[13px] font-bold text-black/90 mb-1">Карта зрелости системы БиОТ</h4>
@@ -235,7 +235,7 @@ export default function DiagnostikaPage() {
                 </div>
             </div>
 
-            <div className="bg-white border border-black/10 rounded-[15px] p-6 flex items-start gap-4 hover:shadow-md transition-shadow">
+            <div className="bg-transparent border border-black/50 rounded-[15px] p-6 flex items-start gap-4 hover:shadow-md transition-shadow">
                 <img src="/assets/diag/icon-top.png" className="w-8 h-8 shrink-0 opacity-80" alt="Top" />
                 <div>
                     <h4 className="text-[13px] font-bold text-black/90 mb-1">Топ-10/20 приоритетных разрывов</h4>
@@ -243,7 +243,7 @@ export default function DiagnostikaPage() {
                 </div>
             </div>
 
-            <div className="bg-white border border-black/10 rounded-[15px] p-6 flex items-start gap-4 hover:shadow-md transition-shadow">
+            <div className="bg-transparent border border-black/50 rounded-[15px] p-6 flex items-start gap-4 hover:shadow-md transition-shadow">
                 <img src="/assets/diag/icon-roadmap.png" className="w-8 h-8 shrink-0 opacity-80" alt="Roadmap" />
                 <div>
                     <h4 className="text-[13px] font-bold text-black/90 mb-1">Дорожная карта улучшений</h4>
@@ -251,7 +251,7 @@ export default function DiagnostikaPage() {
                 </div>
             </div>
 
-            <div className="bg-white border border-black/10 rounded-[15px] p-6 flex items-start gap-4 hover:shadow-md transition-shadow">
+            <div className="bg-transparent border border-black/50 rounded-[15px] p-6 flex items-start gap-4 hover:shadow-md transition-shadow">
                 <img src="/assets/diag/icon-smart.png" className="w-8 h-8 shrink-0 opacity-80" alt="Smart" />
                 <div>
                     <h4 className="text-[13px] font-bold text-black/90 mb-1">SMART-план действий</h4>
