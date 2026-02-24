@@ -3,6 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { Montserrat } from "next/font/google";
+import Button from "../components/Button"; // <--- ДОБАВЬ ЭТУ СТРОКУ
 
 // Подключаем шрифт Montserrat
 const montserrat = Montserrat({
@@ -161,11 +162,11 @@ export default function NocnAicirPage() {
 
         </div>
 
-        {/* Кнопка заявки */}
+{/* Кнопка заявки */}
         <div className="flex justify-center pb-10">
-            <button className="bg-[#0B0073] text-white font-bold text-[14px] px-12 py-4 rounded-full hover:bg-blue-800 transition-colors shadow-lg">
+            <Button>
                 Оставить заявку
-            </button>
+            </Button>
         </div>
 
       </section>

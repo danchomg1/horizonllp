@@ -1,6 +1,8 @@
 import React from "react";
 import Image from "next/image";
 import { Montserrat } from "next/font/google";
+import Button from "../components/Button"; // <--- ДОБАВЬ ЭТУ СТРОКУ
+import ButtonWhite from "../components/ButtonWhite";
 
 // Подключаем шрифт Montserrat
 const montserrat = Montserrat({
@@ -301,8 +303,26 @@ export default function IsoPage() {
             </p>
         </div>
 
-      </section>
+{/* Кнопки заявки */}
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pb-10">
+            {/* Основная синяя кнопка (открывает модалку) */}
+            <Button>
+                Оставить заявку
+            </Button>
 
+            {/* Вторая белая кнопка (открывает Google Форму) */}
+            <a 
+                href="https://docs.google.com/forms/d/e/1FAIpQLSfycmEUau4ILUxGVh0Vgbt57-kIY9fS2e4aLNca6EbZPKagsA/viewform" 
+                target="_blank" 
+                rel="noopener noreferrer"
+            >
+                <ButtonWhite noModal>
+                    Заполнить форму
+                </ButtonWhite>
+            </a>
+        </div>
+
+      </section>
     </main>
   );
 }

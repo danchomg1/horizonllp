@@ -58,7 +58,12 @@ export default function HeaderClient({
   if (pathname && pathname.startsWith('/studio')) {
     return null;
   }
-
+// Сбрасываем меню при любом переходе на новую страницу
+  useEffect(() => {
+    setActiveMenu(null); // Закрывает десктопные дропдауны
+    setIsMobileMenuOpen(false); // На всякий случай закрывает и мобильное меню
+  }, [pathname]);
+  
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;

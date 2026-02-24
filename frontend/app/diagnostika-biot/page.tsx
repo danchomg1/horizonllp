@@ -3,6 +3,8 @@
 import React from "react";
 import Image from "next/image";
 import { Montserrat } from "next/font/google";
+import Button from "../components/Button"; // <--- ДОБАВЬ ЭТУ СТРОКУ
+import ButtonWhite from "../components/ButtonWhite";
 
 // Подключаем шрифт Montserrat
 const montserrat = Montserrat({
@@ -261,11 +263,23 @@ export default function DiagnostikaPage() {
 
         </div>
 
-        {/* Кнопка заявки */}
-        <div className="flex justify-center pb-10">
-            <button className="bg-[#0B0073] text-white font-bold text-[14px] px-12 py-4 rounded-full hover:bg-blue-800 transition-colors shadow-lg">
+{/* Кнопки заявки */}
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pb-10">
+            {/* Основная синяя кнопка (открывает модалку) */}
+            <Button>
                 Оставить заявку
-            </button>
+            </Button>
+
+            {/* Вторая белая кнопка (открывает Google Форму) */}
+            <a 
+                href="https://docs.google.com/forms/d/e/1FAIpQLSfycmEUau4ILUxGVh0Vgbt57-kIY9fS2e4aLNca6EbZPKagsA/viewform" 
+                target="_blank" 
+                rel="noopener noreferrer"
+            >
+                <ButtonWhite noModal>
+                    Заполнить форму
+                </ButtonWhite>
+            </a>
         </div>
 
       </section>
