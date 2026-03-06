@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { Montserrat } from "next/font/google";
-import Button from "../components/Button"; // Убедись, что путь к кнопке верный
+import Button from "../components/Button";
 
 // Подключаем шрифт Montserrat
 const montserrat = Montserrat({
@@ -23,13 +23,13 @@ const accreditations = [
     id: "post",
     navLogo: "/assets/about/logo-post.png",
     cardLogo: "/assets/about/logo-post.png",
-    title: "POST (Petroleum Open Standards Training)",
-    desc: "Стандарты обучения и оценки компетенций персонала в нефтегазовой отрасли. Обеспечивают единый подход к безопасности и качеству выполнения работ на промышленных объектах."
+    title: "NOCN (National Open College Network)",
+    desc: "Ведущий независимый британский образовательный фонд и центр оценки профессиональных квалификаций. Организация разрабатывает передовые мировые стандарты и сертифицирует практические компетенции специалистов в строительной, инженерной и производственной отраслях. Статус независимого института гарантирует строгую объективность оценки, поэтому сертификаты NOCN признаются работодателями по всему миру как знак высочайшего качества и реального профессионализма."
   },
   {
     id: "nebosh",
     navLogo: "/assets/about/logo-nebosh.png",
-    cardLogo: "/assets/about/logo-nebosh-gold.png",
+    cardLogo: "/assets/about/logo-nebosh.png", // ИСПРАВЛЕНО ЗДЕСЬ
     title: "NEBOSH (National Examination Board in Occupational Safety and Health)",
     desc: "Это ведущая британская экзаменационная комиссия, устанавливающая мировые стандарты в области охраны труда, промышленной безопасности и экологии. Организация разрабатывает учебные программы и выдает престижные международные сертификаты, которые признаются «золотым стандартом» для специалистов HSE по всему миру."
   },
@@ -64,15 +64,8 @@ const accreditations = [
 ];
 
 export default function AboutPage() {
+  // Удалили useEffect с setInterval
   const [activeAccreditation, setActiveAccreditation] = useState(0);
-
-  // Автоматическое переключение каждые 5 секунд
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveAccreditation((prev) => (prev + 1) % accreditations.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <main className={`${montserrat.className} bg-[#F4F4F4] min-h-screen pb-20`}>
@@ -99,7 +92,6 @@ export default function AboutPage() {
             </div>
             
             <div className="flex flex-col items-start max-w-[700px]">
-              {/* Уменьшенный в 2 раза логотип (было 140x60) */}
               <Image 
                 src="/assets/about/horizon-logo-white.png" 
                 alt="Horizon Logo" 
@@ -214,7 +206,6 @@ export default function AboutPage() {
         <div className="flex flex-col md:flex-row items-center gap-10 lg:gap-20">
           
           <div className="shrink-0">
-            {/* Уменьшенный в 2 раза логотип (было w-[180px] lg:w-[220px]) */}
             <img src="/assets/about/horizon-logo-dark.png" alt="Horizon Logo Dark" className="w-[90px] lg:w-[110px] object-contain" />
           </div>
 
