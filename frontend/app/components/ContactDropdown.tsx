@@ -114,13 +114,13 @@ export default function ContactsDropdown({ cities }: Props) {
                 {/* Телефоны теперь внутри коммерческого блока */}
                 <div className="flex flex-col gap-1">
                     <div className="flex flex-col">
-                        <span className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">Для юр. лиц</span>
+                        <span className="text-[11px] text-gray-500 leading-tight">Для юр. лиц</span>
                         <a href="tel:+77776400487" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors">
                             +7 777 640 04 87
                         </a>
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">Для физ. лиц</span>
+                        <span className="text-[11px] text-gray-500 leading-tight">Для физ. лиц</span>
                         <a href="tel:+77772756107" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors">
                             +7 777 275 61 07
                         </a>
