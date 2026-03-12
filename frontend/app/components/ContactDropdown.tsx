@@ -109,23 +109,12 @@ export default function ContactsDropdown({ cities }: Props) {
                     <a href="mailto:sales@horizon-llp.com" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors border-b border-transparent hover:border-[#0B0073] w-max">
                         sales@horizon-llp.com
                     </a>
-                </div>
-
-                {/* Телефоны теперь внутри коммерческого блока */}
-                <div className="flex flex-col gap-1">
-                    <div className="flex flex-col">
-                        <span className="text-[11px] text-gray-500 leading-tight">Для юр. лиц</span>
-                        <a href="tel:+77776400487" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors">
+                       <a href="tel:+77776400487" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors">
                             +7 777 640 04 87
                         </a>
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-[11px] text-gray-500 leading-tight">Для физ. лиц</span>
-                        <a href="tel:+77772756107" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors">
-                            +7 777 275 61 07
-                        </a>
-                    </div>
                 </div>
+
+          
             </div>
 
             {/* Группа: Общие обращения */}
