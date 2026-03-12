@@ -110,7 +110,7 @@ export default function ContactsDropdown({ cities }: Props) {
                         sales@horizon-llp.com
                     </a>
                        <a href="tel:+77776400487" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors">
-                            +7 777 640 04 87
+                            +7 777 275 61 07
                         </a>
                 </div>
 
