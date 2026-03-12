@@ -92,48 +92,53 @@ export default function ContactsDropdown({ cities }: Props) {
       </div>
 
 {/* --- ПРАВОЕ ОКНО --- */}
-      <div className="w-[40%] relative rounded-[15px] shadow-2xl">
-          <div className="absolute inset-0 rounded-[15px] border border-white/50" style={glassLayerStyle} />
-          
-          <div className="relative z-10 flex h-full p-8 justify-between items-center">
-              
-              {/* Уменьшил gap-5 до gap-1.5 (~70% меньше) */}
-              <div className="flex flex-col gap-1.5 text-[#1A1A1A] text-[14px]">
-                  
-                  {/* Коммерческие вопросы */}
-                  <div className="flex flex-col">
-                      <span className="text-[11px] text-gray-500 uppercase tracking-wider leading-tight">Коммерческие вопросы</span>
-                      <p className="text-[10px] text-gray-400 leading-tight">По вопросам услуг, предложений и сотрудничества:</p>
-                      <a href="mailto:sales@horizon-llp.com" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors border-b border-transparent hover:border-[#0B0073] w-max">
-                          sales@horizon-llp.com
-                      </a>
-                  </div>
+<div className="w-[40%] relative rounded-[15px] shadow-2xl">
+    <div className="absolute inset-0 rounded-[15px] border border-white/50" style={glassLayerStyle} />
+    
+    <div className="relative z-10 flex h-full p-8 justify-between items-center">
+        
+        {/* Сохраняем плотную верстку gap-1.5 */}
+        <div className="flex flex-col gap-1.5 text-[#1A1A1A] text-[14px]">
+            
+            {/* Группа: Коммерческие вопросы + Телефоны */}
+            <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col">
+                    <span className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">Коммерческие вопросы</span>
+                    {/* Текст увеличен в 2 раза: с 10px до 20px */}
+                    <p className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">По вопросам услуг, предложений и сотрудничества:</p>
+                    <a href="mailto:sales@horizon-llp.com" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors border-b border-transparent hover:border-[#0B0073] w-max">
+                        sales@horizon-llp.com
+                    </a>
+                </div>
 
-                  {/* Общие обращения */}
-                  <div className="flex flex-col">
-                      <span className="text-[11px] text-gray-500 uppercase tracking-wider leading-tight">Общие обращения</span>
-                      <p className="text-[10px] text-gray-400 leading-tight">По административным и иным вопросам:</p>
-                      <a href="mailto:info@horizon-llp.com" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors border-b border-transparent hover:border-[#0B0073] w-max">
-                          info@horizon-llp.com
-                      </a>
-                  </div>
+                {/* Телефоны теперь внутри коммерческого блока */}
+                <div className="flex flex-col gap-1">
+                    <div className="flex flex-col">
+                        <span className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">Для юр. лиц</span>
+                        <a href="tel:+77776400487" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors">
+                            +7 777 640 04 87
+                        </a>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">Для физ. лиц</span>
+                        <a href="tel:+77772756107" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors">
+                            +7 777 275 61 07
+                        </a>
+                    </div>
+                </div>
+            </div>
 
-                  {/* Для юр. лиц */}
-                  <div className="flex flex-col">
-                      <span className="text-[11px] text-gray-500 uppercase tracking-wider leading-tight">Для юр. лиц</span>
-                      <a href="tel:+77776400487" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors">
-                          +7 777 640 04 87
-                      </a>
-                  </div>
+            {/* Группа: Общие обращения */}
+            <div className="flex flex-col">
+                <span className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">Общие обращения</span>
+                {/* Текст увеличен в 2 раза: с 10px до 20px */}
+                <p className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">По административным и иным вопросам:</p>
+                <a href="mailto:info@horizon-llp.com" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors border-b border-transparent hover:border-[#0B0073] w-max">
+                    info@horizon-llp.com
+                </a>
+            </div>
 
-                  {/* Для физ. лиц */}
-                  <div className="flex flex-col">
-                      <span className="text-[11px] text-gray-500 uppercase tracking-wider leading-tight">Для физ. лиц</span>
-                      <a href="tel:+77772756107" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors">
-                          +7 777 275 61 07
-                      </a>
-                  </div>
-              </div>
+        </div>
 
    
               {/* ИЗМЕНИЛИ ОТСТУП: gap-[60px] -> gap-[40px], чтобы влезло в новую высоту */}
