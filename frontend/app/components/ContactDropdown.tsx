@@ -122,8 +122,8 @@ export default function ContactsDropdown({ cities }: Props) {
                 <span className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">Общие обращения</span>
                 {/* Текст увеличен в 2 раза: с 10px до 20px */}
                 <p className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">По административным и иным вопросам:</p>
-                <a href="mailto:info@horizon-llp.com" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors border-b border-transparent hover:border-[#0B0073] w-max">
-                    info@horizon-llp.com
+                <a href="mailto:reception@horizon-llp.com" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors border-b border-transparent hover:border-[#0B0073] w-max">
+                    reception@horizon-llp.com
                 </a>
             </div>
 
