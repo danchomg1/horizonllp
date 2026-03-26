@@ -47,7 +47,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  // В. Статические страницы (Главная и Контакты)
+  // В. Базовые статические страницы (Главная, Контакты и список новостей)
   const staticUrls = [
     {
       url: baseUrl,
@@ -56,12 +56,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1, // Главная - самая важная
     },
     {
-      url: `${baseUrl}/contacts`, // Если страница контактов называется так
+      url: `${baseUrl}/contacts`, 
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.9,
     },
-    // Если есть отдельная страница списка новостей
     {
       url: `${baseUrl}/news`,
       lastModified: new Date(),
@@ -70,6 +69,35 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // Возвращаем объединенный массив
-  return [...staticUrls, ...rootUrls, ...newsUrls];
+  // Г. НОВЫЕ СТАТИЧЕСКИЕ СТРАНИЦЫ ИЗ ПАПОК
+  // Сюда просто дописывай названия новых папок в кавычках, если будешь создавать еще
+  const staticFolders = [
+    'diagnostika-biot',
+    'iosh-vs',
+    'iosh-working-safely',
+    'ioshms',
+    'nebosh-igc',
+    'neboship',
+    'neboshlp',
+    'neboshpsm',
+    'neboshraw',
+    'neboshstress',
+    'neboshwellbeing',
+    'nocn-aicir',
+    'pipeline-course',
+    'rlam',
+    'rospa_def',
+    'sistemy-menedzhmenta'
+  ];
+
+  // Автоматически превращаем список папок в формат ссылок для карты сайта
+  const folderUrls = staticFolders.map((slug) => ({
+    url: `${baseUrl}/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly',
+    priority: 0.8,
+  }));
+
+  // Возвращаем объединенный массив из всех 4 блоков
+  return [...staticUrls, ...folderUrls, ...rootUrls, ...newsUrls];
 }
