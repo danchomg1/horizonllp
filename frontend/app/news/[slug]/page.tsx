@@ -1,7 +1,8 @@
-import { Metadata } from 'next'; // 1. Импортируем тип Metadata
-import { client, urlFor } from '../../lib/sanity'; 
+import { Metadata } from 'next';
+import { client, urlFor } from '../../lib/sanity';
 import { PortableText } from '@portabletext/react';
 import { textComponents } from '../../components/RichTextComponents';
+import JsonLd from '../../components/JsonLd';
 
 interface NewsPost {
   title: string;
@@ -68,7 +69,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 // --- ОСНОВНОЙ КОМПОНЕНТ ---
 export default async function NewsPostPage({ params }: PageProps) {
-  const resolvedParams = await params; 
+  const resolvedParams = await params;
   const { slug } = resolvedParams;
   const post: NewsPost = await getPost(slug);
 
@@ -80,8 +81,40 @@ export default async function NewsPostPage({ params }: PageProps) {
     );
   }
 
+  const pageUrl = `https://horizon-llp.com/news/${slug}`;
+  const articleJsonLd = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: post.title,
+      description: post.description || `Читайте новость: "${post.title}" на сайте учебного центра Horizon LLP.`,
+      datePublished: post.publishedAt,
+      url: pageUrl,
+      image: post.mainImage ? urlFor(post.mainImage).url() : undefined,
+      publisher: {
+        '@type': 'Organization',
+        name: 'Horizon LLP',
+        url: 'https://horizon-llp.com',
+        logo: {
+          '@type': 'ImageObject',
+          url: 'https://horizon-llp.com/HORIZON_logo_header.svg',
+        },
+      },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://horizon-llp.com' },
+        { '@type': 'ListItem', position: 2, name: 'События', item: 'https://horizon-llp.com/news' },
+        { '@type': 'ListItem', position: 3, name: post.title, item: pageUrl },
+      ],
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-[#F4F4F4]">
+      <JsonLd data={articleJsonLd} />
       
       <main className="pb-20">
         

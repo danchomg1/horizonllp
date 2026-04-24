@@ -1,8 +1,20 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import Button from './components/Button';
 import Header from './components/Header';
-import { client, urlFor } from './lib/sanity'; 
+import { client, urlFor } from './lib/sanity';
+
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'Horizon LLP — Обучение охране труда и промышленной безопасности в Казахстане',
+  description:
+    'Horizon LLP — аккредитованный учебный центр в Астане. Международные курсы NEBOSH, IOSH, RoSPA, NOCN. Консалтинг по БиОТ, диагностика систем безопасности, внедрение ISO 45001 для нефтегазового и промышленного секторов Казахстана.',
+  alternates: {
+    canonical: 'https://horizon-llp.com',
+  },
+};
 
 async function getData() {
   const [homeData, latestNews] = await Promise.all([
@@ -24,8 +36,6 @@ export default async function Home() {
   const data = await getData();
 
   return (
-    // ИСПРАВЛЕНИЕ 1: Убрали 'overflow-x-hidden' отсюда. 
-    // Теперь sticky Header увидит скролл и заработает.
     <div className="bg-[#F4F4F4] min-h-screen flex flex-col">
       
       {/* Spacer для десктопа */}
@@ -37,7 +47,6 @@ export default async function Home() {
       <main className="mt-4 lg:-mt-[200px] relative z-0 flex-grow">
         
         {/* --- HERO SECTION --- */}
-        {/* ИСПРАВЛЕНИЕ 2: Добавили 'overflow-hidden' сюда, чтобы картинка справа не создавала горизонтальный скролл */}
         <section className="relative w-full flex flex-col-reverse lg:flex-row lg:min-h-[800px] overflow-hidden">
            
            {/* ЛЕВАЯ ЧАСТЬ (Текст) */}
@@ -47,8 +56,8 @@ export default async function Home() {
                 {/* ЛОГО */}
                 <div className="flex-shrink-0 hidden md:block">
                    {data?.heroLogo ? (
-                     <div className="w-[60px] h-[60px] lg:w-[80px] lg:h-[80px] flex items-center justify-center">
-                        <img src={urlFor(data.heroLogo).url()} alt="Hero Logo" className="w-full h-full object-contain"/>
+                     <div className="relative w-[60px] h-[60px] lg:w-[80px] lg:h-[80px] flex items-center justify-center">
+                        <Image src={urlFor(data.heroLogo).url()} alt="Hero Logo" fill className="object-contain"/>
                      </div>
                    ) : (
                      <div className="w-[80px] h-[80px] border border-dashed border-horizon-blue flex items-center justify-center rounded-lg opacity-50">
@@ -86,15 +95,17 @@ export default async function Home() {
               z-10
            ">
               <div className="relative w-full h-full">
-                <img 
+                <Image
                    src={data?.heroImage ? urlFor(data.heroImage).url() : "https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070"}
                    alt="Hero"
+                   fill
+                   priority
                    className="
-                      w-full h-full object-cover 
+                      object-cover
                       rounded-[15px] lg:rounded-none lg:scale-[1.01]
-                      lg:[mask-image:url(/hero-mask.svg)] lg:[webkit-mask-image:url(/hero-mask.svg)] 
-                      lg:[mask-size:100%_100%] lg:[webkit-mask-size:100%_100%] 
-                      lg:[mask-repeat:no-repeat] lg:[webkit-mask-repeat:no-repeat] 
+                      lg:[mask-image:url(/hero-mask.svg)] lg:[webkit-mask-image:url(/hero-mask.svg)]
+                      lg:[mask-size:100%_100%] lg:[webkit-mask-size:100%_100%]
+                      lg:[mask-repeat:no-repeat] lg:[webkit-mask-repeat:no-repeat]
                       lg:[mask-position:right_top] lg:[webkit-mask-position:right_top]
                    "
                 />
@@ -116,9 +127,9 @@ export default async function Home() {
              {data?.latestNews?.length > 0 ? (
                data.latestNews.map((newsItem: any) => (
                 <Link key={newsItem._id} href={`/news/${newsItem.slug.current}`} className="group cursor-pointer block">
-                  <div className="aspect-square overflow-hidden rounded-[20px] md:rounded-[30px] mb-4 bg-white shadow-md">
+                  <div className="relative aspect-square overflow-hidden rounded-[20px] md:rounded-[30px] mb-4 bg-white shadow-md">
                     {newsItem.mainImage ? (
-                      <img src={urlFor(newsItem.mainImage).url()} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={newsItem.title}/>
+                      <Image src={urlFor(newsItem.mainImage).url()} fill className="object-cover group-hover:scale-110 transition-transform duration-700" alt={newsItem.title}/>
                     ) : (
                       <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400">Нет фото</div>
                     )}

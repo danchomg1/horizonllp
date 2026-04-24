@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* Опции конфигурации */
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'cdn.sanity.io' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+    ],
+  },
 
   // Блок редиректов (перенаправлений)
   async redirects() {
@@ -42,7 +47,15 @@ const nextConfig: NextConfig = {
     ];
 
     return [
-      //1. NEBOSH 
+      // www → без www (301 permanent)
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.horizon-llp.com' }],
+        destination: 'https://horizon-llp.com/:path*',
+        permanent: true,
+      },
+
+      //1. NEBOSH
       {
         source: '/nebosh-landing',   // Старый адрес (откуда)
         destination: '/nebosh-igc',  // Новый адрес (куда)
@@ -183,6 +196,31 @@ const nextConfig: NextConfig = {
         destination: '/audit-sistemy-upr-avariyami-i-chs',
         permanent: true,
       },
+
+
+      // https://www.horizon-llp.com/iosh-managing-safely
+      {
+        source: '/iosh-managing-safely',
+        destination: '/ioshms',
+        permanent: true,
+      },
+
+
+      // https://horizon-llp.com/portfolio/iosh-managing-safely/
+      {
+        source: '/portfolio/iosh-managing-safely/',
+        destination: '/ioshms',
+        permanent: true,
+      },
+
+      // https://horizon-llp.com/kompanija-jt-limited-i-ih-produkt-compex01-04-gaz-i-par/
+      {
+        source: '/kompanija-jt-limited-i-ih-produkt-compex01-04-gaz-i-par/',
+        destination: '/compex-01-04',
+        permanent: true,
+      },
+
+
 
 // Б. А вот тут мы "распаковываем" наш список на Главную
       // (Этот код сам создаст правила для каждой ссылки из списка выше)
