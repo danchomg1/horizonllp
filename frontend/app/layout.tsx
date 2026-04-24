@@ -7,6 +7,7 @@ import GlobalHeaderWrapper from "./components/GlobalHeaderWrapper";
 import Footer from "./components/Footer";
 import { ModalProvider } from "./context/ModalContext";
 import JsonLd from "./components/JsonLd";
+import Script from "next/script";
 
 const organizationSchema = {
   '@context': 'https://schema.org',
@@ -94,6 +95,18 @@ export default function RootLayout({
     <html lang="ru">
       {/* ДОБАВЛЕНО: overflow-x-hidden, чтобы убрать горизонтальный скролл на мобилках */}
       <body className={`${montserrat.variable} font-sans antialiased bg-[#F4F4F4] min-h-screen flex flex-col overflow-x-hidden`}>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-577EM9ZKRS"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-577EM9ZKRS');
+          `}
+        </Script>
         <JsonLd data={organizationSchema} />
         <ModalProvider>
             
