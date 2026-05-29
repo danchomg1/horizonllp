@@ -2,21 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { urlFor } from '../lib/sanity';
 
 // Интерфейс для конкретного курса
 interface Course {
   title: string;
+  titleEn?: string;
   description: string;
-  logo: any;
+  descriptionEn?: string;
   details: string;
-  slug: { current: string }; // Ссылка
+  detailsEn?: string;
+  logo: any;
+  slug: { current: string };
 }
 
-// Интерфейс для группы (категории)
 interface Category {
   _id: string;
   title: string;
+  titleEn?: string;
   courses: Course[];
 }
 
@@ -27,6 +31,8 @@ interface Props {
 export default function CoursesDropdown({ categories }: Props) {
   const [activeCategory, setActiveCategory] = useState<Category | null>(null);
   const [activeCourse, setActiveCourse] = useState<Course | null>(null);
+  const pathname = usePathname();
+  const locale = pathname.split('/')[1] === 'en' ? 'en' : 'ru';
 
   // При загрузке выбираем первую категорию и первый курс
   useEffect(() => {
@@ -57,7 +63,6 @@ export default function CoursesDropdown({ categories }: Props) {
   };
 
   return (
-    // ИЗМЕНЕНИЕ 1: Увеличил высоту с 400px до 440px
     <div className="absolute left-0 top-[0px] w-full h-[440px] flex gap-[15px] z-50 animate-in fade-in slide-in-from-top-2 duration-200 cursor-default">
       
       {/* --- БЛОК 1 и 2: ЛЕВОЕ ОКНО (Категории + Список курсов) --- */}
@@ -77,7 +82,7 @@ export default function CoursesDropdown({ categories }: Props) {
                   ${activeCategory?._id === cat._id ? 'bg-black/5 text-[#0B0073]' : 'text-black hover:bg-black/5'}
                 `}
               >
-                {cat.title}
+                {(locale === 'en' && cat.titleEn) ? cat.titleEn : cat.title}
                 {activeCategory?._id === cat._id && <span className="text-[6px] text-[#0B0073]">●</span>}
               </div>
             ))}
@@ -91,14 +96,14 @@ export default function CoursesDropdown({ categories }: Props) {
                 return (
                   <Link
                     key={idx}
-                    href={course.slug?.current ? `/${course.slug.current}` : '#'}
+                    href={course.slug?.current ? (locale === 'en' ? `/en/${course.slug.current}` : `/${course.slug.current}`) : '#'}
                     onMouseEnter={() => setActiveCourse(course)}
                     className={`
                       cursor-pointer px-4 py-3 rounded-[10px] text-[16px] font-normal transition-all flex items-center justify-between
                       ${activeCourse?.title === course.title ? 'bg-black/5 text-[#0B0073]' : 'text-black hover:bg-black/5'}
                     `}
                   >
-                    {course.title}
+                    {(locale === 'en' && course.titleEn) ? course.titleEn : course.title}
                     {activeCourse?.title === course.title && <span className="text-[6px] text-[#0B0073]">●</span>}
                   </Link>
                 );
@@ -124,9 +129,9 @@ export default function CoursesDropdown({ categories }: Props) {
                 
                 <div className="flex flex-col">
                   {/* Заголовок (тоже ссылка) */}
-                  <Link href={activeCourse.slug?.current ? `/${activeCourse.slug.current}` : '#'}>
+                  <Link href={activeCourse.slug?.current ? (locale === 'en' ? `/en/${activeCourse.slug.current}` : `/${activeCourse.slug.current}`) : '#'}>
                     <h3 className="text-[16px] font-normal text-[#0B0073] mb-3 leading-tight uppercase tracking-wide hover:underline">
-                        {activeCourse.title}
+                      {(locale === 'en' && activeCourse.titleEn) ? activeCourse.titleEn : activeCourse.title}
                     </h3>
                   </Link>
 
@@ -134,21 +139,20 @@ export default function CoursesDropdown({ categories }: Props) {
 
                   <div className="pr-2">
                       <p className="text-[14px] text-black/80 leading-relaxed font-normal">
-                          {activeCourse.description}
+                        {(locale === 'en' && activeCourse.descriptionEn) ? activeCourse.descriptionEn : activeCourse.description}
                       </p>
-                      {activeCourse.details && (
+                      {(activeCourse.details || activeCourse.detailsEn) && (
                         <p className="text-[10px] text-gray-500 mt-2 italic">
-                          {activeCourse.details}
+                          {(locale === 'en' && activeCourse.detailsEn) ? activeCourse.detailsEn : activeCourse.details}
                         </p>
                       )}
                       
-                      {/* ИЗМЕНЕНИЕ 2: Удалили кнопку "Подробнее о курсе" */}
-                  </div>
+                      </div>
                 </div>
             </div>
           ) : (
             <div className="h-full flex items-center justify-center text-gray-500 text-sm font-normal">
-              Выберите курс
+              {locale === 'en' ? 'Select a course' : 'Выберите курс'}
             </div>
           )}
         </div>

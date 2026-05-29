@@ -56,7 +56,39 @@ export default defineType({
     defineField({
       name: 'body',
       title: 'Полный текст новости',
-      type: 'richText', // Ссылаемся на созданный вами RichText.ts
+      type: 'richText',
     }),
+
+    // === ENGLISH VERSION ===
+
+    defineField({
+      name: 'titleEn',
+      title: 'Title (English)',
+      type: 'string',
+      group: 'english',
+    }),
+
+    defineField({
+      name: 'descriptionEn',
+      title: 'Short description (English)',
+      type: 'text',
+      rows: 3,
+      group: 'english',
+      description: 'Shown in the news list under the title.',
+    }),
+
+    defineField({
+      name: 'bodyEn',
+      title: 'Full text (English)',
+      type: 'richText',
+      group: 'english',
+    }),
+  ],
+
+  groups: [
+    {
+      name: 'english',
+      title: 'English version',
+    },
   ],
 })

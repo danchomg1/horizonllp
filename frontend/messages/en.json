@@ -1,0 +1,35 @@
+{
+  "Header": {
+    "about": "About Us",
+    "courses": "International Courses",
+    "consulting": "Consulting",
+    "explosion": "Explosion Protection (IECEx)",
+    "emergency": "Emergency Response",
+    "engineering": "Engineering",
+    "ppe": "PPE",
+    "contacts": "Contacts",
+    "university": "Horizon University",
+    "cta": "Submit Request",
+    "mobileEmergency": "Emergency Response",
+    "mobileEngineering": "Engineering",
+    "mobilePpe": "PPE",
+    "email": "Email"
+  },
+  "Home": {
+    "cta": "Submit Request",
+    "learnMore": "learn more about us ▸",
+    "newsTitle": "Latest News",
+    "viewAll": "view all news ▸",
+    "noPhoto": "No photo",
+    "noNews": "No news yet."
+  },
+  "News": {
+    "pageTitle": "News & Events",
+    "back": "Back to all news",
+    "notFound": "Article not found :("
+  },
+  "Common": {
+    "cta": "Submit Request",
+    "notFoundTitle": "Page not found | Horizon LLP"
+  }
+}

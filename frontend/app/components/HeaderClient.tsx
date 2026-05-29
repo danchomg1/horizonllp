@@ -3,9 +3,10 @@
 import { usePathname } from 'next/navigation';
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Send, Menu, X } from 'lucide-react'; 
-import Button from './Button'; 
-import { urlFor } from '../lib/sanity'; 
+import { ChevronDown, Send, Menu, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import Button from './Button';
+import { urlFor } from '../lib/sanity';
 
 import CoursesDropdown from './CoursesDropdown';
 import ConsultingDropdown from './ConsultingDropdown';
@@ -41,7 +42,10 @@ export default function HeaderClient({
 }: HeaderClientProps) {
   
   const pathname = usePathname();
-  const isHomePage = pathname === '/';
+  const t = useTranslations('Header');
+  const isEnglish = pathname.startsWith('/en');
+  const locale = isEnglish ? 'en' : 'ru';
+  const isHomePage = pathname === '/' || pathname === '/en';
   
   // =========================================================
   // 👇 НАСТРОЙКИ
@@ -169,7 +173,7 @@ export default function HeaderClient({
                 : 'opacity-0 translate-x-4 pointer-events-none' // Скрыт: прозрачный и сдвинут вправо (к центру)
             }
         `}>
-            <Link href="/" className="block">
+            <Link href={locale === 'en' ? '/en' : '/'} className="block">
                 <div className="w-[91px] h-[22px] relative flex items-center justify-center">
                     {logo ? (
                       <img src={urlFor(logo).url()} alt="Logo" className="w-full h-full object-contain" />
@@ -187,7 +191,7 @@ export default function HeaderClient({
 
             {/* Лого внутри (только для мобильных) */}
             <div className="flex items-center lg:hidden">
-                <Link href="/" className="block">
+                <Link href={locale === 'en' ? '/en' : '/'} className="block">
                     <div className="w-[80px] h-[20px] relative">
                           {logo ? (
                              <img src={urlFor(logo).url()} alt="Logo" className="w-full h-full object-contain" />
@@ -200,14 +204,14 @@ export default function HeaderClient({
 
             {/* МЕНЮ */}
             <nav className="hidden lg:flex w-full justify-between items-center h-full">
-              <MenuItem label="О нас" name="about" />
-              <MenuItem label="Международные курсы" name="courses" />
-              <MenuItem label="Консалтинг" name="consulting" />
-              <MenuItem label="Взрывозащита (IEC Ex)" name="explosion" />
-              <MenuItem label="Аварийное реагирование" name="emergency" />
-              <MenuItem label="Инжиниринг" name="engineering" />
-              <MenuItem label="СИЗ" name="ppe" />
-              <MenuItem label="Контакты" name="contacts" />
+              <MenuItem label={t('about')} name="about" />
+              <MenuItem label={t('courses')} name="courses" />
+              <MenuItem label={t('consulting')} name="consulting" />
+              <MenuItem label={t('explosion')} name="explosion" />
+              <MenuItem label={t('emergency')} name="emergency" />
+              <MenuItem label={t('engineering')} name="engineering" />
+              <MenuItem label={t('ppe')} name="ppe" />
+              <MenuItem label={t('contacts')} name="contacts" />
             </nav>
 
             {/* БУРГЕР (МОБИЛЬНЫЙ) */}
@@ -267,13 +271,14 @@ export default function HeaderClient({
             </div>
 
             <div className="flex-grow overflow-y-auto p-4 flex flex-col gap-2">
-                <MobileAccordion label="О нас">
+                <MobileAccordion label={t('about')}>
                     {aboutItems?.map((item: any) => {
-                        const href = item.slug.current === 'events' ? '/news' : `/${item.slug.current}`;
+                        const slugPath = item.slug.current === 'events' ? 'news' : item.slug.current;
+                        const href = locale === 'en' ? `/en/${slugPath}` : `/${slugPath}`;
                         return (
-                            <Link 
-                                key={item._id} 
-                                href={href} 
+                            <Link
+                                key={item._id}
+                                href={href}
                                 onClick={() => setIsMobileMenuOpen(false)} 
                                 className="block py-2 pl-4 text-sm text-gray-600 border-l-2 border-gray-100 hover:text-[#0B0073]"
                             >
@@ -283,15 +288,15 @@ export default function HeaderClient({
                     })}
                 </MobileAccordion>
 
-                <MobileAccordion label="Международные курсы">
+                <MobileAccordion label={t('courses')}>
                     {categories?.map((cat: any) => (
                         <div key={cat._id} className="pl-4 py-2 text-sm text-gray-600 border-l-2 border-gray-100 mb-2">
                             <div className="font-semibold text-black mb-1">{cat.title}</div>
                             <div className="flex flex-col gap-1">
                                 {cat.courses?.map((c: any) => (
-                                    <Link 
-                                        key={c.slug?.current} 
-                                        href={`/${c.slug?.current}`} 
+                                    <Link
+                                        key={c.slug?.current}
+                                        href={locale === 'en' ? `/en/${c.slug?.current}` : `/${c.slug?.current}`}
                                         onClick={() => setIsMobileMenuOpen(false)}
                                         className="block py-1 hover:text-[#0B0073]"
                                     >
@@ -303,27 +308,27 @@ export default function HeaderClient({
                     ))}
                 </MobileAccordion>
                 
-                <MobileAccordion label="Консалтинг">
+                <MobileAccordion label={t('consulting')}>
                     {consultingItems?.map((item: any) => (
-                        <Link key={item._id} href={`/${item.slug?.current}`} onClick={() => setIsMobileMenuOpen(false)} className="block py-2 pl-4 text-sm text-gray-600 border-l-2 border-gray-100 hover:text-[#0B0073]">
+                        <Link key={item._id} href={locale === 'en' ? `/en/${item.slug?.current}` : `/${item.slug?.current}`} onClick={() => setIsMobileMenuOpen(false)} className="block py-2 pl-4 text-sm text-gray-600 border-l-2 border-gray-100 hover:text-[#0B0073]">
                             {item.title}
                         </Link>
                     ))}
                 </MobileAccordion>
 
-                <MobileAccordion label="Взрывозащита">
+                <MobileAccordion label={t('explosion')}>
                     {explosionItems?.map((item: any) => (
-                        <Link key={item._id} href={`/${item.slug?.current}`} onClick={() => setIsMobileMenuOpen(false)} className="block py-2 pl-4 text-sm text-gray-600 border-l-2 border-gray-100 hover:text-[#0B0073]">
+                        <Link key={item._id} href={locale === 'en' ? `/en/${item.slug?.current}` : `/${item.slug?.current}`} onClick={() => setIsMobileMenuOpen(false)} className="block py-2 pl-4 text-sm text-gray-600 border-l-2 border-gray-100 hover:text-[#0B0073]">
                             {item.title}
                         </Link>
                     ))}
                 </MobileAccordion>
                 
-                <Link href="#" className="text-[18px] font-medium py-3 border-b border-gray-100 text-gray-400">Аварийное реагирование</Link>
-                <Link href="#" className="text-[18px] font-medium py-3 border-b border-gray-100 text-gray-400">Инжиниринг</Link>
-                <Link href="#" className="text-[18px] font-medium py-3 border-b border-gray-100 text-gray-400">СИЗ</Link>
+                <Link href="#" className="text-[18px] font-medium py-3 border-b border-gray-100 text-gray-400">{t('mobileEmergency')}</Link>
+                <Link href="#" className="text-[18px] font-medium py-3 border-b border-gray-100 text-gray-400">{t('mobileEngineering')}</Link>
+                <Link href="#" className="text-[18px] font-medium py-3 border-b border-gray-100 text-gray-400">{t('mobilePpe')}</Link>
 
-                <MobileAccordion label="Контакты">
+                <MobileAccordion label={t('contacts')}>
                     <div className="pl-4 text-sm text-gray-600 space-y-4">
                         {contactCities?.map((city: any) => (
                             <div key={city._id}>
@@ -332,7 +337,7 @@ export default function HeaderClient({
                             </div>
                         ))}
                         <div className="mt-4 pt-4 border-t border-gray-100">
-                            <div className="text-xs text-gray-400">Email</div>
+                            <div className="text-xs text-gray-400">{t('email')}</div>
                             <a href="mailto:sales@horizon-llp.com" className="font-medium">sales@horizon-llp.com</a>
                         </div>
                     </div>
@@ -340,7 +345,7 @@ export default function HeaderClient({
             </div>
 
             <div className="p-4 border-t border-gray-100">
-                <Button className="w-full">Оставить заявку</Button>
+                <Button className="w-full">{t('cta')}</Button>
             </div>
         </div>
 

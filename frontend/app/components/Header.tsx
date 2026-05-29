@@ -6,12 +6,12 @@ async function getCategories() {
   return await client.fetch(`
     *[_type == "courseCategory"] | order(title asc) {
       _id,
-      title,
+      title, titleEn,
       courses[]->{
-        title,
-        description,
+        title, titleEn,
+        description, descriptionEn,
+        details, detailsEn,
         logo,
-        details,
         slug
       }
     }
@@ -39,9 +39,9 @@ async function getContactCities() {
   return await client.fetch(`
     *[_type == "contactCity"] | order(order asc) {
       _id,
-      city,
-      officeName,
-      address,
+      city, cityEn,
+      officeName, officeNameEn,
+      address, addressEn,
       phones
     }
   `);
@@ -52,10 +52,10 @@ async function getAboutItems() {
   return await client.fetch(`
     *[_type == "aboutItem"] | order(order asc) {
       _id,
-      title,
+      title, titleEn,
       slug,
-      description,      // <--- Добавили
-      dropdownImage     // <--- Добавили
+      description, descriptionEn,
+      dropdownImage
     }
   `);
 }

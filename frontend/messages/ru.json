@@ -1,0 +1,35 @@
+{
+  "Header": {
+    "about": "О нас",
+    "courses": "Международные курсы",
+    "consulting": "Консалтинг",
+    "explosion": "Взрывозащита (IEC Ex)",
+    "emergency": "Аварийное реагирование",
+    "engineering": "Инжиниринг",
+    "ppe": "СИЗ",
+    "contacts": "Контакты",
+    "university": "Horizon University",
+    "cta": "Оставить заявку",
+    "mobileEmergency": "Аварийное реагирование",
+    "mobileEngineering": "Инжиниринг",
+    "mobilePpe": "СИЗ",
+    "email": "Email"
+  },
+  "Home": {
+    "cta": "Оставить заявку",
+    "learnMore": "подробнее о компании ▸",
+    "newsTitle": "Последние события",
+    "viewAll": "смотреть все новости ▸",
+    "noPhoto": "Нет фото",
+    "noNews": "Новостей пока нет."
+  },
+  "News": {
+    "pageTitle": "События",
+    "back": "Вернуться ко всем событиям",
+    "notFound": "Новость не найдена :("
+  },
+  "Common": {
+    "cta": "Оставить заявку",
+    "notFoundTitle": "Страница не найдена | Horizon LLP"
+  }
+}

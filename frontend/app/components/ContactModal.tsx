@@ -2,11 +2,61 @@
 
 import React, { useEffect, useState } from 'react';
 import { X, ChevronDown, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
 }
+
+const t = {
+  ru: {
+    title: 'Оставить заявку',
+    successTitle: 'Заявка принята!',
+    successHeading: 'Спасибо!',
+    successText: 'Мы получили вашу заявку.\nОкно закроется автоматически через 3 секунды...',
+    successClose: 'Закрыть сейчас',
+    labelName: 'Имя*',
+    placeholderName: 'Как к Вам обращаться?',
+    labelPhone: 'Телефон*',
+    labelQuestion: 'По какому вопросу обращаетесь*',
+    placeholderQuestion: 'Выберите из списка',
+    options: ['Международные курсы', 'Вакансии', 'Консалтинг и Технические услуги', 'СИЗ', 'Другое'],
+    labelCompany: 'Компания',
+    placeholderCompany: 'Название вашей компании',
+    labelEmail: 'Почта',
+    placeholderEmail: 'Ваш e-mail для ответа',
+    labelComment: 'Комментарий',
+    placeholderComment: 'Ваш вопрос или комментарий',
+    submit: 'Оставить заявку',
+    sending: 'Отправка...',
+    errorGeneric: 'Ошибка отправки',
+    errorText: 'Что-то пошло не так. Попробуйте позвонить нам.',
+  },
+  en: {
+    title: 'Submit a Request',
+    successTitle: 'Request Received!',
+    successHeading: 'Thank you!',
+    successText: 'We have received your request.\nThe window will close automatically in 3 seconds...',
+    successClose: 'Close now',
+    labelName: 'Name*',
+    placeholderName: 'How should we address you?',
+    labelPhone: 'Phone*',
+    labelQuestion: 'Subject of enquiry*',
+    placeholderQuestion: 'Select from list',
+    options: ['International Courses', 'Careers', 'Consulting & Technical Services', 'PPE', 'Other'],
+    labelCompany: 'Company',
+    placeholderCompany: 'Your company name',
+    labelEmail: 'Email',
+    placeholderEmail: 'Your e-mail for reply',
+    labelComment: 'Comment',
+    placeholderComment: 'Your question or comment',
+    submit: 'Submit Request',
+    sending: 'Sending...',
+    errorGeneric: 'Submission error',
+    errorText: 'Something went wrong. Please try calling us.',
+  },
+} as const;
 
 // Типы статусов формы
 type Status = 'idle' | 'loading' | 'success' | 'error';
@@ -14,9 +64,11 @@ type Status = 'idle' | 'loading' | 'success' | 'error';
 export default function ContactModal({ isOpen, onClose }: Props) {
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
-  
-  // Состояние для телефона, чтобы управлять маской
   const [phoneValue, setPhoneValue] = useState('');
+
+  const pathname = usePathname();
+  const locale = pathname.startsWith('/en') ? 'en' : 'ru';
+  const i = t[locale];
 
   // Сброс формы при закрытии/открытии
   useEffect(() => {
@@ -93,20 +145,14 @@ export default function ContactModal({ isOpen, onClose }: Props) {
             body: JSON.stringify(data)
         });
 
-        if (!res.ok) throw new Error('Ошибка отправки');
-        
-        // УСПЕХ!
+        if (!res.ok) throw new Error('send error');
         setStatus('success');
-
-        // Ждем 3 секунды и закрываем модалку автоматически
-        setTimeout(() => {
-            onClose(); 
-        }, 3000);
+        setTimeout(() => { onClose(); }, 3000);
 
     } catch (error) {
         console.error(error);
         setStatus('error');
-        setErrorMessage('Что-то пошло не так. Попробуйте позвонить нам.');
+        setErrorMessage(i.errorText);
     }
   };
 
@@ -127,92 +173,79 @@ export default function ContactModal({ isOpen, onClose }: Props) {
         {/* Шапка */}
         <div className="flex justify-between items-center mb-6 flex-shrink-0">
             <h2 className="text-[28px] md:text-[32px] font-bold text-black">
-                {status === 'success' ? 'Заявка принята!' : 'Оставить заявку'}
+                {status === 'success' ? i.successTitle : i.title}
             </h2>
             <button onClick={onClose} className="p-2 hover:bg-black/5 rounded-full transition-colors">
                 <X className="w-6 h-6 text-black/50" />
             </button>
         </div>
 
-        {/* --- ВАРИАНТ 1: УСПЕХ --- */}
+        {/* --- УСПЕХ --- */}
         {status === 'success' && (
             <div className="flex-grow flex flex-col items-center justify-center text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
                     <CheckCircle className="w-10 h-10 text-green-600" />
                 </div>
-                <h3 className="text-2xl font-bold text-[#0B0073] mb-2">Спасибо!</h3>
-                <p className="text-gray-600 max-w-sm mb-8">
-                    Мы получили вашу заявку. <br/>
-                    Окно закроется автоматически через 3 секунды...
-                </p>
-                <button 
+                <h3 className="text-2xl font-bold text-[#0B0073] mb-2">{i.successHeading}</h3>
+                <p className="text-gray-600 max-w-sm mb-8 whitespace-pre-line">{i.successText}</p>
+                <button
                     onClick={onClose}
                     className="bg-[#0B0073] text-white px-8 py-3 rounded-[15px] hover:opacity-90 transition-opacity text-sm"
                 >
-                    Закрыть сейчас
+                    {i.successClose}
                 </button>
             </div>
         )}
 
-        {/* --- ВАРИАНТ 2: ФОРМА --- */}
+        {/* --- ФОРМА --- */}
         {status !== 'success' && (
             <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-8 flex-grow">
-                
+
                 {/* ЛЕВАЯ КОЛОНКА */}
                 <div className="flex-1 flex flex-col gap-6">
-                    
-                    {/* Имя */}
+
                     <div className="flex flex-col gap-2">
-                        <label className="text-[14px] text-black pl-1">Имя*</label>
-                        <input name="name" type="text" required placeholder="Как к Вам обращаться?" className="input-style" />
+                        <label className="text-[14px] text-black pl-1">{i.labelName}</label>
+                        <input name="name" type="text" required placeholder={i.placeholderName} className="input-style" />
                     </div>
 
-                    {/* Телефон */}
                     <div className="flex flex-col gap-2">
-                        <label className="text-[14px] text-black pl-1">Телефон*</label>
-                        <input 
-                            name="phone" 
-                            type="tel" 
-                            required 
-                            placeholder="+7 (___) ___-__-__" 
+                        <label className="text-[14px] text-black pl-1">{i.labelPhone}</label>
+                        <input
+                            name="phone"
+                            type="tel"
+                            required
+                            placeholder="+7 (___) ___-__-__"
                             className="input-style font-medium tracking-wide"
                             value={phoneValue}
                             onChange={handlePhoneChange}
-                            maxLength={18} 
+                            maxLength={18}
                         />
                     </div>
 
-                    {/* Вопрос (ОБНОВЛЕННЫЙ СПИСОК) */}
                     <div className="flex flex-col gap-2 relative">
-                        <label className="text-[14px] text-black pl-1">По какому вопросу обращаетесь*</label>
+                        <label className="text-[14px] text-black pl-1">{i.labelQuestion}</label>
                         <div className="relative">
                             <select name="question" required className="input-style appearance-none cursor-pointer" defaultValue="">
-                                <option value="" disabled hidden>Выберите из списка</option>
-                                
-                                <option value="Международные курсы">Международные курсы</option>
-                                <option value="Вакансии">Вакансии</option>
-                                {/* Объединенный пункт: */}
-                                <option value="Консалтинг и Технические услуги">Консалтинг и Технические услуги</option>
-                                <option value="СИЗ">СИЗ</option>
-                                <option value="Другое">Другое</option>
-
+                                <option value="" disabled hidden>{i.placeholderQuestion}</option>
+                                {i.options.map((opt) => (
+                                    <option key={opt} value={opt}>{opt}</option>
+                                ))}
                             </select>
                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                         </div>
                     </div>
 
-                    {/* Ошибка */}
                     {status === 'error' && (
                         <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg text-sm animate-in shake">
                             <AlertCircle className="w-4 h-4" />
-                            {errorMessage || 'Ошибка отправки'}
+                            {errorMessage || i.errorGeneric}
                         </div>
                     )}
 
                     <div className="flex-grow md:hidden" />
 
-                    {/* КНОПКА ОТПРАВКИ */}
-                    <button 
+                    <button
                         type="submit"
                         disabled={status === 'loading'}
                         className="w-full h-[60px] bg-[#0B0073] text-white rounded-[15px] font-medium text-[18px] hover:bg-[#0B0073]/90 transition-all shadow-lg shadow-[#0B0073]/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed mt-auto"
@@ -220,32 +253,30 @@ export default function ContactModal({ isOpen, onClose }: Props) {
                         {status === 'loading' ? (
                             <>
                                 <Loader2 className="w-5 h-5 animate-spin" />
-                                Отправка...
+                                {i.sending}
                             </>
-                        ) : (
-                            'Оставить заявку'
-                        )}
+                        ) : i.submit}
                     </button>
                 </div>
 
                 {/* ПРАВАЯ КОЛОНКА */}
                 <div className="flex-1 flex flex-col gap-6">
                     <div className="flex flex-col gap-2">
-                        <label className="text-[14px] text-black pl-1">Компания</label>
-                        <input name="company" type="text" placeholder="Название вашей компании" className="input-style" />
+                        <label className="text-[14px] text-black pl-1">{i.labelCompany}</label>
+                        <input name="company" type="text" placeholder={i.placeholderCompany} className="input-style" />
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <label className="text-[14px] text-black pl-1">Почта</label>
-                        <input name="email" type="email" placeholder="Ваш e-mail для ответа" className="input-style" />
+                        <label className="text-[14px] text-black pl-1">{i.labelEmail}</label>
+                        <input name="email" type="email" placeholder={i.placeholderEmail} className="input-style" />
                     </div>
 
                     <div className="flex flex-col gap-2 flex-grow h-full">
-                        <label className="text-[14px] text-black pl-1">Комментарий</label>
-                        <textarea 
-                            name="comment" 
-                            placeholder="Ваш вопрос или комментарий" 
-                            className="input-style h-full min-h-[150px] resize-none py-4 leading-relaxed" 
+                        <label className="text-[14px] text-black pl-1">{i.labelComment}</label>
+                        <textarea
+                            name="comment"
+                            placeholder={i.placeholderComment}
+                            className="input-style h-full min-h-[150px] resize-none py-4 leading-relaxed"
                         />
                     </div>
                 </div>

@@ -18,7 +18,6 @@ export const textComponents: PortableTextComponents = {
     image: ({ value }: any) => {
       if (!value?.asset?._ref) return null;
       return (
-        // БЫЛО: justify-center (центр) -> СТАЛО: justify-start (лево)
         <div className="w-full flex justify-start my-8">
           {/* Фиксированная ширина 400px */}
           <div className="relative w-[400px] rounded-[20px] overflow-hidden shadow-sm">
@@ -41,7 +40,6 @@ export const textComponents: PortableTextComponents = {
       const id = getYouTubeId(url);
       if (!id) return null;
       return (
-        // БЫЛО: justify-center (центр) -> СТАЛО: justify-start (лево)
         <div className="w-full flex justify-start my-8">
            {/* Фиксированная ширина 400px */}
           <div className="w-[400px] aspect-video rounded-[20px] overflow-hidden shadow-lg bg-black">

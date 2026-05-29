@@ -33,5 +33,29 @@ export default defineType({
       type: 'number',
       initialValue: 0,
     }),
+
+    // === ENGLISH VERSION ===
+    defineField({
+      name: 'cityEn',
+      title: 'City name (English)',
+      type: 'string',
+      group: 'english',
+    }),
+    defineField({
+      name: 'officeNameEn',
+      title: 'Office name (English)',
+      type: 'string',
+      group: 'english',
+    }),
+    defineField({
+      name: 'addressEn',
+      title: 'Address (English)',
+      type: 'string',
+      group: 'english',
+    }),
+  ],
+
+  groups: [
+    { name: 'english', title: 'English version' },
   ],
 })

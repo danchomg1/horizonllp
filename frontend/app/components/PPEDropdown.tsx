@@ -1,15 +1,18 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { urlFor } from '../lib/sanity';
-import Link from 'next/link'; // <--- 1. ИМПОРТИРУЕМ LINK
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 interface ConsultingItem {
   _id: string;
   title: string;
+  titleEn?: string;
   description: string;
+  descriptionEn?: string;
   image: any;
-  slug: { current: string }; // <--- 2. ДОБАВЛЯЕМ SLUG В ИНТЕРФЕЙС
+  slug: { current: string };
 }
 
 interface Props {
@@ -18,6 +21,8 @@ interface Props {
 
 export default function ConsultingDropdown({ items }: Props) {
   const [activeItem, setActiveItem] = useState<ConsultingItem | null>(null);
+  const pathname = usePathname();
+  const locale = pathname.split('/')[1] === 'en' ? 'en' : 'ru';
 
   useEffect(() => {
     if (items && items.length > 0) {
@@ -52,7 +57,7 @@ export default function ConsultingDropdown({ items }: Props) {
                // Обязательно проверяем, что slug существует
                <Link 
                  key={item._id}
-                 href={`/${item.slug?.current}`} // <--- ВОТ ССЫЛКА НА СТРАНИЦУ
+                 href={locale === 'en' ? `/en/${item.slug?.current}` : `/${item.slug?.current}`}
                  onMouseEnter={() => setActiveItem(item)}
                  className={`
                    cursor-pointer px-4 py-3 rounded-[10px] text-[16px] font-normal transition-all flex items-center justify-between
@@ -61,7 +66,7 @@ export default function ConsultingDropdown({ items }: Props) {
                      : 'text-black hover:bg-black/5'}
                  `}
                >
-                 {item.title}
+                 {(locale === 'en' && item.titleEn) ? item.titleEn : item.title}
                  {activeItem?._id === item._id && <span className="text-[6px] text-[#0B0073]">●</span>}
                </Link>
              ))}
@@ -83,26 +88,26 @@ export default function ConsultingDropdown({ items }: Props) {
                   <div className="w-[140px] h-[140px] flex-shrink-0 flex items-center justify-center">
                      <img 
                         src={urlFor(activeItem.image).url()} 
-                        alt={activeItem.title} 
+                        alt={(locale === 'en' && activeItem.titleEn) ? activeItem.titleEn : activeItem.title} 
                         className="w-full h-full object-contain drop-shadow-md"
                      />
                   </div>
                 )}
                 <div className="flex flex-col w-full">
                    <h3 className="text-[20px] font-normal text-[#0B0073] mb-4 leading-tight uppercase tracking-wide">
-                      {activeItem.title}
+                      {(locale === 'en' && activeItem.titleEn) ? activeItem.titleEn : activeItem.title}
                    </h3>
                    <div className="w-full h-[1px] bg-[#0B0073]/20 mb-4" />
                    <div className="overflow-y-auto max-h-[280px] custom-scrollbar pr-4">
                       <p className="text-[15px] text-black/80 leading-relaxed font-normal whitespace-pre-wrap">
-                          {activeItem.description}
+                          {(locale === 'en' && activeItem.descriptionEn) ? activeItem.descriptionEn : activeItem.description}
                       </p>
                    </div>
                 </div>
              </div>
            ) : (
              <div className="h-full flex items-center justify-center text-gray-500 text-sm font-normal">
-               Выберите услугу
+               {locale === 'en' ? 'Select a service' : 'Выберите услугу'}
              </div>
            )}
          </div>

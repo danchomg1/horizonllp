@@ -9,6 +9,7 @@ export default defineType({
   groups: [
     { name: 'dropdown', title: 'Для меню (Шапка)' },
     { name: 'page', title: 'Для страницы (Контент)' },
+    { name: 'english', title: 'English version' },
   ],
   fields: [
     // --- 1. ДЛЯ ВЫПАДАЮЩЕГО МЕНЮ ---
@@ -79,7 +80,14 @@ export default defineType({
       title: 'Вкладки с контентом',
       type: 'array',
       group: 'page',
-      of: [{ type: 'tabItem' }] // Ссылка на tabs.ts
+      of: [{ type: 'tabItem' }]
     }),
+
+    // === ENGLISH VERSION ===
+    defineField({ name: 'titleEn', title: 'Course name (English)', type: 'string', group: 'english' }),
+    defineField({ name: 'descriptionEn', title: 'Short description (English)', type: 'text', rows: 3, group: 'english' }),
+    defineField({ name: 'detailsEn', title: 'Details (English, e.g. "2 days / Offline")', type: 'string', group: 'english' }),
+    defineField({ name: 'introTitleEn', title: 'Intro heading (English)', type: 'string', group: 'english' }),
+    defineField({ name: 'introTextEn', title: 'Intro text (English)', type: 'richText', group: 'english' }),
   ],
 })

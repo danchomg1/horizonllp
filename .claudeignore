@@ -1,0 +1,32 @@
+# Кэш сборки TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Sanity (если генерируется автоматически)
+.sanity/
+
+# Зависимости
+node_modules/
+
+# Сборка Next.js
+.next/
+out/
+dist/
+build/
+
+# Кэши
+.cache/
+.turbo/
+.vercel/
+
+# Логи и временные файлы
+*.log
+npm-debug.log*
+
+# Окружение (и для безопасности тоже)
+.env
+.env.local
+.env*.local
+
+# Системное
+.DS_Store

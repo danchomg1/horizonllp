@@ -1,12 +1,16 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 
 interface ContactCity {
   _id: string;
   city: string;
+  cityEn?: string;
   officeName: string;
+  officeNameEn?: string;
   address: string;
+  addressEn?: string;
   phones: string[];
 }
 
@@ -16,6 +20,8 @@ interface Props {
 
 export default function ContactsDropdown({ cities }: Props) {
   const [activeCity, setActiveCity] = useState<ContactCity | null>(null);
+  const pathname = usePathname();
+  const locale = pathname.startsWith('/en') ? 'en' : 'ru';
 
   useEffect(() => {
     if (cities && cities.length > 0) {
@@ -54,7 +60,7 @@ export default function ContactsDropdown({ cities }: Props) {
                                     : 'text-black hover:bg-black/5'}
                             `}
                         >
-                            {item.city}
+                            {(locale === 'en' && item.cityEn) ? item.cityEn : item.city}
                             {isActive && <span className="text-[6px] text-[#0B0073]">●</span>}
                         </div>
                     )
@@ -66,11 +72,11 @@ export default function ContactsDropdown({ cities }: Props) {
                     <div className="flex flex-col gap-5 animate-in fade-in duration-300">
                         <div>
                             <h4 className="text-[18px] text-[#0B0073] mb-2 font-normal uppercase tracking-wide">
-                                {activeCity.officeName}
+                              {(locale === 'en' && activeCity.officeNameEn) ? activeCity.officeNameEn : activeCity.officeName}
                             </h4>
                             <div className="w-[50px] h-[1px] bg-[#0B0073]/20 mb-3" />
                             <p className="text-[15px] text-gray-800 leading-relaxed font-normal">
-                                {activeCity.address}
+                              {(locale === 'en' && activeCity.addressEn) ? activeCity.addressEn : activeCity.address}
                             </p>
                         </div>
                         
@@ -84,7 +90,7 @@ export default function ContactsDropdown({ cities }: Props) {
                     </div>
                 ) : (
                     <div className="h-full flex items-center justify-center text-gray-500 text-sm">
-                        Выберите город
+                        {locale === 'en' ? 'Select a city' : 'Выберите город'}
                     </div>
                 )}
             </div>
@@ -100,12 +106,12 @@ export default function ContactsDropdown({ cities }: Props) {
         {/* Сохраняем плотную верстку gap-1.5 */}
         <div className="flex flex-col gap-1.5 text-[#1A1A1A] text-[14px]">
             
-            {/* Группа: Коммерческие вопросы + Телефоны */}
+            {/* Группа: {locale === 'en' ? 'Commercial enquiries' : 'Коммерческие вопросы'} + Телефоны */}
             <div className="flex flex-col gap-1.5">
                 <div className="flex flex-col">
-                    <span className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">Коммерческие вопросы</span>
+                    <span className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">{locale === 'en' ? 'Commercial enquiries' : 'Коммерческие вопросы'}</span>
                     {/* Текст увеличен в 2 раза: с 10px до 20px */}
-                    <p className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">По вопросам услуг, предложений и сотрудничества:</p>
+                    <p className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">{locale === 'en' ? 'For services, proposals and partnerships:' : 'По вопросам услуг, предложений и сотрудничества:'}</p>
                     <a href="mailto:sales@horizon-llp.com" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors border-b border-transparent hover:border-[#0B0073] w-max">
                         sales@horizon-llp.com
                     </a>
@@ -117,11 +123,11 @@ export default function ContactsDropdown({ cities }: Props) {
           
             </div>
 
-            {/* Группа: Общие обращения */}
+            {/* Группа: {locale === 'en' ? 'General enquiries' : 'Общие обращения'} */}
             <div className="flex flex-col">
-                <span className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">Общие обращения</span>
+                <span className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">{locale === 'en' ? 'General enquiries' : 'Общие обращения'}</span>
                 {/* Текст увеличен в 2 раза: с 10px до 20px */}
-                <p className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">По административным и иным вопросам:</p>
+                <p className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">{locale === 'en' ? 'For administrative and other matters:' : 'По административным и иным вопросам:'}</p>
                 <a href="mailto:reception@horizon-llp.com" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors border-b border-transparent hover:border-[#0B0073] w-max">
                     reception@horizon-llp.com
                 </a>

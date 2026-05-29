@@ -15,12 +15,14 @@ export default defineType({
       name: 'courses',
       title: 'Курсы в этой группе',
       type: 'array',
-      of: [
-        {
-          type: 'reference',
-          to: [{ type: 'course' }] // Ссылаемся на документ course из Шага 1
-        }
-      ]
+      of: [{ type: 'reference', to: [{ type: 'course' }] }]
+    }),
+
+    // === ENGLISH VERSION ===
+    defineField({
+      name: 'titleEn',
+      title: 'Group name (English)',
+      type: 'string',
     }),
   ],
 })

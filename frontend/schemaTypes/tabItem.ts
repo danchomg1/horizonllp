@@ -20,6 +20,18 @@ export default defineType({
       name: 'tabImage',
       title: 'Картинка справа (опционально)',
       type: 'image',
-    })
+    }),
+
+    // === ENGLISH VERSION ===
+    defineField({
+      name: 'tabTitleEn',
+      title: 'Tab title (English)',
+      type: 'string',
+    }),
+    defineField({
+      name: 'tabContentEn',
+      title: 'Tab content (English)',
+      type: 'richText',
+    }),
   ]
 })

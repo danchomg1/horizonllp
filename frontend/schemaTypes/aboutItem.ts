@@ -7,6 +7,7 @@ export default defineType({
   groups: [
     { name: 'menu', title: 'Для Меню (Шапка)' },
     { name: 'page', title: 'Контент Страницы' },
+    { name: 'english', title: 'English version' },
   ],
   fields: [
     // --- ПОЛЯ ДЛЯ МЕНЮ ---
@@ -77,6 +78,12 @@ export default defineType({
       type: 'image',
       group: 'page',
     }),
+
+    // === ENGLISH VERSION ===
+    defineField({ name: 'titleEn', title: 'Menu item name (English)', type: 'string', group: 'english' }),
+    defineField({ name: 'descriptionEn', title: 'Short description (English)', type: 'text', rows: 3, group: 'english' }),
+    defineField({ name: 'introTitleEn', title: 'Intro heading (English)', type: 'string', group: 'english' }),
+    defineField({ name: 'introTextEn', title: 'Intro text (English)', type: 'richText', group: 'english' }),
 
     // --- СЕКЦИЯ TABS (ВКЛАДКИ) ---
     defineField({

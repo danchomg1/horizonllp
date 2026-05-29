@@ -73,6 +73,16 @@ defineField({
       title: 'Порядковый номер',
       type: 'number',
       initialValue: 0
-    })
-  ]
+    }),
+
+    // === ENGLISH VERSION ===
+    defineField({ name: 'titleEn', title: 'Service name (English)', type: 'string', group: 'english' }),
+    defineField({ name: 'descriptionEn', title: 'Short description (English)', type: 'text', rows: 3, group: 'english' }),
+    defineField({ name: 'introTitleEn', title: 'Intro heading (English)', type: 'string', group: 'english' }),
+    defineField({ name: 'introTextEn', title: 'Intro text (English)', type: 'richText', group: 'english' }),
+  ],
+
+  groups: [
+    { name: 'english', title: 'English version' },
+  ],
 })

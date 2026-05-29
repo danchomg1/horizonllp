@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 interface AboutItem {
   _id: string;
   title: string;
+  titleEn?: string;
   slug: { current: string };
 }
 
@@ -13,6 +15,9 @@ interface Props {
 }
 
 export default function AboutDropdown({ items }: Props) {
+  const pathname = usePathname();
+  const locale = pathname.split('/')[1] === 'en' ? 'en' : 'ru';
+
   if (!items || items.length === 0) return null;
 
   const glassLayerStyle = {
@@ -37,10 +42,12 @@ export default function AboutDropdown({ items }: Props) {
              {items.map((item) => (
                <Link
                  key={item._id}
-                 href={`/${item.slug?.current}`}
+                 href={locale === 'en'
+                   ? `/en/${item.slug?.current === 'events' ? 'news' : item.slug?.current}`
+                   : `/${item.slug?.current === 'events' ? 'news' : item.slug?.current}`}
                  className="cursor-pointer px-4 py-3 rounded-[10px] text-[16px] font-normal text-black hover:bg-black/5 hover:text-[#0B0073] transition-all flex items-center justify-between group"
                >
-                 {item.title}
+                 {(locale === 'en' && item.titleEn) ? item.titleEn : item.title}
                  {/* Маленькая точка при наведении (опционально) */}
                  <span className="opacity-0 group-hover:opacity-100 text-[6px] text-[#0B0073] transition-opacity">●</span>
                </Link>

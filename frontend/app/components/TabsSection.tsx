@@ -8,15 +8,19 @@ import { textComponents } from './RichTextComponents';
 interface Tab {
   _key: string;
   tabTitle: string;
+  tabTitleEn?: string;
   tabContent: any;
+  tabContentEn?: any;
   tabImage?: any;
 }
 
 interface Props {
   tabs: Tab[];
+  locale?: string;
 }
 
-export default function TabsSection({ tabs }: Props) {
+export default function TabsSection({ tabs, locale }: Props) {
+  const isEn = locale === 'en';
   const [activeTab, setActiveTab] = useState(0);
 
   if (!tabs || tabs.length === 0) return null;
@@ -50,7 +54,9 @@ export default function TabsSection({ tabs }: Props) {
                 `} />
                 
                 {/* Текст кнопки */}
-                <span className="text-[14px] md:text-[15px]">{tab.tabTitle}</span>
+                <span className="text-[14px] md:text-[15px]">
+                  {(isEn && tab.tabTitleEn) ? tab.tabTitleEn : tab.tabTitle}
+                </span>
               </button>
             );
           })}
@@ -64,14 +70,13 @@ export default function TabsSection({ tabs }: Props) {
             
             {/* ТЕКСТ */}
             <div className="flex-1 max-w-none text-black text-[14px] md:text-[15px] leading-relaxed">
-               {tabs[activeTab].tabContent ? (
-                 <PortableText 
-                 value={tabs[activeTab].tabContent}
-                   components={textComponents} 
-                 />
-               ) : (
-                 <p className="text-gray-400 italic">Нет текста для этой вкладки</p>
-               )}
+               {(() => {
+                const tab = tabs[activeTab];
+                const content = (isEn && tab.tabContentEn) ? tab.tabContentEn : tab.tabContent;
+                return content
+                  ? <PortableText value={content} components={textComponents} />
+                  : <p className="text-gray-400 italic">{isEn ? 'No content for this tab' : 'Нет текста для этой вкладки'}</p>;
+              })()}
             </div>
 
             {/* КАРТИНКА / ЛОГО */}

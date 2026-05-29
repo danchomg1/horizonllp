@@ -7,8 +7,8 @@ import React from 'react';
 export default function GlobalHeaderWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  // Если мы на главной странице, возвращаем null (ничего не рисуем)
-  if (pathname === '/') {
+  // Если мы на главной странице (RU или EN), возвращаем null (ничего не рисуем)
+  if (pathname === '/' || pathname === '/en' || pathname === '/en/') {
     return null;
   }
 

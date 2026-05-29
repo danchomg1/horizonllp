@@ -87,7 +87,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     'pipeline-course',
     'rlam',
     'rospa_def',
-    'sistemy-menedzhmenta'
+    'sistemy-menedzhmenta',
+    'horizon-university',
   ];
 
   // Автоматически превращаем список папок в формат ссылок для карты сайта
