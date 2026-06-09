@@ -33,7 +33,7 @@ const content = {
       { Icon: Award, title: 'Сертификаты и отчёты', desc: 'Автоматическая выдача сертификатов и выгрузка отчётности по итогам обучения сотрудников.' },
     ],
     audienceEyebrow: 'Для кого',
-    audienceTitle: 'Платформа подойдёт компаниям, которые хотят:',
+    audienceTitle: 'Кому подойдёт Horizon University:',
     audienceItems: [
       'обучать сотрудников на разных объектах и в разных городах без командировок и остановки работы;',
       'снизить нагрузку на учебные центры и HSE-специалистов;',
@@ -74,7 +74,7 @@ const content = {
       { Icon: Award, title: 'Certificates & Reports', desc: 'Automatic certificate issuance and reporting upon completion of employee training.' },
     ],
     audienceEyebrow: "Who it's for",
-    audienceTitle: 'The platform is right for companies that want to:',
+    audienceTitle: 'Who is Horizon University for:',
     audienceItems: [
       'train employees across multiple sites and cities without travel or work stoppages;',
       'reduce the workload on training centres and HSE specialists;',
