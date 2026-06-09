@@ -14,16 +14,16 @@ const content = {
     stat1n: '2007', stat1l: 'опыт Horizon в HSE',
     stat2n: '100%', stat2l: 'контроль прохождения',
     stat3n: 'Offline', stat3l: 'доступ без интернета',
-    missionEyebrow: 'Зачем нужна платформа',
+    missionEyebrow: 'Какие задачи решает платформа',
     missionText: (
       <>
-        Платформа Horizon помогает компаниям организовать обучение сотрудников по{' '}
+        On-Line Платформа Horizon University помогает компаниям организовать обучение сотрудников по{' '}
         <strong>охране труда, технике безопасности и внутренним корпоративным программам</strong>{' '}
-        — удобно, системно и с возможностью контроля результатов.
+        — без отрыва от производства, в удобное время и с любого устройства.
       </>
     ),
     featuresEyebrow: 'Возможности',
-    featuresTitle: 'Что позволяет платформа',
+    featuresTitle: 'Технические возможности платформы',
     features: [
       { Icon: MonitorPlay, title: 'Дистанционное обучение', desc: 'Сотрудники проходят курсы онлайн в удобном формате — с любого устройства и в удобное время.' },
       { Icon: WifiOff, title: 'Обучение без интернета', desc: 'Доступ к материалам возможен даже при отсутствии подключения к сети — важно для удалённых объектов.' },
@@ -33,13 +33,13 @@ const content = {
       { Icon: Award, title: 'Сертификаты и отчёты', desc: 'Автоматическая выдача сертификатов и выгрузка отчётности по итогам обучения сотрудников.' },
     ],
     audienceEyebrow: 'Для кого',
-    audienceTitle: 'Компаниям, которым важно —',
+    audienceTitle: 'Платформа подойдёт компаниям, которые хотят:',
     audienceItems: [
-      'обучать сотрудников в разных городах и на разных объектах;',
-      'снизить нагрузку на учебные центры и HSE-отдел;',
-      'видеть прозрачную статистику по обучению;',
-      'быстро запускать новые курсы и программы;',
-      'поддерживать культуру безопасного труда.',
+      'обучать сотрудников на разных объектах и в разных городах без командировок и остановки работы;',
+      'снизить нагрузку на учебные центры и HSE-специалистов;',
+      'получать прозрачную статистику по обучению в режиме реального времени;',
+      'быстро запускать новые курсы и программы инструктажей;',
+      'системно развивать культуру безопасного труда в компании.',
     ],
     quoteTitle: 'Horizon — опыт в обучении. Теперь — в цифровом формате.',
     quoteText: 'Мы развиваем культуру безопасного труда с 2007 года. Horizon University переносит эту экспертизу в удобную цифровую платформу для всей компании.',
@@ -55,16 +55,16 @@ const content = {
     stat1n: '2007', stat1l: 'Horizon HSE experience',
     stat2n: '100%', stat2l: 'completion control',
     stat3n: 'Offline', stat3l: 'access without internet',
-    missionEyebrow: 'Why this platform',
+    missionEyebrow: 'What challenges does the platform solve',
     missionText: (
       <>
-        The Horizon platform helps companies organise employee training in{' '}
+        The Horizon University On-Line Platform helps companies organise employee training in{' '}
         <strong>occupational health, safety and internal corporate programmes</strong>{' '}
-        — conveniently, systematically and with full visibility of results.
+        — without disrupting operations, at a convenient time and from any device.
       </>
     ),
     featuresEyebrow: 'Features',
-    featuresTitle: 'What the platform enables',
+    featuresTitle: 'Platform capabilities',
     features: [
       { Icon: MonitorPlay, title: 'Remote Learning', desc: 'Employees complete courses online at their own pace — from any device, at any time.' },
       { Icon: WifiOff, title: 'Offline Access', desc: 'Materials are accessible even without an internet connection — essential for remote sites.' },
@@ -74,13 +74,13 @@ const content = {
       { Icon: Award, title: 'Certificates & Reports', desc: 'Automatic certificate issuance and reporting upon completion of employee training.' },
     ],
     audienceEyebrow: "Who it's for",
-    audienceTitle: 'Companies that need to —',
+    audienceTitle: 'The platform is right for companies that want to:',
     audienceItems: [
-      'train employees across multiple cities and sites;',
-      'reduce the burden on training centres and HSE teams;',
-      'have transparent training statistics;',
-      'launch new courses and programmes quickly;',
-      'build a culture of safe work.',
+      'train employees across multiple sites and cities without travel or work stoppages;',
+      'reduce the workload on training centres and HSE specialists;',
+      'get transparent training statistics in real time;',
+      'quickly launch new courses and induction programmes;',
+      'systematically build a culture of safe work across the organisation.',
     ],
     quoteTitle: 'Horizon — expertise in training. Now in digital format.',
     quoteText: 'We have been building a culture of safe work since 2007. Horizon University brings this expertise into a convenient digital platform for your entire company.',
