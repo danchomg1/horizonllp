@@ -1,4 +1,5 @@
 import { Linkedin, Facebook, Instagram } from 'lucide-react';
+import { getLocale } from 'next-intl/server';
 import { client, urlFor } from '../lib/sanity'; // Добавил urlFor
 
 async function getFooterData() {
@@ -7,12 +8,18 @@ async function getFooterData() {
 
 export default async function Footer() {
   const data = await getFooterData();
+  const locale = await getLocale();
+  const isEn = locale === 'en';
 
-  const columns = data?.columns || [
+  const columns = data?.columns || (isEn ? [
+    { titleEn: 'Qualifications', linksEn: ['Nebosh', 'Iosh', 'Rospa', 'CompEx'] },
+    { titleEn: 'Services', linksEn: ['Inspections', 'Consulting', 'Audit', 'Training'] },
+    { titleEn: 'Engineering', linksEn: ['Design', 'Supervision'] },
+  ] : [
     { title: 'Квалификации', links: ['Nebosh', 'Iosh', 'Rospa', 'CompEx'] },
     { title: 'Услуги', links: ['Инспекции', 'Консалтинг', 'Аудит', 'Обучение'] },
     { title: 'Инжиниринг', links: ['Проектирование', 'Надзор'] },
-  ];
+  ]);
  
   return (
     <div className="w-full flex justify-center mt-auto px-4 pb-4">
@@ -51,9 +58,11 @@ export default async function Footer() {
               <div className="md:col-span-9 flex flex-wrap justify-between px-0 lg:px-10 gap-8 md:gap-0">
                  {columns.map((col: any, idx: number) => (
                     <div key={idx} className="min-w-[120px]">
-                      <h3 className="font-bold mb-6 text-sm">{col.title}</h3>
+                      <h3 className="font-bold mb-6 text-sm">
+                        {(isEn && col.titleEn) ? col.titleEn : col.title}
+                      </h3>
                       <ul className="space-y-3 text-xs text-gray-300 font-light font-sans">
-                        {col.links?.map((link: string, i: number) => (
+                        {((isEn && col.linksEn) ? col.linksEn : col.links)?.map((link: string, i: number) => (
                            <li key={i} className="cursor-pointer hover:text-white transition-colors">
                               {link}
                            </li>

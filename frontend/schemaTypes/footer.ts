@@ -21,12 +21,19 @@ export default defineType({
         type: 'object',
         title: 'Колонка',
         fields: [
-          { name: 'title', title: 'Заголовок', type: 'string' },
-          { 
-            name: 'links', 
-            title: 'Пункты меню', 
-            type: 'array', 
-            of: [{ type: 'string' }] 
+          { name: 'title', title: 'Заголовок (RU)', type: 'string' },
+          { name: 'titleEn', title: 'Заголовок (EN)', type: 'string' },
+          {
+            name: 'links',
+            title: 'Пункты меню (RU)',
+            type: 'array',
+            of: [{ type: 'string' }]
+          },
+          {
+            name: 'linksEn',
+            title: 'Пункты меню (EN)',
+            type: 'array',
+            of: [{ type: 'string' }]
           }
         ]
       }]

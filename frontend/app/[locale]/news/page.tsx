@@ -38,7 +38,7 @@ export default async function NewsPage({
       <div className="h-[100px]" />
       <main className="w-full max-w-[1250px] mx-auto px-4 py-8">
         <h1 className="text-[36px] font-bold text-[#0B0073] mb-10">{t('pageTitle')}</h1>
-        <NewsList initialNews={normalizedNews} />
+        <NewsList initialNews={normalizedNews} locale={locale} />
       </main>
     </div>
   );

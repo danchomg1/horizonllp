@@ -8,16 +8,28 @@ export default {
   fields: [
     {
       name: 'title',
-      title: 'Заголовок (H1)',
+      title: 'Заголовок (H1, RU)',
       type: 'string',
       description: 'Например: HORIZON'
+    },
+    {
+      name: 'titleEn',
+      title: 'Заголовок (H1, EN)',
+      type: 'string',
+      description: 'e.g. HORIZON'
     },
     // --- НОВЫЕ ПОЛЯ ---
     {
       name: 'subtitle',
-      title: 'Подзаголовок (H2)',
+      title: 'Подзаголовок (H2, RU)',
       type: 'string',
       description: 'Например: LLP Consulting'
+    },
+    {
+      name: 'subtitleEn',
+      title: 'Подзаголовок (H2, EN)',
+      type: 'string',
+      description: 'e.g. LLP Consulting'
     },
     {
       name: 'heroLogo',
@@ -35,12 +47,18 @@ export default {
 // --- НОВОЕ ПОЛЕ ---
     {
       name: 'heroDescription',
-      title: 'Описание (Текст под заголовком)',
-      type: 'text', // Используем text для многострочного поля
+      title: 'Описание (RU)',
+      type: 'text',
       description: 'Краткое описание компании или миссии'
     },
+    {
+      name: 'heroDescriptionEn',
+      title: 'Описание (EN)',
+      type: 'text',
+      description: 'Short company description in English'
+    },
     // ------------------
-    
+
     // ... твои остальные поля
   ]
 }

@@ -15,9 +15,10 @@ interface NewsItem {
 
 interface Props {
   initialNews: NewsItem[];
+  locale?: string;
 }
 
-export default function NewsList({ initialNews }: Props) {
+export default function NewsList({ initialNews, locale }: Props) {
   // Начинаем с 12 новостей
   const [visibleCount, setVisibleCount] = useState(12);
 
@@ -59,7 +60,7 @@ export default function NewsList({ initialNews }: Props) {
                 />
               ) : (
                 <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                  Нет фото
+                  {locale === 'en' ? 'No photo' : 'Нет фото'}
                 </div>
               )}
             </div>

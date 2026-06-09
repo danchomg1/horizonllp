@@ -77,13 +77,13 @@ export default async function Home({
               </div>
               <div className="flex flex-col items-start w-full">
                 <h1 className="font-black text-[28px] md:text-[36px] text-horizon-blue uppercase leading-[1.1] mb-2 break-words max-w-full">
-                  {data?.title || 'HORIZON'}
+                  {(isEn && data?.titleEn) ? data.titleEn : (data?.title || 'HORIZON')}
                 </h1>
                 <h2 className="font-bold text-[20px] md:text-[28px] text-horizon-blue leading-tight mb-4 md:mb-6">
-                  {data?.subtitle || 'LLP Consulting'}
+                  {(isEn && data?.subtitleEn) ? data.subtitleEn : (data?.subtitle || 'LLP Consulting')}
                 </h2>
                 <p className="font-normal text-[14px] md:text-[15px] text-black/80 leading-relaxed mb-8 max-w-md whitespace-pre-wrap">
-                  {data?.heroDescription || ''}
+                  {(isEn && data?.heroDescriptionEn) ? data.heroDescriptionEn : (data?.heroDescription || '')}
                 </p>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 w-full sm:w-auto">
                   <Button className="w-full sm:w-[200px]">{t('cta')}</Button>
