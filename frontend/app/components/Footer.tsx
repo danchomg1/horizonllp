@@ -94,7 +94,7 @@ export default async function Footer() {
                   </div>
                   
                   {/* Копирайт */}
-                  <div className="whitespace-nowrap mt-8 md:mt-0 md:absolute md:bottom-10 md:right-16">
+                  <div className="whitespace-nowrap mt-8 md:mt-0">
                       <p className="text-[10px] text-gray-400 font-sans">
                           {data?.copyright || '© 2026 Horizon LLP Consulting'}
                       </p>
