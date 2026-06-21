@@ -120,9 +120,14 @@ export default function ContactsDropdown({ cities }: Props) {
                         </a>
                 </div>
 
-          
+
             </div>
 
+            {/* Группа: Общие обращения */}
+            <div className="flex flex-col">
+                <span className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">{locale === 'en' ? 'General enquiries' : 'Общие обращения'}</span>
+                <p className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">{locale === 'en' ? 'For administrative and other matters:' : 'По административным и иным вопросам:'}</p>
+            </div>
 
         </div>
 
