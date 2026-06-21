@@ -28,18 +28,40 @@ interface Props {
   categories: Category[];
 }
 
+const ONLINE_CATEGORY: Category = {
+  _id: '__online',
+  title: 'Онлайн курсы',
+  titleEn: 'Online Courses',
+  courses: [{
+    title: 'Horizon University',
+    titleEn: 'Horizon University',
+    description: 'Дистанционное обучение сотрудников, контроль прогресса и управление учебными программами в одной системе.',
+    descriptionEn: 'Remote employee training, progress tracking and programme management — all in one system.',
+    details: '',
+    logo: null,
+    slug: { current: 'horizon-university' },
+  }],
+};
+
+function getCategoryTitle(cat: Category, locale: string): string {
+  if (locale === 'en') return cat.titleEn || cat.title;
+  if (cat.title === 'NOCN') return 'Аварийное реагирование';
+  return cat.title;
+}
+
 export default function CoursesDropdown({ categories }: Props) {
   const [activeCategory, setActiveCategory] = useState<Category | null>(null);
   const [activeCourse, setActiveCourse] = useState<Course | null>(null);
   const pathname = usePathname();
   const locale = pathname.split('/')[1] === 'en' ? 'en' : 'ru';
 
-  // При загрузке выбираем первую категорию и первый курс
+  const allCategories = [...(categories || []), ONLINE_CATEGORY];
+
   useEffect(() => {
-    if (categories && categories.length > 0) {
-      setActiveCategory(categories[0]);
-      if (categories[0].courses?.length > 0) {
-        setActiveCourse(categories[0].courses[0]);
+    if (allCategories.length > 0) {
+      setActiveCategory(allCategories[0]);
+      if (allCategories[0].courses?.length > 0) {
+        setActiveCourse(allCategories[0].courses[0]);
       }
     }
   }, [categories]);
@@ -54,7 +76,7 @@ export default function CoursesDropdown({ categories }: Props) {
     }
   };
 
-  if (!categories || categories.length === 0) return null;
+  if (allCategories.length === 0) return null;
 
   const glassLayerStyle = {
     backgroundColor: 'rgba(244, 244, 244, 0.65)',
@@ -73,7 +95,7 @@ export default function CoursesDropdown({ categories }: Props) {
           
           {/* КОЛОНКА 1: КАТЕГОРИИ (NEBOSH, IOSH и т.д.) */}
           <div className="w-[35%] border-r border-gray-400/20 pr-4 flex flex-col gap-1 overflow-y-auto custom-scrollbar">
-            {categories.map((cat) => (
+            {allCategories.map((cat) => (
               <div
                 key={cat._id}
                 onMouseEnter={() => handleCategoryHover(cat)}
@@ -82,7 +104,7 @@ export default function CoursesDropdown({ categories }: Props) {
                   ${activeCategory?._id === cat._id ? 'bg-black/5 text-[#0B0073]' : 'text-black hover:bg-black/5'}
                 `}
               >
-                {(locale === 'en' && cat.titleEn) ? cat.titleEn : cat.title}
+                {getCategoryTitle(cat, locale)}
                 {activeCategory?._id === cat._id && <span className="text-[6px] text-[#0B0073]">●</span>}
               </div>
             ))}

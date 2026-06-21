@@ -106,10 +106,15 @@ ${safeComment}
                 </div>
             `;
 
+            const recipients = [EMAIL_TO, 'sales@horizon-llp.com']
+              .filter(Boolean)
+              .filter((v, i, arr) => arr.indexOf(v) === i)
+              .join(', ');
+
             await transporter.sendMail({
-                from: `"Horizon Website" <${SMTP_USER}>`, 
-                to: EMAIL_TO, 
-                replyTo: email, 
+                from: `"Horizon Website" <${SMTP_USER}>`,
+                to: recipients,
+                replyTo: email,
                 subject: `🔥 Заявка: ${name} (${phone})`,
                 text: `Имя: ${name}\nТелефон: ${phone}`,
                 html: htmlContent,

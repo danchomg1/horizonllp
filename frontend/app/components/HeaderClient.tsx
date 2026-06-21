@@ -306,6 +306,20 @@ export default function HeaderClient({
                             </div>
                         </div>
                     ))}
+                    <div className="pl-4 py-2 text-sm text-gray-600 border-l-2 border-gray-100 mb-2">
+                        <div className="font-semibold text-black mb-1">
+                            {locale === 'en' ? 'Online Courses' : 'Онлайн курсы'}
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <Link
+                                href={locale === 'en' ? '/en/horizon-university' : '/horizon-university'}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="block py-1 hover:text-[#0B0073]"
+                            >
+                                Horizon University
+                            </Link>
+                        </div>
+                    </div>
                 </MobileAccordion>
                 
                 <MobileAccordion label={t('consulting')}>

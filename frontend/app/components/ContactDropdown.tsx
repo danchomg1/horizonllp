@@ -123,15 +123,6 @@ export default function ContactsDropdown({ cities }: Props) {
           
             </div>
 
-            {/* Группа: {locale === 'en' ? 'General enquiries' : 'Общие обращения'} */}
-            <div className="flex flex-col">
-                <span className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">{locale === 'en' ? 'General enquiries' : 'Общие обращения'}</span>
-                {/* Текст увеличен в 2 раза: с 10px до 20px */}
-                <p className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">{locale === 'en' ? 'For administrative and other matters:' : 'По административным и иным вопросам:'}</p>
-                <a href="mailto:reception@horizon-llp.com" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors border-b border-transparent hover:border-[#0B0073] w-max">
-                    reception@horizon-llp.com
-                </a>
-            </div>
 
         </div>
 
