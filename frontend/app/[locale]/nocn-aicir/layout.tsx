@@ -3,14 +3,14 @@ import JsonLd from '../../components/JsonLd';
 
 const META = {
   ru: {
-    title: 'NOCN AICIR — Asset Incident Commander | Horizon LLP',
-    description: 'Курс NOCN AICIR (Asset Incident Commander – Initial Response) — подготовка руководителей первоначального реагирования на производственные аварии.',
-    ogTitle: 'NOCN AICIR — Asset Incident Commander – Initial Response',
+    title: 'РУБЕЖ — Аварийное реагирование | Horizon LLP',
+    description: 'Курс РУБЕЖ (Asset Incident Commander – Initial Response) — подготовка руководителей первоначального реагирования на производственные аварии.',
+    ogTitle: 'РУБЕЖ — Asset Incident Commander – Initial Response',
   },
   en: {
-    title: 'NOCN AICIR — Asset Incident Commander | Horizon LLP',
-    description: 'NOCN AICIR (Asset Incident Commander – Initial Response) course — training initial response commanders for industrial emergencies.',
-    ogTitle: 'NOCN AICIR — Asset Incident Commander – Initial Response',
+    title: 'РУБЕЖ — Emergency Response Training | Horizon LLP',
+    description: 'РУБЕЖ (Asset Incident Commander – Initial Response) course — training initial response commanders for industrial emergencies.',
+    ogTitle: 'РУБЕЖ — Asset Incident Commander – Initial Response',
   },
 };
 
@@ -21,7 +21,7 @@ const makeJsonLd = (isEn: boolean) => {
     {
       '@context': 'https://schema.org',
       '@type': 'Course',
-      name: 'NOCN AICIR — Asset Incident Commander Initial Response',
+      name: 'РУБЕЖ — Первичные действия руководителя штаба при крупных технологических авариях',
       description: isEn ? META.en.description : META.ru.description,
       url,
       courseMode: ['onsite'],
@@ -33,7 +33,7 @@ const makeJsonLd = (isEn: boolean) => {
       '@type': 'BreadcrumbList',
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: isEn ? 'Home' : 'Главная', item: isEn ? 'https://horizon-llp.com/en' : 'https://horizon-llp.com' },
-        { '@type': 'ListItem', position: 2, name: 'NOCN AICIR', item: url },
+        { '@type': 'ListItem', position: 2, name: 'РУБЕЖ', item: url },
       ],
     },
   ];

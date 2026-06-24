@@ -4,12 +4,12 @@ import JsonLd from '../../components/JsonLd';
 const META = {
   ru: {
     title: 'О компании | Horizon LLP',
-    description: 'Horizon LLP — казахстанский учебный центр в области охраны труда и промышленной безопасности. Официальный партнёр NEBOSH, IOSH, RoSPA, NOCN и CompEx.',
+    description: 'Horizon LLP — казахстанский учебный центр в области охраны труда и промышленной безопасности. Официальный партнёр NEBOSH, IOSH, RoSPA и CompEx.',
     ogTitle: 'О компании Horizon LLP',
   },
   en: {
     title: 'About Us | Horizon LLP',
-    description: 'Horizon LLP — Kazakhstan-based training centre in occupational health and industrial safety. Official partner of NEBOSH, IOSH, RoSPA, NOCN and CompEx.',
+    description: 'Horizon LLP — Kazakhstan-based training centre in occupational health and industrial safety. Official partner of NEBOSH, IOSH, RoSPA and CompEx.',
     ogTitle: 'About Horizon LLP',
   },
 };

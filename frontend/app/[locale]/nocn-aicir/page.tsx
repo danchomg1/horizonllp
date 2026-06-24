@@ -62,15 +62,14 @@ export default async function NocnAicirPage({ params }: { params: Promise<{ loca
     <main className="bg-[#F4F4F4] min-h-screen pb-20">
       <section className="w-full max-w-[1280px] mx-auto pt-[80px] px-4">
         <div className="relative w-full h-[400px] lg:h-[450px] rounded-[15px] overflow-hidden">
-          <Image src="/assets/nocn/hero-bg.jpg" alt="NOCN AICIR" fill className="object-cover" />
+          <Image src="/assets/nocn/hero-bg.jpg" alt="РУБЕЖ" fill className="object-cover" />
           <div className="absolute inset-0 bg-[#0B0073]/80"></div>
           <div className="absolute inset-0 p-8 lg:p-12 flex flex-col justify-between z-10">
             <div className="flex justify-start items-start">
-              <Image src="/assets/nocn/hse-logo.png" alt="NOCN" width={120} height={50} className="object-contain" />
             </div>
             <div className="flex flex-col lg:flex-row justify-between items-end w-full gap-8">
               <div className="max-w-2xl">
-                <h1 className="text-3xl lg:text-[42px] font-bold text-white leading-[1.1] mb-1 drop-shadow-lg">NOCN AICIR</h1>
+                <h1 className="text-3xl lg:text-[42px] font-bold text-white leading-[1.1] mb-1 drop-shadow-lg">РУБЕЖ</h1>
                 <p className="text-xl lg:text-[22px] font-medium text-white/90 leading-tight drop-shadow-md">{t.heroSubtitle}</p>
               </div>
               <p className="hidden lg:block text-[12px] text-white/90 max-w-[420px] leading-snug font-light text-left drop-shadow-md pb-1">{t.heroRight}</p>

@@ -19,14 +19,14 @@ export async function generateMetadata({
     return {
       title: 'Horizon LLP — Health & Safety Training in Kazakhstan',
       description:
-        'Horizon LLP — accredited training center in Astana. NEBOSH, IOSH, RoSPA, NOCN international courses. HSE consulting, safety diagnostics, ISO 45001 implementation for oil & gas and industrial sectors of Kazakhstan.',
+        'Horizon LLP — accredited training center in Astana. NEBOSH, IOSH, RoSPA, CompEx international courses. HSE consulting, safety diagnostics, ISO 45001 implementation for oil & gas and industrial sectors of Kazakhstan.',
       alternates: { canonical: 'https://horizon-llp.com/en' },
     };
   }
   return {
     title: 'Horizon LLP — Обучение охране труда и промышленной безопасности в Казахстане',
     description:
-      'Horizon LLP — аккредитованный учебный центр в Астане. Международные курсы NEBOSH, IOSH, RoSPA, NOCN. Консалтинг по БиОТ, диагностика систем безопасности, внедрение ISO 45001 для нефтегазового и промышленного секторов Казахстана.',
+      'Horizon LLP — аккредитованный учебный центр в Астане. Международные курсы NEBOSH, IOSH, RoSPA, CompEx. Консалтинг по БиОТ, диагностика систем безопасности, внедрение ISO 45001 для нефтегазового и промышленного секторов Казахстана.',
     alternates: { canonical: 'https://horizon-llp.com' },
   };
 }
