@@ -44,9 +44,7 @@ const ONLINE_CATEGORY: Category = {
 };
 
 function getCategoryTitle(cat: Category, locale: string): string {
-  if (locale === 'en') return cat.titleEn || cat.title;
-  if (cat.title === 'NOCN') return 'Аварийное реагирование';
-  return cat.title;
+  return (locale === 'en' && cat.titleEn) ? cat.titleEn : cat.title;
 }
 
 export default function CoursesDropdown({ categories }: Props) {
