@@ -1,9 +1,9 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Send, Menu, X } from 'lucide-react';
+import { ChevronDown, Send, Menu, X, Globe } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Button from './Button';
 import { urlFor } from '../lib/sanity';
@@ -223,18 +223,27 @@ export default function HeaderClient({
             </button>
         </div>
 
-        {/* --- КНОПКА СПРАВА (ВНЕШНЯЯ) --- */}
+        {/* --- КНОПКИ СПРАВА (ВНЕШНИЕ, ТОЛЬКО DESKTOP lg+) --- */}
         <div className={`
-            hidden lg:flex absolute top-0 left-full ml-[15px] h-full items-center z-40
+            hidden lg:flex absolute top-0 left-full ml-[15px] h-full items-center gap-2 z-40
             transition-all duration-500 ease-in-out
-            ${showExternalElements 
-                ? 'opacity-100 translate-x-0 pointer-events-auto' // Видна
-                : 'opacity-0 -translate-x-4 pointer-events-none' // Скрыта: сдвинута влево (к центру)
+            ${showExternalElements
+                ? 'opacity-100 translate-x-0 pointer-events-auto'
+                : 'opacity-0 -translate-x-4 pointer-events-none'
             }
         `}>
-             <Button className="!w-[50px] !px-0 flex items-center justify-center">
+            <LanguageSwitcher locale={locale} pathname={pathname} />
+            <Button className="!w-[50px] !px-0 flex items-center justify-center">
                 <Send className="w-5 h-5 -ml-1 text-white" />
-             </Button>
+            </Button>
+        </div>
+
+        {/* --- КНОПКИ ПОД ШАПКОЙ (МОБИЛЬНЫЕ / ПЛАНШЕТ, < lg) --- */}
+        <div className="lg:hidden absolute top-full right-0 mt-2 flex flex-col items-end gap-2 z-40 pointer-events-auto">
+            <LanguageSwitcher locale={locale} pathname={pathname} />
+            <Button className="!w-[50px] !px-0 flex items-center justify-center">
+                <Send className="w-5 h-5 -ml-1 text-white" />
+            </Button>
         </div>
 
         {/* DROPDOWNS */}
@@ -372,7 +381,7 @@ function MobileAccordion({ label, children }: { label: string, children: React.R
     const [isOpen, setIsOpen] = useState(false);
     return (
         <div className="border-b border-gray-100">
-            <button 
+            <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="w-full flex justify-between items-center py-3 text-[18px] font-medium text-left"
             >
@@ -382,6 +391,54 @@ function MobileAccordion({ label, children }: { label: string, children: React.R
             <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[1000px] opacity-100 mb-4' : 'max-h-0 opacity-0'}`}>
                 {children}
             </div>
+        </div>
+    );
+}
+
+function LanguageSwitcher({ locale, pathname }: { locale: string; pathname: string }) {
+    const router = useRouter();
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const switchTo = (newLocale: string) => {
+        if (newLocale === locale) { setOpen(false); return; }
+        if (newLocale === 'en') {
+            router.push('/en' + (pathname === '/' ? '' : pathname));
+        } else {
+            router.push(pathname.replace(/^\/en/, '') || '/');
+        }
+        setOpen(false);
+    };
+
+    return (
+        <div ref={ref} className="relative">
+            <button
+                onClick={() => setOpen(!open)}
+                className="w-[50px] h-[50px] rounded-[15px] bg-[#0B0073] text-white flex flex-col items-center justify-center gap-0.5 shadow-xl hover:shadow-[0_10px_20px_rgba(11,0,115,0.4)] active:scale-95 transition-all duration-300"
+            >
+                <Globe className="w-4 h-4" />
+                <span className="text-[11px] font-bold uppercase leading-none">{locale}</span>
+            </button>
+            {open && (
+                <div className="absolute top-full right-0 mt-2 bg-white rounded-[10px] shadow-lg overflow-hidden z-50 w-[60px]">
+                    <button
+                        onClick={() => switchTo('ru')}
+                        className={`w-full px-3 py-2.5 text-sm text-left transition-colors ${locale === 'ru' ? 'text-[#0B0073] font-bold bg-blue-50' : 'hover:bg-gray-50'}`}
+                    >RU</button>
+                    <button
+                        onClick={() => switchTo('en')}
+                        className={`w-full px-3 py-2.5 text-sm text-left transition-colors ${locale === 'en' ? 'text-[#0B0073] font-bold bg-blue-50' : 'hover:bg-gray-50'}`}
+                    >EN</button>
+                </div>
+            )}
         </div>
     );
 }
