@@ -239,7 +239,7 @@ export default function HeaderClient({
         </div>
 
         {/* --- КНОПКИ ПОД ШАПКОЙ (ВСЕ ЭКРАНЫ < 1536px) --- */}
-        <div className="2xl:hidden absolute top-full right-0 mt-2 flex flex-col items-end gap-2 z-40 pointer-events-auto">
+        <div className="2xl:hidden absolute top-full right-4 mt-2 flex flex-col items-end gap-2 z-40 pointer-events-auto">
             <LanguageSwitcher locale={locale} pathname={pathname} />
             <Button className="!w-[50px] !px-0 flex items-center justify-center">
                 <Send className="w-5 h-5 -ml-1 text-white" />
