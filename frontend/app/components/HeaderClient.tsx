@@ -223,9 +223,9 @@ export default function HeaderClient({
             </button>
         </div>
 
-        {/* --- КНОПКИ СПРАВА (ВНЕШНИЕ, ТОЛЬКО DESKTOP lg+) --- */}
+        {/* --- КНОПКИ СПРАВА (ВНЕШНИЕ, ТОЛЬКО > 1536px) --- */}
         <div className={`
-            hidden lg:flex absolute top-0 left-full ml-[15px] h-full items-center gap-2 z-40
+            hidden 2xl:flex absolute top-0 left-full ml-[15px] h-full items-center gap-2 z-40
             transition-all duration-500 ease-in-out
             ${showExternalElements
                 ? 'opacity-100 translate-x-0 pointer-events-auto'
@@ -238,8 +238,8 @@ export default function HeaderClient({
             </Button>
         </div>
 
-        {/* --- КНОПКИ ПОД ШАПКОЙ (МОБИЛЬНЫЕ / ПЛАНШЕТ, < lg) --- */}
-        <div className="lg:hidden absolute top-full right-0 mt-2 flex flex-col items-end gap-2 z-40 pointer-events-auto">
+        {/* --- КНОПКИ ПОД ШАПКОЙ (ВСЕ ЭКРАНЫ < 1536px) --- */}
+        <div className="2xl:hidden absolute top-full right-0 mt-2 flex flex-col items-end gap-2 z-40 pointer-events-auto">
             <LanguageSwitcher locale={locale} pathname={pathname} />
             <Button className="!w-[50px] !px-0 flex items-center justify-center">
                 <Send className="w-5 h-5 -ml-1 text-white" />
