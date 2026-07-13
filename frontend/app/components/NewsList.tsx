@@ -45,9 +45,9 @@ export default function NewsList({ initialNews, locale }: Props) {
       {/* СЕТКА НОВОСТЕЙ */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
         {visibleNews.map((item) => (
-          <Link 
-            key={item._id} 
-            href={`/news/${item.slug.current}`}
+          <Link
+            key={item._id}
+            href={locale === 'en' ? `/en/news/${item.slug.current}` : `/news/${item.slug.current}`}
             className="group flex flex-col gap-4 cursor-pointer"
           >
             {/* КАРТИНКА */}
