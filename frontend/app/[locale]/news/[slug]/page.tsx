@@ -42,13 +42,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     ? `Read the article: "${title}" on the Horizon LLP website.`
     : `Читайте новость: "${title}" на сайте учебного центра Horizon LLP.`;
 
+  const ruUrl = `https://horizon-llp.com/news/${slug}`;
+  const enUrl = `https://horizon-llp.com/en/news/${slug}`;
+  const canonical = isEn ? enUrl : ruUrl;
   return {
     title: `${title} | Horizon LLP`,
     description: desc || fallbackDesc,
+    alternates: {
+      canonical,
+      languages: { 'ru': ruUrl, 'en': enUrl, 'x-default': ruUrl },
+    },
     openGraph: {
       title,
       description: desc || fallbackDesc,
-      images: post.mainImage ? [urlFor(post.mainImage).url()] : [],
+      images: post.mainImage ? [urlFor(post.mainImage).url()] : [{ url: '/og.jpg', width: 1200, height: 630 }],
       type: 'article',
     },
   };
@@ -97,8 +104,8 @@ export default async function NewsPostPage({ params }: PageProps) {
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: isEn ? 'Home' : 'Главная', item: `https://horizon-llp.com/${locale}` },
-        { '@type': 'ListItem', position: 2, name: isEn ? 'News' : 'События', item: `https://horizon-llp.com/${locale}/news` },
+        { '@type': 'ListItem', position: 1, name: isEn ? 'Home' : 'Главная', item: isEn ? 'https://horizon-llp.com/en' : 'https://horizon-llp.com' },
+        { '@type': 'ListItem', position: 2, name: isEn ? 'News' : 'События', item: isEn ? 'https://horizon-llp.com/en/news' : 'https://horizon-llp.com/news' },
         { '@type': 'ListItem', position: 3, name: title, item: pageUrl },
       ],
     },

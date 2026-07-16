@@ -44,11 +44,13 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const isEn = locale === 'en';
   const m = isEn ? META.en : META.ru;
   const canonical = isEn ? 'https://horizon-llp.com/en/neboshraw' : 'https://horizon-llp.com/neboshraw';
+  const ruUrl = 'https://horizon-llp.com/neboshraw';
+  const enUrl = 'https://horizon-llp.com/en/neboshraw';
   return {
     title: m.title,
     description: m.description,
-    alternates: { canonical },
-    openGraph: { title: m.ogTitle, description: m.description },
+    alternates: { canonical, languages: { 'ru': ruUrl, 'en': enUrl, 'x-default': ruUrl } },
+    openGraph: { title: m.ogTitle, description: m.description, images: [{ url: '/og.jpg', width: 1200, height: 630, alt: 'Horizon LLP' }] },
   };
 }
 

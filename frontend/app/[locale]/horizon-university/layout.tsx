@@ -101,6 +101,7 @@ export async function generateMetadata({
       languages: {
         ru: 'https://horizon-llp.com/horizon-university',
         en: 'https://horizon-llp.com/en/horizon-university',
+        'x-default': 'https://horizon-llp.com/horizon-university',
       },
     },
     openGraph: {

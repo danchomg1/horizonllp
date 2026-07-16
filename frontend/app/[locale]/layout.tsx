@@ -64,7 +64,14 @@ export async function generateMetadata({
         description: 'NEBOSH, IOSH, RoSPA, CompEx international courses. HSE consulting and ISO 45001 implementation in Kazakhstan.',
         images: ['/og.jpg'],
       },
-      alternates: { canonical: 'https://horizon-llp.com/en' },
+      alternates: {
+        canonical: 'https://horizon-llp.com/en',
+        languages: {
+          'ru': 'https://horizon-llp.com',
+          'en': 'https://horizon-llp.com/en',
+          'x-default': 'https://horizon-llp.com',
+        },
+      },
     };
   }
 
@@ -94,7 +101,14 @@ export async function generateMetadata({
       description: 'Международные курсы NEBOSH, IOSH, RoSPA, CompEx. Консалтинг по БиОТ и внедрение ISO 45001 в Казахстане.',
       images: ['/og.jpg'],
     },
-    alternates: { canonical: 'https://horizon-llp.com' },
+    alternates: {
+      canonical: 'https://horizon-llp.com',
+      languages: {
+        'ru': 'https://horizon-llp.com',
+        'en': 'https://horizon-llp.com/en',
+        'x-default': 'https://horizon-llp.com',
+      },
+    },
   };
 }
 

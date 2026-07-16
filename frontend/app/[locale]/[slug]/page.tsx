@@ -40,10 +40,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!data) return { title: isEn ? 'Page not found | Horizon LLP' : 'Страница не найдена | Horizon LLP' };
   const title = (isEn && data.titleEn) ? data.titleEn : data.title;
   const description = (isEn && data.descriptionEn) ? data.descriptionEn : data.description;
+  const ruUrl = `https://horizon-llp.com/${slug}`;
+  const enUrl = `https://horizon-llp.com/en/${slug}`;
+  const canonical = isEn ? enUrl : ruUrl;
   return {
     title: `${title} | Horizon LLP`,
     description: description || (isEn ? `Learn more about ${title} — Horizon LLP` : `Подробнее о ${title} — Horizon LLP`),
-    openGraph: { title, description, images: data.heroImage ? [urlFor(data.heroImage).url()] : [] },
+    alternates: {
+      canonical,
+      languages: { 'ru': ruUrl, 'en': enUrl, 'x-default': ruUrl },
+    },
+    openGraph: {
+      title,
+      description,
+      images: data.heroImage ? [urlFor(data.heroImage).url()] : [{ url: '/og.jpg', width: 1200, height: 630 }],
+    },
   };
 }
 

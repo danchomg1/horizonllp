@@ -1,18 +1,16 @@
 import { MetadataRoute } from 'next';
-import { client } from './lib/sanity'; // Убедись, что путь к sanity client правильный
+import { client } from './lib/sanity';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://horizon-llp.com';
 
-  // 1. ЗАПРОС ДЛЯ "КОРНЕВЫХ" СТРАНИЦ (Услуги, Курсы, О нас)
-  // Мы берем все типы, которые обрабатываются в файле app/[slug]/page.tsx
   const rootPagesData = await client.fetch(`
     *[_type in [
-      "consultingItem", 
-      "emergencyItem", 
-      "engineeringItem", 
-      "ppeItem", 
-      "aboutItem", 
+      "consultingItem",
+      "emergencyItem",
+      "engineeringItem",
+      "ppeItem",
+      "aboutItem",
       "course"
     ] && defined(slug.current)] {
       "slug": slug.current,
@@ -20,8 +18,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   `);
 
-  // 2. ЗАПРОС ДЛЯ НОВОСТЕЙ
-  // Новости лежат отдельно в app/news/[slug]
   const newsData = await client.fetch(`
     *[_type == "news" && defined(slug.current)] {
       "slug": slug.current,
@@ -29,48 +25,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   `);
 
-  // --- ГЕНЕРАЦИЯ ССЫЛОК ---
-
-  // А. Генерация ссылок для Услуг и Курсов (Приоритет 0.8 - 0.9)
-  const rootUrls = rootPagesData.map((item: any) => ({
-    url: `${baseUrl}/${item.slug}`,
-    lastModified: item._updatedAt || new Date(),
-    changeFrequency: 'monthly',
-    priority: 0.8,
-  }));
-
-  // Б. Генерация ссылок для Новостей (Приоритет 0.7)
-  const newsUrls = newsData.map((item: any) => ({
-    url: `${baseUrl}/news/${item.slug}`,
-    lastModified: item.publishedAt || new Date(),
-    changeFrequency: 'weekly',
-    priority: 0.7,
-  }));
-
-  // В. Базовые статические страницы (Главная, Контакты и список новостей)
-  const staticUrls = [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 1, // Главная - самая важная
-    },
-    {
-      url: `${baseUrl}/contacts`, 
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/news`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.8,
-    },
-  ];
-
-  // Г. НОВЫЕ СТАТИЧЕСКИЕ СТРАНИЦЫ ИЗ ПАПОК
-  // Сюда просто дописывай названия новых папок в кавычках, если будешь создавать еще
+  // Static folders (hardcoded pages)
   const staticFolders = [
     'diagnostika-biot',
     'iosh-vs',
@@ -91,14 +46,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     'horizon-university',
   ];
 
-  // Автоматически превращаем список папок в формат ссылок для карты сайта
-  const folderUrls = staticFolders.map((slug) => ({
-    url: `${baseUrl}/${slug}`,
-    lastModified: new Date(),
-    changeFrequency: 'monthly',
-    priority: 0.8,
-  }));
+  // Root static pages
+  const staticUrls: MetadataRoute.Sitemap = [
+    { url: baseUrl, lastModified: new Date(), changeFrequency: 'yearly', priority: 1 },
+    { url: `${baseUrl}/en`, lastModified: new Date(), changeFrequency: 'yearly', priority: 1 },
+    { url: `${baseUrl}/news`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.8 },
+    { url: `${baseUrl}/en/news`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.8 },
+    { url: `${baseUrl}/about`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${baseUrl}/en/about`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.9 },
+  ];
 
-  // Возвращаем объединенный массив из всех 4 блоков
+  // Hardcoded static pages + EN versions
+  const folderUrls: MetadataRoute.Sitemap = staticFolders.flatMap((slug) => [
+    { url: `${baseUrl}/${slug}`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.8 },
+    { url: `${baseUrl}/en/${slug}`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.8 },
+  ]);
+
+  // Dynamic Sanity pages + EN versions
+  const rootUrls: MetadataRoute.Sitemap = rootPagesData.flatMap((item: any) => [
+    { url: `${baseUrl}/${item.slug}`, lastModified: item._updatedAt || new Date(), changeFrequency: 'monthly' as const, priority: 0.8 },
+    { url: `${baseUrl}/en/${item.slug}`, lastModified: item._updatedAt || new Date(), changeFrequency: 'monthly' as const, priority: 0.8 },
+  ]);
+
+  // News articles + EN versions
+  const newsUrls: MetadataRoute.Sitemap = newsData.flatMap((item: any) => [
+    { url: `${baseUrl}/news/${item.slug}`, lastModified: item.publishedAt || new Date(), changeFrequency: 'weekly' as const, priority: 0.7 },
+    { url: `${baseUrl}/en/news/${item.slug}`, lastModified: item.publishedAt || new Date(), changeFrequency: 'weekly' as const, priority: 0.7 },
+  ]);
+
   return [...staticUrls, ...folderUrls, ...rootUrls, ...newsUrls];
 }

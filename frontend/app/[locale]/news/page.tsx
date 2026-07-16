@@ -1,6 +1,34 @@
 import { setRequestLocale, getTranslations } from 'next-intl/server';
+import type { Metadata } from 'next';
 import { client } from '../../lib/sanity';
 import NewsList from '../../components/NewsList';
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const isEn = locale === 'en';
+  const canonical = isEn ? 'https://horizon-llp.com/en/news' : 'https://horizon-llp.com/news';
+  return {
+    title: isEn ? 'News & Events | Horizon LLP' : 'События и новости | Horizon LLP',
+    description: isEn
+      ? 'Latest news, events and updates from Horizon LLP — health, safety and environment training centre in Kazakhstan.'
+      : 'Последние новости, события и обновления от Horizon LLP — учебного центра по охране труда и промышленной безопасности в Казахстане.',
+    alternates: {
+      canonical,
+      languages: {
+        'ru': 'https://horizon-llp.com/news',
+        'en': 'https://horizon-llp.com/en/news',
+        'x-default': 'https://horizon-llp.com/news',
+      },
+    },
+    openGraph: {
+      title: isEn ? 'News & Events | Horizon LLP' : 'События и новости | Horizon LLP',
+      description: isEn
+        ? 'Latest news and events from Horizon LLP.'
+        : 'Последние новости и события Horizon LLP.',
+      images: [{ url: '/og.jpg', width: 1200, height: 630, alt: 'Horizon LLP' }],
+    },
+  };
+}
 
 async function getNews(locale: string) {
   const isEn = locale === 'en';
