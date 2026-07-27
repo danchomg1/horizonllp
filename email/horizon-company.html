@@ -1,5 +1,5 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="ru">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" lang="ru">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -42,9 +42,6 @@
     box-shadow:0 10px 26px rgba(11,0,115,.13) !important;
   }
 
-  .hero-img { transition: opacity .25s ease; }
-  .hero-img:hover { opacity:.9 !important; }
-
   @media screen and (max-width:620px) {
     .wrap      { width:100% !important; }
     .px        { padding-left:22px !important; padding-right:22px !important; }
@@ -77,9 +74,20 @@
 
   <table role="presentation" class="wrap" border="0" cellpadding="0" cellspacing="0" width="100%" style="width:100%; max-width:600px; margin:0 auto; background-color:#ffffff; border-radius:20px; overflow:hidden; border-collapse:separate;">
 
-    <!-- ══ ШАПКА ══ -->
+    <!-- ══ ШАПКА С ФОТО-ФОНОМ ══
+         background-атрибут + CSS работают везде, VML ниже - только для Outlook,
+         который фоновые картинки через CSS не понимает. bgcolor - запасной вариант,
+         если получатель отключил загрузку изображений. -->
     <tr>
-      <td bgcolor="#0B0073" style="background-color:#0B0073;">
+      <td background="https://horizon-llp.com/assets/email/header-bg.jpg" bgcolor="#0B0073" valign="top"
+          style="background-color:#0B0073; background-image:url('https://horizon-llp.com/assets/email/header-bg.jpg'); background-position:center center; background-size:cover; background-repeat:no-repeat;">
+
+        <!--[if gte mso 9]>
+        <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:600px; height:412px;">
+        <v:fill type="frame" src="https://horizon-llp.com/assets/email/header-bg.jpg" color="#0B0073" />
+        <v:textbox inset="0,0,0,0">
+        <![endif]-->
+
         <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
           <tr>
             <td class="px" align="center" style="padding:40px 44px 36px 44px;">
@@ -119,21 +127,18 @@
             </td>
           </tr>
         </table>
-      </td>
-    </tr>
 
-    <!-- ══ ФОТО ══ -->
-    <tr>
-      <td class="px" align="center" style="padding:36px 44px 0 44px;">
-        <a href="https://horizon-llp.com" target="_blank" style="display:block;">
-          <img class="hero-img" src="https://horizon-llp.com/assets/email/horizon-hero.jpg" width="512" alt="Horizon LLP — промышленная безопасность" style="display:block; width:100%; max-width:512px; height:auto; border-radius:14px;" />
-        </a>
+        <!--[if gte mso 9]>
+        </v:textbox>
+        </v:rect>
+        <![endif]-->
+
       </td>
     </tr>
 
     <!-- ══ О КОМПАНИИ ══ -->
     <tr>
-      <td class="px" style="padding:32px 44px 0 44px;">
+      <td class="px" style="padding:38px 44px 0 44px;">
         <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:separate;">
           <tr>
             <td style="padding:0 0 0 18px; border-left:3px solid #0B0073;">
