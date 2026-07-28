@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { X, ChevronDown, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import PhoneInput from './PhoneInput';
 
 interface Props {
   isOpen: boolean;
@@ -83,44 +84,6 @@ export default function ContactModal({ isOpen, onClose }: Props) {
     }
     return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen]); 
-
-  // --- ЛОГИКА МАСКИ ТЕЛЕФОНА ---
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let input = e.target.value;
-    
-    // 1. Оставляем только цифры
-    let numbers = input.replace(/\D/g, '');
-
-    // 2. Обработка начала ввода (чтобы всегда было +7)
-    if (numbers.length === 0) {
-        setPhoneValue('');
-        return;
-    }
-
-    if (numbers.length > 0 && (numbers[0] === '7' || numbers[0] === '8')) {
-        numbers = numbers.substring(1);
-    }
-    
-    // Ограничиваем длину (10 цифр после семерки)
-    numbers = numbers.substring(0, 10);
-
-    // 3. Формируем красивую строку
-    let formatted = '+7';
-    if (numbers.length > 0) {
-        formatted += ` (${numbers.substring(0, 3)}`;
-    }
-    if (numbers.length >= 4) {
-        formatted += `) ${numbers.substring(3, 6)}`;
-    }
-    if (numbers.length >= 7) {
-        formatted += `-${numbers.substring(6, 8)}`;
-    }
-    if (numbers.length >= 9) {
-        formatted += `-${numbers.substring(8, 10)}`;
-    }
-
-    setPhoneValue(formatted);
-  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -209,18 +172,10 @@ export default function ContactModal({ isOpen, onClose }: Props) {
                         <input name="name" type="text" required placeholder={i.placeholderName} className="input-style" />
                     </div>
 
-                    <div className="flex flex-col gap-2">
+                    {/* pb-5 - место под названием страны, оно выводится под полем */}
+                    <div className="flex flex-col gap-2 pb-5">
                         <label className="text-[14px] text-black pl-1">{i.labelPhone}</label>
-                        <input
-                            name="phone"
-                            type="tel"
-                            required
-                            placeholder="+7 (___) ___-__-__"
-                            className="input-style font-medium tracking-wide"
-                            value={phoneValue}
-                            onChange={handlePhoneChange}
-                            maxLength={18}
-                        />
+                        <PhoneInput locale={locale} onChange={setPhoneValue} />
                     </div>
 
                     <div className="flex flex-col gap-2 relative">
