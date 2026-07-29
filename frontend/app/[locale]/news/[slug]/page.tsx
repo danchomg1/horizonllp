@@ -4,6 +4,7 @@ import { client, urlFor } from '../../../lib/sanity';
 import { PortableText } from '@portabletext/react';
 import { textComponents } from '../../../components/RichTextComponents';
 import JsonLd from '../../../components/JsonLd';
+import NewsViews from '../../../components/NewsViews';
 
 async function getPost(slug: string) {
   return client.fetch(
@@ -134,9 +135,12 @@ export default async function NewsPostPage({ params }: PageProps) {
         </div>
 
         <div className="max-w-[1000px] mx-auto px-6 md:px-10 relative z-10 mt-10">
-          <h1 className="text-[32px] md:text-[48px] leading-tight font-black text-[#0B0073] mb-12 uppercase">
+          <h1 className="text-[32px] md:text-[48px] leading-tight font-black text-[#0B0073] mb-4 uppercase">
             {title}
           </h1>
+          <div className="mb-10">
+            <NewsViews slug={slug} locale={locale} />
+          </div>
           <div className="w-full text-black/80">
             <PortableText value={body} components={textComponents} />
           </div>

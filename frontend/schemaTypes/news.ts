@@ -59,6 +59,16 @@ export default defineType({
       type: 'richText',
     }),
 
+    // 7. СЧЕТЧИК ПРОСМОТРОВ
+    defineField({
+      name: 'views',
+      title: 'Просмотры',
+      type: 'number',
+      initialValue: 0,
+      readOnly: true,
+      description: 'Считается автоматически, когда новость открывают на сайте.',
+    }),
+
     // === ENGLISH VERSION ===
 
     defineField({
