@@ -1,118 +1,89 @@
 import { Linkedin, Facebook, Instagram } from 'lucide-react';
 import { getLocale } from 'next-intl/server';
-import { client, urlFor } from '../lib/sanity'; // Добавил urlFor
+import { client, urlFor } from '../lib/sanity';
 
 async function getFooterData() {
   return await client.fetch(`*[_type == "footer"][0]`);
 }
+
+const PHONE = '+7 777 275 61 07';
+const PHONE_HREF = '+77772756107';
+const EMAIL = 'sales@horizon-llp.com';
 
 export default async function Footer() {
   const data = await getFooterData();
   const locale = await getLocale();
   const isEn = locale === 'en';
 
-  const columns = data?.columns || (isEn ? [
-    { titleEn: 'Qualifications', linksEn: ['Nebosh', 'Iosh', 'Rospa', 'CompEx'] },
-    { titleEn: 'Services', linksEn: ['Inspections', 'Consulting', 'Audit', 'Training'] },
-    { titleEn: 'Engineering', linksEn: ['Design', 'Supervision'] },
-  ] : [
-    { title: 'Квалификации', links: ['Nebosh', 'Iosh', 'Rospa', 'CompEx'] },
-    { title: 'Услуги', links: ['Инспекции', 'Консалтинг', 'Аудит', 'Обучение'] },
-    { title: 'Инжиниринг', links: ['Проектирование', 'Надзор'] },
-  ]);
- 
+  const socials = [
+    { href: data?.socials?.linkedin, Icon: Linkedin, label: 'LinkedIn' },
+    { href: data?.socials?.facebook, Icon: Facebook, label: 'Facebook' },
+    { href: data?.socials?.instagram, Icon: Instagram, label: 'Instagram' },
+  ].filter((s) => Boolean(s.href));
+
   return (
     <div className="w-full flex justify-center mt-auto px-4 pb-4">
       <footer className="w-full max-w-[1300px]">
-        
-        <div className="bg-[#0B0073] text-white rounded-[20px] pt-12 pb-10 px-4 md:px-12">
-           
-           <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-              
-             {/* 1. ЛОГОТИП */}
-              <div className="md:col-span-2 flex flex-col justify-between">
-                <div>
-                  {/* ИЗМЕНЕНИЯ:
-                      1. w-14 h-14 заменены на w-24 h-24 (увеличили размер примерно в 1.7 раза).
-                      2. Убраны классы: border, border-white/30, bg-white/5, rounded, p-1.
-                      3. Добавлен object-left (чтобы логотип ровнялся по левому краю, а не по центру).
-                  */}
-                  <div className="w-24 h-24 mb-4 relative">
-                      {data?.logo ? (
-                        <img 
-                            src={urlFor(data.logo).url()} 
-                            alt="Footer Logo" 
-                            className="w-full h-full object-contain object-left"
-                        />
-                      ) : (
-                        /* Заглушка осталась в рамочке, чтобы ее было видно, если лого нет */
-                        <div className="w-14 h-14 flex items-center justify-center border border-white/30 rounded bg-white/5">
-                            <span className="text-[10px] font-bold">LOGO</span>
-                        </div>
-                      )}
-                  </div>
+        <div className="bg-[#0B0073] text-white rounded-[20px] px-6 md:px-12 py-8">
+
+          {/* Логотип - контакты - соцсети в одну строку, на мобильных складываются */}
+          <div className="flex flex-col md:flex-row md:items-center gap-8 md:gap-10">
+
+            <div className="shrink-0">
+              {data?.logo ? (
+                <img
+                  src={urlFor(data.logo).url()}
+                  alt="Horizon LLP"
+                  className="h-14 w-auto object-contain object-left"
+                />
+              ) : (
+                <div className="h-14 flex items-center">
+                  <span className="text-[10px] font-bold border border-white/30 rounded px-3 py-2">LOGO</span>
                 </div>
-              </div>
+              )}
+            </div>
 
-              {/* 2. МЕНЮ (Колонки) */}
-              <div className="md:col-span-9 flex flex-wrap justify-between px-0 lg:px-10 gap-8 md:gap-0">
-                 {columns.map((col: any, idx: number) => (
-                    <div key={idx} className="min-w-[120px]">
-                      <h3 className="font-bold mb-6 text-sm">
-                        {(isEn && col.titleEn) ? col.titleEn : col.title}
-                      </h3>
-                      <ul className="space-y-3 text-xs text-gray-300 font-light font-sans">
-                        {((isEn && col.linksEn) ? col.linksEn : col.links)?.map((link: string, i: number) => (
-                           <li key={i} className="cursor-pointer hover:text-white transition-colors">
-                              {link}
-                           </li>
-                        ))}
-                      </ul>
-                    </div>
-                 ))}
-              </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-8 md:flex-grow">
+              <a
+                href={`tel:${PHONE_HREF}`}
+                className="text-[15px] font-medium hover:text-blue-200 transition-colors whitespace-nowrap"
+              >
+                {PHONE}
+              </a>
+              <a
+                href={`mailto:${EMAIL}`}
+                className="text-[15px] font-medium hover:text-blue-200 transition-colors"
+              >
+                {EMAIL}
+              </a>
+              <span className="text-[13px] text-gray-300 font-light">
+                {isEn ? 'Astana, Kazakhstan' : 'Астана, Казахстан'}
+              </span>
+            </div>
 
-              {/* 3. СОЦСЕТИ И КОПИРАЙТ */}
-              <div className="md:col-span-1 flex flex-col justify-between items-end h-full">
-                  
-                  {/* Иконки соцсетей */}
-                  <div className="flex md:flex-col gap-4 mt-2">
-                      {data?.socials?.linkedin && (
-                        <a href={data.socials.linkedin} target="_blank" rel="noreferrer">
-                           <Linkedin className="w-5 h-5 cursor-pointer hover:text-blue-300 transition-colors"/>
-                        </a>
-                      )}
-                      {data?.socials?.facebook && (
-                          <a href={data.socials.facebook} target="_blank" rel="noreferrer">
-                            <Facebook className="w-5 h-5 cursor-pointer hover:text-blue-300 transition-colors"/>
-                          </a>
-                      )}
-                      {data?.socials?.instagram && (
-                          <a href={data.socials.instagram} target="_blank" rel="noreferrer">
-                            <Instagram className="w-5 h-5 cursor-pointer hover:text-blue-300 transition-colors"/>
-                          </a>
-                      )}
+            <div className="flex flex-row gap-3 shrink-0">
+              {socials.map(({ href, Icon, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={label}
+                  className="w-10 h-10 rounded-full border border-white/25 flex items-center justify-center hover:bg-white hover:text-[#0B0073] transition-colors"
+                >
+                  <Icon className="w-[18px] h-[18px]" />
+                </a>
+              ))}
+            </div>
+          </div>
 
-                      {!data?.socials && (
-                        <>
-                           <Linkedin className="w-5 h-5 opacity-50"/>
-                           <Facebook className="w-5 h-5 opacity-50"/>
-                           <Instagram className="w-5 h-5 opacity-50"/>
-                        </>
-                      )}
-                  </div>
-                  
-                  {/* Копирайт */}
-                  <div className="whitespace-nowrap mt-8 md:mt-0">
-                      <p className="text-[10px] text-gray-400 font-sans">
-                          {data?.copyright || '© 2026 Horizon LLP Consulting'}
-                      </p>
-                  </div>
-              </div>
+          <div className="mt-7 pt-5 border-t border-white/15">
+            <p className="text-[11px] text-gray-400 font-sans">
+              {data?.copyright || '© 2026 Horizon LLP Consulting'}
+            </p>
+          </div>
 
-           </div>
         </div>
-
       </footer>
     </div>
   );
