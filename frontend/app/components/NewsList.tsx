@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { urlFor } from '../lib/sanity';
+import { pick, href as hrefFor } from '../lib/locale';
 
 interface NewsItem {
   _id: string;
@@ -47,7 +48,7 @@ export default function NewsList({ initialNews, locale }: Props) {
         {visibleNews.map((item) => (
           <Link
             key={item._id}
-            href={locale === 'en' ? `/en/news/${item.slug.current}` : `/news/${item.slug.current}`}
+            href={hrefFor(`/news/${item.slug.current}`, locale)}
             className="group flex flex-col gap-4 cursor-pointer"
           >
             {/* КАРТИНКА */}
@@ -60,7 +61,7 @@ export default function NewsList({ initialNews, locale }: Props) {
                 />
               ) : (
                 <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                  {locale === 'en' ? 'No photo' : 'Нет фото'}
+                  {pick({ ru: 'Нет фото', en: 'No photo', kz: 'Сурет жоқ' }, locale)}
                 </div>
               )}
             </div>

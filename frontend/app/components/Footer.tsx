@@ -1,6 +1,7 @@
 import { Linkedin, Facebook, Instagram } from 'lucide-react';
 import { getLocale } from 'next-intl/server';
 import { client, urlFor } from '../lib/sanity';
+import { pick } from '../lib/locale';
 
 async function getFooterData() {
   return await client.fetch(`*[_type == "footer"][0]`);
@@ -13,7 +14,6 @@ const EMAIL = 'sales@horizon-llp.com';
 export default async function Footer() {
   const data = await getFooterData();
   const locale = await getLocale();
-  const isEn = locale === 'en';
 
   const socials = [
     { href: data?.socials?.linkedin, Icon: Linkedin, label: 'LinkedIn' },
@@ -57,7 +57,7 @@ export default async function Footer() {
                 {EMAIL}
               </a>
               <span className="text-[13px] text-gray-300 font-light">
-                {isEn ? 'Astana, Kazakhstan' : 'Астана, Казахстан'}
+                {pick({ ru: 'Астана, Казахстан', en: 'Astana, Kazakhstan', kz: 'Астана, Қазақстан' }, locale)}
               </span>
             </div>
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import { normalizeLocale, loc, pick } from '../lib/locale';
 
 interface ContactCity {
   _id: string;
@@ -21,7 +22,7 @@ interface Props {
 export default function ContactsDropdown({ cities }: Props) {
   const [activeCity, setActiveCity] = useState<ContactCity | null>(null);
   const pathname = usePathname();
-  const locale = pathname.startsWith('/en') ? 'en' : 'ru';
+  const locale = normalizeLocale(pathname.split('/')[1]);
 
   useEffect(() => {
     if (cities && cities.length > 0) {
@@ -60,7 +61,7 @@ export default function ContactsDropdown({ cities }: Props) {
                                     : 'text-black hover:bg-black/5'}
                             `}
                         >
-                            {(locale === 'en' && item.cityEn) ? item.cityEn : item.city}
+                            {loc(item, 'city', locale)}
                             {isActive && <span className="text-[6px] text-[#0B0073]">●</span>}
                         </div>
                     )
@@ -72,11 +73,11 @@ export default function ContactsDropdown({ cities }: Props) {
                     <div className="flex flex-col gap-5 animate-in fade-in duration-300">
                         <div>
                             <h4 className="text-[18px] text-[#0B0073] mb-2 font-normal uppercase tracking-wide">
-                              {(locale === 'en' && activeCity.officeNameEn) ? activeCity.officeNameEn : activeCity.officeName}
+                              {loc(activeCity, 'officeName', locale)}
                             </h4>
                             <div className="w-[50px] h-[1px] bg-[#0B0073]/20 mb-3" />
                             <p className="text-[15px] text-gray-800 leading-relaxed font-normal">
-                              {(locale === 'en' && activeCity.addressEn) ? activeCity.addressEn : activeCity.address}
+                              {loc(activeCity, 'address', locale)}
                             </p>
                         </div>
                         
@@ -90,7 +91,7 @@ export default function ContactsDropdown({ cities }: Props) {
                     </div>
                 ) : (
                     <div className="h-full flex items-center justify-center text-gray-500 text-sm">
-                        {locale === 'en' ? 'Select a city' : 'Выберите город'}
+                        {pick({ ru: 'Выберите город', en: 'Select a city', kz: 'Қаланы таңдаңыз' }, locale)}
                     </div>
                 )}
             </div>
@@ -106,12 +107,12 @@ export default function ContactsDropdown({ cities }: Props) {
         {/* Сохраняем плотную верстку gap-1.5 */}
         <div className="flex flex-col gap-1.5 text-[#1A1A1A] text-[14px]">
             
-            {/* Группа: {locale === 'en' ? 'Commercial enquiries' : 'Коммерческие вопросы'} + Телефоны */}
+            {/* Группа: {pick({ ru: 'Коммерческие вопросы', en: 'Commercial enquiries', kz: 'Коммерциялық сұрақтар' }, locale)} + Телефоны */}
             <div className="flex flex-col gap-1.5">
                 <div className="flex flex-col">
-                    <span className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">{locale === 'en' ? 'Commercial enquiries' : 'Коммерческие вопросы'}</span>
+                    <span className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">{pick({ ru: 'Коммерческие вопросы', en: 'Commercial enquiries', kz: 'Коммерциялық сұрақтар' }, locale)}</span>
                     {/* Текст увеличен в 2 раза: с 10px до 20px */}
-                    <p className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">{locale === 'en' ? 'For services, proposals and partnerships:' : 'По вопросам услуг, предложений и сотрудничества:'}</p>
+                    <p className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">{pick({ ru: 'По вопросам услуг, предложений и сотрудничества:', en: 'For services, proposals and partnerships:', kz: 'Қызметтер, ұсыныстар және ынтымақтастық бойынша:' }, locale)}</p>
                     <a href="mailto:sales@horizon-llp.com" className="text-[15px] font-medium hover:text-[#0B0073] transition-colors border-b border-transparent hover:border-[#0B0073] w-max">
                         sales@horizon-llp.com
                     </a>
@@ -125,8 +126,8 @@ export default function ContactsDropdown({ cities }: Props) {
 
             {/* Группа: Общие обращения */}
             <div className="flex flex-col">
-                <span className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">{locale === 'en' ? 'General enquiries' : 'Общие обращения'}</span>
-                <p className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">{locale === 'en' ? 'For administrative and other matters:' : 'По административным и иным вопросам:'}</p>
+                <span className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">{pick({ ru: 'Общие обращения', en: 'General enquiries', kz: 'Жалпы сұрақтар' }, locale)}</span>
+                <p className="text-[11px] text-gray-700 uppercase tracking-wider leading-tight">{pick({ ru: 'По административным и иным вопросам:', en: 'For administrative and other matters:', kz: 'Әкімшілік және өзге де сұрақтар бойынша:' }, locale)}</p>
             </div>
 
         </div>

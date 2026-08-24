@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { urlFor } from '../lib/sanity';
+import { normalizeLocale, loc, pick, href as hrefFor } from '../lib/locale';
 
 // Интерфейс для конкретного курса
 interface Course {
@@ -43,15 +44,15 @@ const ONLINE_CATEGORY: Category = {
   }],
 };
 
-function getCategoryTitle(cat: Category, locale: string): string {
-  return (locale === 'en' && cat.titleEn) ? cat.titleEn : cat.title;
+function getCategoryTitle(cat: Category, locale?: string): string {
+  return loc<string>(cat, 'title', locale) ?? '';
 }
 
 export default function CoursesDropdown({ categories }: Props) {
   const [activeCategory, setActiveCategory] = useState<Category | null>(null);
   const [activeCourse, setActiveCourse] = useState<Course | null>(null);
   const pathname = usePathname();
-  const locale = pathname.split('/')[1] === 'en' ? 'en' : 'ru';
+  const locale = normalizeLocale(pathname.split('/')[1]);
 
   const allCategories = [...(categories || []), ONLINE_CATEGORY];
 
@@ -116,14 +117,14 @@ export default function CoursesDropdown({ categories }: Props) {
                 return (
                   <Link
                     key={idx}
-                    href={course.slug?.current ? (locale === 'en' ? `/en/${course.slug.current}` : `/${course.slug.current}`) : '#'}
+                    href={course.slug?.current ? hrefFor(course.slug.current, locale) : '#'}
                     onMouseEnter={() => setActiveCourse(course)}
                     className={`
                       cursor-pointer px-4 py-3 rounded-[10px] text-[16px] font-normal transition-all flex items-center justify-between
                       ${activeCourse?.title === course.title ? 'bg-black/5 text-[#0B0073]' : 'text-black hover:bg-black/5'}
                     `}
                   >
-                    {(locale === 'en' && course.titleEn) ? course.titleEn : course.title}
+                    {loc(course, 'title', locale)}
                     {activeCourse?.title === course.title && <span className="text-[6px] text-[#0B0073]">●</span>}
                   </Link>
                 );
@@ -149,9 +150,9 @@ export default function CoursesDropdown({ categories }: Props) {
                 
                 <div className="flex flex-col">
                   {/* Заголовок (тоже ссылка) */}
-                  <Link href={activeCourse.slug?.current ? (locale === 'en' ? `/en/${activeCourse.slug.current}` : `/${activeCourse.slug.current}`) : '#'}>
+                  <Link href={activeCourse.slug?.current ? hrefFor(activeCourse.slug.current, locale) : '#'}>
                     <h3 className="text-[16px] font-normal text-[#0B0073] mb-3 leading-tight uppercase tracking-wide hover:underline">
-                      {(locale === 'en' && activeCourse.titleEn) ? activeCourse.titleEn : activeCourse.title}
+                      {loc(activeCourse, 'title', locale)}
                     </h3>
                   </Link>
 
@@ -159,11 +160,11 @@ export default function CoursesDropdown({ categories }: Props) {
 
                   <div className="pr-2">
                       <p className="text-[14px] text-black/80 leading-relaxed font-normal">
-                        {(locale === 'en' && activeCourse.descriptionEn) ? activeCourse.descriptionEn : activeCourse.description}
+                        {loc(activeCourse, 'description', locale)}
                       </p>
                       {(activeCourse.details || activeCourse.detailsEn) && (
                         <p className="text-[10px] text-gray-500 mt-2 italic">
-                          {(locale === 'en' && activeCourse.detailsEn) ? activeCourse.detailsEn : activeCourse.details}
+                          {loc(activeCourse, 'details', locale)}
                         </p>
                       )}
                       
@@ -172,7 +173,7 @@ export default function CoursesDropdown({ categories }: Props) {
             </div>
           ) : (
             <div className="h-full flex items-center justify-center text-gray-500 text-sm font-normal">
-              {locale === 'en' ? 'Select a course' : 'Выберите курс'}
+              {pick({ ru: 'Выберите курс', en: 'Select a course', kz: 'Курсты таңдаңыз' }, locale)}
             </div>
           )}
         </div>

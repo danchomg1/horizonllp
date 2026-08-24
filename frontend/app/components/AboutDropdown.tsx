@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { normalizeLocale, loc, href as hrefFor } from '../lib/locale';
 
 interface AboutItem {
   _id: string;
@@ -16,7 +17,7 @@ interface Props {
 
 export default function AboutDropdown({ items }: Props) {
   const pathname = usePathname();
-  const locale = pathname.split('/')[1] === 'en' ? 'en' : 'ru';
+  const locale = normalizeLocale(pathname.split('/')[1]);
 
   if (!items || items.length === 0) return null;
 
@@ -42,12 +43,10 @@ export default function AboutDropdown({ items }: Props) {
              {items.map((item) => (
                <Link
                  key={item._id}
-                 href={locale === 'en'
-                   ? `/en/${item.slug?.current === 'events' ? 'news' : item.slug?.current}`
-                   : `/${item.slug?.current === 'events' ? 'news' : item.slug?.current}`}
+                 href={hrefFor(item.slug?.current === 'events' ? 'news' : item.slug?.current, locale)}
                  className="cursor-pointer px-4 py-3 rounded-[10px] text-[16px] font-normal text-black hover:bg-black/5 hover:text-[#0B0073] transition-all flex items-center justify-between group"
                >
-                 {(locale === 'en' && item.titleEn) ? item.titleEn : item.title}
+                 {loc(item, 'title', locale)}
                  {/* Маленькая точка при наведении (опционально) */}
                  <span className="opacity-0 group-hover:opacity-100 text-[6px] text-[#0B0073] transition-opacity">●</span>
                </Link>

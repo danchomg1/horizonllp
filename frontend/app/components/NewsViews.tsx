@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Eye } from 'lucide-react';
+import { intlLocale } from '../lib/locale';
 
 interface Props {
   slug: string;
@@ -58,12 +59,16 @@ export default function NewsViews({ slug, locale }: Props) {
 
   if (views === null) return null;
 
-  const label = locale === 'en' ? (views === 1 ? 'view' : 'views') : pluralRu(views);
+  // В казахском существительное после числа не склоняется
+  const label =
+    locale === 'en' ? (views === 1 ? 'view' : 'views')
+    : locale === 'kz' ? 'қаралым'
+    : pluralRu(views);
 
   return (
     <span className="inline-flex items-center gap-2 text-[14px] text-gray-500">
       <Eye className="w-4 h-4" />
-      {views.toLocaleString(locale === 'en' ? 'en-GB' : 'ru-RU')} {label}
+      {views.toLocaleString(intlLocale(locale))} {label}
     </span>
   );
 }

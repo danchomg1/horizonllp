@@ -32,7 +32,7 @@ export function normalizeLocale(value?: string): Locale {
 }
 
 /** Суффикс переведённых полей в Sanity: ru -> '', en -> 'En', kz -> 'Kz'. */
-export function fieldSuffix(locale: string): '' | 'En' | 'Kz' {
+export function fieldSuffix(locale?: string): '' | 'En' | 'Kz' {
   if (locale === 'en') return 'En';
   if (locale === 'kz') return 'Kz';
   return '';
@@ -42,7 +42,7 @@ export function fieldSuffix(locale: string): '' | 'En' | 'Kz' {
  * Значение поля на нужном языке с откатом на русский.
  * loc(course, 'title', 'kz') -> titleKz, если заполнено, иначе title.
  */
-export function loc<T = any>(doc: any, field: string, locale: string): T | undefined {
+export function loc<T = any>(doc: any, field: string, locale?: string): T | undefined {
   if (!doc) return undefined;
 
   const suffix = fieldSuffix(locale);
@@ -60,18 +60,18 @@ export function loc<T = any>(doc: any, field: string, locale: string): T | undef
 }
 
 /** Префикс пути: ru -> '', en -> '/en', kz -> '/kz'. */
-export function localePath(locale: string): string {
+export function localePath(locale?: string): string {
   return normalizeLocale(locale) === DEFAULT_LOCALE ? '' : `/${normalizeLocale(locale)}`;
 }
 
 /** Ссылка внутри сайта с учётом языка: href('nebosh-igc', 'kz') -> '/kz/nebosh-igc'. */
-export function href(path: string, locale: string): string {
+export function href(path: string, locale?: string): string {
   const clean = path.startsWith('/') ? path : `/${path}`;
   return `${localePath(locale)}${clean}` || '/';
 }
 
 /** Абсолютный адрес страницы для нужного языка. */
-export function localeUrl(locale: string, path = ''): string {
+export function localeUrl(locale?: string, path = ''): string {
   const clean = path && !path.startsWith('/') ? `/${path}` : path;
   return `${SITE_URL}${localePath(locale)}${clean}`;
 }
@@ -85,7 +85,7 @@ export function languageAlternates(path = ''): Record<string, string> {
 }
 
 /** Полный блок alternates: canonical текущего языка + все языковые версии. */
-export function alternatesFor(locale: string, path = '') {
+export function alternatesFor(locale: string | undefined, path = '') {
   return {
     canonical: localeUrl(locale, path),
     languages: languageAlternates(path),
@@ -93,7 +93,25 @@ export function alternatesFor(locale: string, path = '') {
 }
 
 /** Выбор значения из словаря по языку с откатом на русский. */
-export function pick<T>(dict: Partial<Record<Locale, T>>, locale: string): T {
+export function pick<T>(dict: Partial<Record<Locale, T>>, locale?: string): T {
   const l = normalizeLocale(locale);
   return (dict[l] ?? dict[DEFAULT_LOCALE]) as T;
+}
+
+/** Локаль для toLocaleDateString / toLocaleString. */
+export const INTL_LOCALE: Record<Locale, string> = {
+  ru: 'ru-RU',
+  en: 'en-GB',
+  kz: 'kk-KZ',
+};
+
+/** Значение og:locale. */
+export const OG_LOCALE: Record<Locale, string> = {
+  ru: 'ru_RU',
+  en: 'en_US',
+  kz: 'kk_KZ',
+};
+
+export function intlLocale(locale?: string): string {
+  return INTL_LOCALE[normalizeLocale(locale)];
 }

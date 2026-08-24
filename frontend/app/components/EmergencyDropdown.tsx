@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { urlFor } from '../lib/sanity';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { normalizeLocale, loc, pick, href as hrefFor } from '../lib/locale';
 
 interface EmergencyItem {
   _id: string;
@@ -22,7 +23,7 @@ interface Props {
 export default function EmergencyDropdown({ items }: Props) {
   const [activeItem, setActiveItem] = useState<EmergencyItem | null>(null);
   const pathname = usePathname();
-  const locale = pathname.split('/')[1] === 'en' ? 'en' : 'ru';
+  const locale = normalizeLocale(pathname.split('/')[1]);
 
   useEffect(() => {
     if (items && items.length > 0) {
@@ -52,7 +53,7 @@ export default function EmergencyDropdown({ items }: Props) {
             {items.map((item) => (
               <Link
                 key={item._id}
-                href={locale === 'en' ? `/en/${item.slug?.current}` : `/${item.slug?.current}`}
+                href={hrefFor(item.slug?.current, locale)}
                 onMouseEnter={() => setActiveItem(item)}
                 className={`
                   cursor-pointer px-4 py-3 rounded-[10px] text-[16px] font-normal transition-all flex items-center justify-between
@@ -61,7 +62,7 @@ export default function EmergencyDropdown({ items }: Props) {
                     : 'text-black hover:bg-black/5'}
                 `}
               >
-                {(locale === 'en' && item.titleEn) ? item.titleEn : item.title}
+                {loc(item, 'title', locale)}
                 {activeItem?._id === item._id && <span className="text-[6px] text-[#0B0073]">●</span>}
               </Link>
             ))}
@@ -82,26 +83,26 @@ export default function EmergencyDropdown({ items }: Props) {
                 <div className="w-[140px] h-[140px] flex-shrink-0 flex items-center justify-center">
                   <img
                     src={urlFor(activeItem.image).url()}
-                    alt={(locale === 'en' && activeItem.titleEn) ? activeItem.titleEn : activeItem.title}
+                    alt={loc(activeItem, 'title', locale)}
                     className="w-full h-full object-contain drop-shadow-md"
                   />
                 </div>
               )}
               <div className="flex flex-col w-full">
                 <h3 className="text-[20px] font-normal text-[#0B0073] mb-4 leading-tight uppercase tracking-wide">
-                  {(locale === 'en' && activeItem.titleEn) ? activeItem.titleEn : activeItem.title}
+                  {loc(activeItem, 'title', locale)}
                 </h3>
                 <div className="w-full h-[1px] bg-[#0B0073]/20 mb-4" />
                 <div className="overflow-y-auto max-h-[280px] custom-scrollbar pr-4">
                   <p className="text-[15px] text-black/80 leading-relaxed font-normal whitespace-pre-wrap">
-                    {(locale === 'en' && activeItem.descriptionEn) ? activeItem.descriptionEn : activeItem.description}
+                    {loc(activeItem, 'description', locale)}
                   </p>
                 </div>
               </div>
             </div>
           ) : (
             <div className="h-full flex items-center justify-center text-gray-500 text-sm font-normal">
-              {locale === 'en' ? 'Select a service' : 'Выберите услугу'}
+              {pick({ ru: 'Выберите услугу', en: 'Select a service', kz: 'Қызметті таңдаңыз' }, locale)}
             </div>
           )}
         </div>
