@@ -7,6 +7,7 @@ export default defineType({
   type: 'document',
   icon: BookIcon,
   groups: [
+    { name: 'kazakh', title: 'Қазақша нұсқа' },
     { name: 'dropdown', title: 'Для меню (Шапка)' },
     { name: 'page', title: 'Для страницы (Контент)' },
     { name: 'english', title: 'English version' },
@@ -89,5 +90,12 @@ export default defineType({
     defineField({ name: 'detailsEn', title: 'Details (English, e.g. "2 days / Offline")', type: 'string', group: 'english' }),
     defineField({ name: 'introTitleEn', title: 'Intro heading (English)', type: 'string', group: 'english' }),
     defineField({ name: 'introTextEn', title: 'Intro text (English)', type: 'richText', group: 'english' }),
+
+    // === KAZAKH VERSION ===
+    defineField({ name: 'titleKz', title: 'Course name (Kazakh)', type: 'string', group: 'kazakh' }),
+    defineField({ name: 'descriptionKz', title: 'Short description (Kazakh)', type: 'text', rows: 3, group: 'kazakh' }),
+    defineField({ name: 'detailsKz', title: 'Details (English, e.g. "2 days / Offline")', type: 'string', group: 'kazakh' }),
+    defineField({ name: 'introTitleKz', title: 'Intro heading (Kazakh)', type: 'string', group: 'kazakh' }),
+    defineField({ name: 'introTextKz', title: 'Intro text (Kazakh)', type: 'richText', group: 'kazakh' }),
   ],
 })

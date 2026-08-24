@@ -24,5 +24,16 @@ export default defineType({
       title: 'Group name (English)',
       type: 'string',
     }),
+
+    // === KAZAKH VERSION ===
+    defineField({
+      name: 'titleKz',
+      title: 'Group name (Kazakh)',
+      type: 'string', group: 'kazakh' }),
+  ],
+
+  groups: [
+    { name: 'english', title: 'English version' },
+    { name: 'kazakh', title: 'Қазақша нұсқа' },
   ],
 })

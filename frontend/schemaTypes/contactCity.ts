@@ -53,9 +53,30 @@ export default defineType({
       type: 'string',
       group: 'english',
     }),
+
+    // === KAZAKH VERSION ===
+    defineField({
+      name: 'cityKz',
+      title: 'City name (Kazakh)',
+      type: 'string',
+      group: 'kazakh',
+    }),
+    defineField({
+      name: 'officeNameKz',
+      title: 'Office name (Kazakh)',
+      type: 'string',
+      group: 'kazakh',
+    }),
+    defineField({
+      name: 'addressKz',
+      title: 'Address (Kazakh)',
+      type: 'string',
+      group: 'kazakh',
+    }),
   ],
 
   groups: [
+    { name: 'kazakh', title: 'Қазақша нұсқа' },
     { name: 'english', title: 'English version' },
   ],
 })

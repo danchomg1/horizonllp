@@ -33,5 +33,20 @@ export default defineType({
       title: 'Tab content (English)',
       type: 'richText',
     }),
-  ]
+
+    // === KAZAKH VERSION ===
+    defineField({
+      name: 'tabTitleKz',
+      title: 'Tab title (Kazakh)',
+      type: 'string', group: 'kazakh' }),
+    defineField({
+      name: 'tabContentKz',
+      title: 'Tab content (Kazakh)',
+      type: 'richText', group: 'kazakh' }),
+  ],
+
+  groups: [
+    { name: 'english', title: 'English version' },
+    { name: 'kazakh', title: 'Қазақша нұсқа' },
+  ],
 })

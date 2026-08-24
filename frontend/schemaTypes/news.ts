@@ -93,9 +93,32 @@ export default defineType({
       type: 'richText',
       group: 'english',
     }),
+
+    // === KAZAKH VERSION ===
+    defineField({
+      name: 'titleKz',
+      title: 'Title (Kazakh)',
+      type: 'string',
+      group: 'kazakh',
+    }),
+    defineField({
+      name: 'descriptionKz',
+      title: 'Short description (Kazakh)',
+      type: 'text',
+      rows: 3,
+      group: 'kazakh',
+      description: 'Shown in the news list under the title.',
+    }),
+    defineField({
+      name: 'bodyKz',
+      title: 'Full text (Kazakh)',
+      type: 'richText',
+      group: 'kazakh',
+    }),
   ],
 
   groups: [
+    { name: 'kazakh', title: 'Қазақша нұсқа' },
     {
       name: 'english',
       title: 'English version',

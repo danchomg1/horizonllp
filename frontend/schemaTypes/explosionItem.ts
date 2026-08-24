@@ -80,9 +80,16 @@ defineField({
     defineField({ name: 'descriptionEn', title: 'Short description (English)', type: 'text', rows: 3, group: 'english' }),
     defineField({ name: 'introTitleEn', title: 'Intro heading (English)', type: 'string', group: 'english' }),
     defineField({ name: 'introTextEn', title: 'Intro text (English)', type: 'richText', group: 'english' }),
+
+    // === KAZAKH VERSION ===
+    defineField({ name: 'titleKz', title: 'Service name (Kazakh)', type: 'string', group: 'kazakh' }),
+    defineField({ name: 'descriptionKz', title: 'Short description (Kazakh)', type: 'text', rows: 3, group: 'kazakh' }),
+    defineField({ name: 'introTitleKz', title: 'Intro heading (Kazakh)', type: 'string', group: 'kazakh' }),
+    defineField({ name: 'introTextKz', title: 'Intro text (Kazakh)', type: 'richText', group: 'kazakh' }),
   ],
 
   groups: [
+    { name: 'kazakh', title: 'Қазақша нұсқа' },
     { name: 'english', title: 'English version' },
   ],
 })

@@ -18,6 +18,12 @@ export default {
       type: 'string',
       description: 'e.g. HORIZON'
     },
+    {
+      name: 'titleKz',
+      title: 'Заголовок (H1, KZ)',
+      type: 'string',
+      description: 'Мысалы: HORIZON'
+    },
     // --- НОВЫЕ ПОЛЯ ---
     {
       name: 'subtitle',
@@ -30,6 +36,12 @@ export default {
       title: 'Подзаголовок (H2, EN)',
       type: 'string',
       description: 'e.g. LLP Consulting'
+    },
+    {
+      name: 'subtitleKz',
+      title: 'Подзаголовок (H2, KZ)',
+      type: 'string',
+      description: 'Мысалы: LLP Consulting'
     },
     {
       name: 'heroLogo',
@@ -56,6 +68,12 @@ export default {
       title: 'Описание (EN)',
       type: 'text',
       description: 'Short company description in English'
+    },
+    {
+      name: 'heroDescriptionKz',
+      title: 'Описание (KZ)',
+      type: 'text',
+      description: 'Компания туралы қысқаша сипаттама'
     },
     // ------------------
 

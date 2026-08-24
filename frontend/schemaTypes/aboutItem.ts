@@ -5,6 +5,7 @@ export default defineType({
   title: 'Меню: О нас (Страницы)',
   type: 'document',
   groups: [
+    { name: 'kazakh', title: 'Қазақша нұсқа' },
     { name: 'menu', title: 'Для Меню (Шапка)' },
     { name: 'page', title: 'Контент Страницы' },
     { name: 'english', title: 'English version' },
@@ -84,6 +85,12 @@ export default defineType({
     defineField({ name: 'descriptionEn', title: 'Short description (English)', type: 'text', rows: 3, group: 'english' }),
     defineField({ name: 'introTitleEn', title: 'Intro heading (English)', type: 'string', group: 'english' }),
     defineField({ name: 'introTextEn', title: 'Intro text (English)', type: 'richText', group: 'english' }),
+
+    // === KAZAKH VERSION ===
+    defineField({ name: 'titleKz', title: 'Menu item name (Kazakh)', type: 'string', group: 'kazakh' }),
+    defineField({ name: 'descriptionKz', title: 'Short description (Kazakh)', type: 'text', rows: 3, group: 'kazakh' }),
+    defineField({ name: 'introTitleKz', title: 'Intro heading (Kazakh)', type: 'string', group: 'kazakh' }),
+    defineField({ name: 'introTextKz', title: 'Intro text (Kazakh)', type: 'richText', group: 'kazakh' }),
 
     // --- СЕКЦИЯ TABS (ВКЛАДКИ) ---
     defineField({
