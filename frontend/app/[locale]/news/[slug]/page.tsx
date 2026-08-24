@@ -5,11 +5,13 @@ import { PortableText } from '@portabletext/react';
 import { textComponents } from '../../../components/RichTextComponents';
 import JsonLd from '../../../components/JsonLd';
 import NewsViews from '../../../components/NewsViews';
+import { loc, pick, alternatesFor, intlLocale, localeUrl, href as hrefFor } from '../../../lib/locale';
 
 async function getPost(slug: string) {
   return client.fetch(
     `*[_type == "news" && slug.current == $slug][0] {
-      title, titleEn, publishedAt, mainImage, body, bodyEn, description, descriptionEn
+      title, titleEn, titleKz, publishedAt, mainImage,
+      body, bodyEn, bodyKz, description, descriptionEn, descriptionKz
     }`,
     { slug }
   );
@@ -18,7 +20,7 @@ async function getPost(slug: string) {
 const formatDate = (dateString: string, locale: string) => {
   if (!dateString) return '';
   const date = new Date(dateString);
-  return date.toLocaleDateString(locale === 'en' ? 'en-GB' : 'ru-RU', {
+  return date.toLocaleDateString(intlLocale(locale), {
     day: '2-digit', month: '2-digit', year: 'numeric',
   });
 };
@@ -29,30 +31,25 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug, locale } = await params;
-  const isEn = locale === 'en';
   const post = await client.fetch(
-    `*[_type == "news" && slug.current == $slug][0] { title, titleEn, description, descriptionEn, mainImage }`,
+    `*[_type == "news" && slug.current == $slug][0] { title, titleEn, titleKz, description, descriptionEn, descriptionKz, mainImage }`,
     { slug }
   );
 
-  if (!post) return { title: isEn ? 'Article not found | Horizon LLP' : 'Новость не найдена | Horizon LLP' };
+  if (!post) return { title: pick({ ru: 'Новость не найдена', en: 'Article not found', kz: 'Жаңалық табылмады' }, locale) };
 
-  const title = isEn && post.titleEn ? post.titleEn : post.title;
-  const desc = isEn && post.descriptionEn ? post.descriptionEn : post.description;
-  const fallbackDesc = isEn
-    ? `Read the article: "${title}" on the Horizon LLP website.`
-    : `Читайте новость: "${title}" на сайте учебного центра Horizon LLP.`;
+  const title = loc(post, 'title', locale);
+  const desc = loc(post, 'description', locale);
+  const fallbackDesc = pick({
+    ru: `Читайте новость: "${title}" на сайте учебного центра Horizon LLP.`,
+    en: `Read the article: "${title}" on the Horizon LLP website.`,
+    kz: `"${title}" жаңалығын Horizon LLP сайтында оқыңыз.`,
+  }, locale);
 
-  const ruUrl = `https://horizon-llp.com/news/${slug}`;
-  const enUrl = `https://horizon-llp.com/en/news/${slug}`;
-  const canonical = isEn ? enUrl : ruUrl;
   return {
-    title: `${title} | Horizon LLP`,
+    title,
     description: desc || fallbackDesc,
-    alternates: {
-      canonical,
-      languages: { 'ru': ruUrl, 'en': enUrl, 'x-default': ruUrl },
-    },
+    alternates: alternatesFor(locale, `/news/${slug}`),
     openGraph: {
       title,
       description: desc || fallbackDesc,
@@ -67,7 +64,6 @@ export default async function NewsPostPage({ params }: PageProps) {
   setRequestLocale(locale);
   const t = await getTranslations('News');
   const post = await getPost(slug);
-  const isEn = locale === 'en';
 
   if (!post) {
     return (
@@ -77,14 +73,16 @@ export default async function NewsPostPage({ params }: PageProps) {
     );
   }
 
-  const title = isEn && post.titleEn ? post.titleEn : post.title;
-  const body = isEn && post.bodyEn ? post.bodyEn : post.body;
-  const desc = isEn && post.descriptionEn ? post.descriptionEn : post.description;
-  const fallbackDesc = isEn
-    ? `Read the article: "${title}" on the Horizon LLP website.`
-    : `Читайте новость: "${title}" на сайте учебного центра Horizon LLP.`;
+  const title = loc(post, 'title', locale);
+  const body = loc(post, 'body', locale);
+  const desc = loc(post, 'description', locale);
+  const fallbackDesc = pick({
+    ru: `Читайте новость: "${title}" на сайте учебного центра Horizon LLP.`,
+    en: `Read the article: "${title}" on the Horizon LLP website.`,
+    kz: `"${title}" жаңалығын Horizon LLP сайтында оқыңыз.`,
+  }, locale);
 
-  const pageUrl = `https://horizon-llp.com/${locale}/news/${slug}`;
+  const pageUrl = localeUrl(locale, `/news/${slug}`);
   const articleJsonLd = [
     {
       '@context': 'https://schema.org',
@@ -105,8 +103,8 @@ export default async function NewsPostPage({ params }: PageProps) {
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: isEn ? 'Home' : 'Главная', item: isEn ? 'https://horizon-llp.com/en' : 'https://horizon-llp.com' },
-        { '@type': 'ListItem', position: 2, name: isEn ? 'News' : 'События', item: isEn ? 'https://horizon-llp.com/en/news' : 'https://horizon-llp.com/news' },
+        { '@type': 'ListItem', position: 1, name: pick({ ru: 'Главная', en: 'Home', kz: 'Басты бет' }, locale), item: localeUrl(locale) },
+        { '@type': 'ListItem', position: 2, name: pick({ ru: 'События', en: 'News', kz: 'Жаңалықтар' }, locale), item: localeUrl(locale, '/news') },
         { '@type': 'ListItem', position: 3, name: title, item: pageUrl },
       ],
     },
@@ -145,7 +143,7 @@ export default async function NewsPostPage({ params }: PageProps) {
             <PortableText value={body} components={textComponents} />
           </div>
           <div className="mt-16 pt-8 border-t border-gray-300">
-            <a href={`/${locale}/news`} className="inline-flex items-center gap-2 text-[#0B0073] font-bold hover:underline">
+            <a href={hrefFor('/news', locale)} className="inline-flex items-center gap-2 text-[#0B0073] font-bold hover:underline">
               <span>←</span> {t('back')}
             </a>
           </div>

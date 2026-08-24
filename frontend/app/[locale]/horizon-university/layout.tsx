@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import JsonLd from '../../components/JsonLd';
+import { pick, alternatesFor, localeUrl, HREFLANG, normalizeLocale, OG_LOCALE } from '../../lib/locale';
 
 const META = {
   ru: {
@@ -32,12 +33,25 @@ const META = {
     twitterTitle: 'Horizon University — Corporate Learning Platform',
     twitterDescription: 'Employee HSE training online. Progress tracking, certificates, offline access.',
   },
+  kz: {
+    title: 'Horizon University — корпоративтік оқу платформасы',
+    description: 'Horizon University — қызметкерлерді еңбекті қорғау және өнеркәсіптік қауіпсіздік бойынша қашықтан оқытуға арналған цифрлық платформа. Үлгерімді бақылау, сертификаттар, желіден тыс қолжетімділік.',
+    keywords: [
+      'Horizon University', 'корпоративтік оқыту', 'LMS платформа',
+      'еңбекті қорғау қашықтан оқыту', 'e-learning қауіпсіздік',
+      'қызметкерлерді оқыту платформасы', 'еңбекті қорғау сертификаттары',
+      'оқу платформасы Қазақстан', 'Horizon LLP',
+    ],
+    ogTitle: 'Horizon University — оқу платформасы',
+    ogDescription: 'Қызметкерлерді еңбекті қорғау және өнеркәсіптік қауіпсіздік бойынша қашықтан оқыту. Үлгерімді бақылау, сертификаттар, шалғай объектілер үшін желіден тыс қолжетімділік.',
+    twitterTitle: 'Horizon University — корпоративтік оқу платформасы',
+    twitterDescription: 'Қызметкерлерді еңбекті қорғау бойынша онлайн оқыту. Үлгерімді бақылау, сертификаттар, желіден тыс қолжетімділік.',
+  },
 };
 
-const makeJsonLd = (isEn: boolean) => {
-  const slug = isEn ? 'en/horizon-university' : 'horizon-university';
-  const url = `https://horizon-llp.com/${slug}`;
-  const m = isEn ? META.en : META.ru;
+const makeJsonLd = (locale: string) => {
+  const url = localeUrl(locale, '/horizon-university');
+  const m = pick(META, locale);
   return [
     {
       '@context': 'https://schema.org',
@@ -47,7 +61,7 @@ const makeJsonLd = (isEn: boolean) => {
       url,
       applicationCategory: 'EducationApplication',
       operatingSystem: 'Web, Android, iOS',
-      inLanguage: isEn ? 'en' : 'ru',
+      inLanguage: HREFLANG[normalizeLocale(locale)],
       provider: {
         '@type': 'Organization',
         name: 'Horizon LLP',
@@ -66,8 +80,8 @@ const makeJsonLd = (isEn: boolean) => {
         {
           '@type': 'ListItem',
           position: 1,
-          name: isEn ? 'Home' : 'Главная',
-          item: isEn ? 'https://horizon-llp.com/en' : 'https://horizon-llp.com',
+          name: pick({ ru: 'Главная', en: 'Home', kz: 'Басты бет' }, locale),
+          item: localeUrl(locale),
         },
         {
           '@type': 'ListItem',
@@ -86,29 +100,19 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const isEn = locale === 'en';
-  const m = isEn ? META.en : META.ru;
-  const canonical = isEn
-    ? 'https://horizon-llp.com/en/horizon-university'
-    : 'https://horizon-llp.com/horizon-university';
+  const m = pick(META, locale);
+  const canonical = localeUrl(locale, '/horizon-university');
 
   return {
     title: m.title,
     description: m.description,
     keywords: m.keywords,
-    alternates: {
-      canonical,
-      languages: {
-        ru: 'https://horizon-llp.com/horizon-university',
-        en: 'https://horizon-llp.com/en/horizon-university',
-        'x-default': 'https://horizon-llp.com/horizon-university',
-      },
-    },
+    alternates: alternatesFor(locale, '/horizon-university'),
     openGraph: {
       type: 'website',
       url: canonical,
       siteName: 'Horizon LLP',
-      locale: isEn ? 'en_US' : 'ru_RU',
+      locale: OG_LOCALE[normalizeLocale(locale)],
       title: m.ogTitle,
       description: m.ogDescription,
       images: [{ url: '/og.jpg', width: 1200, height: 630, alt: 'Horizon University' }],
@@ -132,7 +136,7 @@ export default async function Layout({
   const { locale } = await params;
   return (
     <>
-      <JsonLd data={makeJsonLd(locale === 'en')} />
+      <JsonLd data={makeJsonLd(locale)} />
       {children}
     </>
   );

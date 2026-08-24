@@ -6,6 +6,7 @@ import { getTranslations } from 'next-intl/server';
 import Button from '../components/Button';
 import Header from '../components/Header';
 import { client, urlFor } from '../lib/sanity';
+import { loc, pick, alternatesFor, href as hrefFor } from '../lib/locale';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,28 +16,32 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  if (locale === 'en') {
-    return {
-      title: 'Horizon LLP — Health & Safety Training in Kazakhstan',
-      description:
-        'Horizon LLP — accredited training center in Astana. NEBOSH, IOSH, RoSPA, CompEx international courses. HSE consulting, safety diagnostics, ISO 45001 implementation for oil & gas and industrial sectors of Kazakhstan.',
-      alternates: { canonical: 'https://horizon-llp.com/en' },
-    };
-  }
   return {
-    title: 'Horizon LLP — Обучение охране труда и промышленной безопасности в Казахстане',
-    description:
-      'Horizon LLP — аккредитованный учебный центр в Астане. Международные курсы NEBOSH, IOSH, RoSPA, CompEx. Консалтинг по БиОТ, диагностика систем безопасности, внедрение ISO 45001 для нефтегазового и промышленного секторов Казахстана.',
-    alternates: { canonical: 'https://horizon-llp.com' },
+    title: pick({
+      ru: 'Horizon LLP — Обучение охране труда и промышленной безопасности в Казахстане',
+      en: 'Horizon LLP — Health & Safety Training in Kazakhstan',
+      kz: 'Horizon LLP — Қазақстанда еңбекті қорғау және өнеркәсіптік қауіпсіздік бойынша оқыту',
+    }, locale),
+    description: pick({
+      ru: 'Horizon LLP — аккредитованный учебный центр в Астане. Международные курсы NEBOSH, IOSH, RoSPA, CompEx. Консалтинг по БиОТ, диагностика систем безопасности, внедрение ISO 45001 для нефтегазового и промышленного секторов Казахстана.',
+      en: 'Horizon LLP — accredited training center in Astana. NEBOSH, IOSH, RoSPA, CompEx international courses. HSE consulting, safety diagnostics, ISO 45001 implementation for oil & gas and industrial sectors of Kazakhstan.',
+      kz: 'Horizon LLP — Астанадағы аккредиттелген оқу орталығы. NEBOSH, IOSH, RoSPA, CompEx халықаралық курстары. Еңбекті қорғау бойынша консалтинг, қауіпсіздік жүйелерін диагностикалау, ISO 45001 енгізу.',
+    }, locale),
+    alternates: alternatesFor(locale),
   };
 }
 
 async function getData() {
   const [homeData, latestNews] = await Promise.all([
-    client.fetch(`*[_type == "home"][0]`),
+    client.fetch(`*[_type == "home"][0]{
+      ...,
+      title, titleEn, titleKz,
+      subtitle, subtitleEn, subtitleKz,
+      heroDescription, heroDescriptionEn, heroDescriptionKz
+    }`),
     client.fetch(`
       *[_type == "news"] | order(publishedAt desc)[0...4] {
-        _id, title, titleEn, slug, mainImage, publishedAt
+        _id, title, titleEn, titleKz, slug, mainImage, publishedAt
       }
     `),
   ]);
@@ -52,7 +57,7 @@ export default async function Home({
   setRequestLocale(locale);
   const t = await getTranslations('Home');
   const data = await getData();
-  const isEn = locale === 'en';
+
 
   return (
     <div className="bg-[#F4F4F4] min-h-screen flex flex-col">
@@ -77,18 +82,18 @@ export default async function Home({
               </div>
               <div className="flex flex-col items-start w-full">
                 <h1 className="font-black text-[28px] md:text-[36px] text-horizon-blue uppercase leading-[1.1] mb-2 break-words max-w-full">
-                  {(isEn && data?.titleEn) ? data.titleEn : (data?.title || 'HORIZON')}
+                  {loc(data, 'title', locale) || 'HORIZON'}
                 </h1>
                 <h2 className="font-bold text-[20px] md:text-[28px] text-horizon-blue leading-tight mb-4 md:mb-6">
-                  {(isEn && data?.subtitleEn) ? data.subtitleEn : (data?.subtitle || 'LLP Consulting')}
+                  {loc(data, 'subtitle', locale) || 'LLP Consulting'}
                 </h2>
                 <p className="font-normal text-[14px] md:text-[15px] text-black/80 leading-relaxed mb-8 max-w-md whitespace-pre-wrap">
-                  {(isEn && data?.heroDescriptionEn) ? data.heroDescriptionEn : (data?.heroDescription || '')}
+                  {loc(data, 'heroDescription', locale) || ''}
                 </p>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 w-full sm:w-auto">
                   <Button className="w-full sm:w-[200px]">{t('cta')}</Button>
                   <Link
-                    href={`/${locale}/about`}
+                    href={hrefFor('/about', locale)}
                     className="font-normal text-[14px] md:text-[16px] text-black/80 flex items-center gap-2 hover:text-horizon-blue transition-colors"
                   >
                     {t('learnMore')}
@@ -117,7 +122,7 @@ export default async function Home({
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 border-b border-gray-200 pb-4 gap-4">
             <h2 className="font-bold text-[28px] md:text-[36px] text-horizon-blue">{t('newsTitle')}</h2>
             <Link
-              href={`/${locale}/news`}
+              href={hrefFor('/news', locale)}
               className="font-normal text-[14px] text-black/60 hover:text-horizon-blue transition-colors leading-relaxed"
             >
               {t('viewAll')}
@@ -127,14 +132,14 @@ export default async function Home({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {data?.latestNews?.length > 0 ? (
               data.latestNews.map((item: any) => (
-                <Link key={item._id} href={`/${locale}/news/${item.slug.current}`} className="group cursor-pointer block">
+                <Link key={item._id} href={hrefFor(`/news/${item.slug.current}`, locale)} className="group cursor-pointer block">
                   <div className="relative aspect-square overflow-hidden rounded-[20px] md:rounded-[30px] mb-4 bg-white shadow-md">
                     {item.mainImage ? (
                       <Image
                         src={urlFor(item.mainImage).url()}
                         fill
                         className="object-cover group-hover:scale-110 transition-transform duration-700"
-                        alt={isEn && item.titleEn ? item.titleEn : item.title}
+                        alt={loc<string>(item, 'title', locale) ?? ''}
                       />
                     ) : (
                       <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400">
@@ -143,7 +148,7 @@ export default async function Home({
                     )}
                   </div>
                   <h3 className="font-normal text-[14px] md:text-[15px] text-black leading-snug pr-2 opacity-85 group-hover:text-horizon-blue transition-colors line-clamp-3">
-                    {isEn && item.titleEn ? item.titleEn : item.title}
+                    {loc(item, 'title', locale)}
                   </h3>
                 </Link>
               ))

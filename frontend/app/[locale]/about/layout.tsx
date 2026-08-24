@@ -1,16 +1,22 @@
 import type { Metadata } from 'next';
 import JsonLd from '../../components/JsonLd';
+import { pick, alternatesFor, localeUrl, HREFLANG, normalizeLocale } from '../../lib/locale';
 
 const META = {
   ru: {
-    title: 'О компании | Horizon LLP',
+    title: 'О компании',
     description: 'Horizon LLP — казахстанский учебный центр в области охраны труда и промышленной безопасности. Официальный партнёр NEBOSH, IOSH, RoSPA и CompEx.',
     ogTitle: 'О компании Horizon LLP',
   },
   en: {
-    title: 'About Us | Horizon LLP',
+    title: 'About Us',
     description: 'Horizon LLP — Kazakhstan-based training centre in occupational health and industrial safety. Official partner of NEBOSH, IOSH, RoSPA and CompEx.',
     ogTitle: 'About Horizon LLP',
+  },
+  kz: {
+    title: 'Компания туралы',
+    description: 'Horizon LLP — еңбекті қорғау және өнеркәсіптік қауіпсіздік саласындағы қазақстандық оқу орталығы. NEBOSH, IOSH, RoSPA және CompEx ресми серіктесі.',
+    ogTitle: 'Horizon LLP компаниясы туралы',
   },
 };
 
@@ -54,15 +60,13 @@ const jsonLdEn = [
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
-  const isEn = locale === 'en';
-  const m = isEn ? META.en : META.ru;
-  const canonical = isEn ? 'https://horizon-llp.com/en/about' : 'https://horizon-llp.com/about';
+  const m = pick(META, locale);
   const ruUrl = 'https://horizon-llp.com/about';
   const enUrl = 'https://horizon-llp.com/en/about';
   return {
     title: m.title,
     description: m.description,
-    alternates: { canonical, languages: { 'ru': ruUrl, 'en': enUrl, 'x-default': ruUrl } },
+    alternates: alternatesFor(locale, '/about'),
     openGraph: { title: m.ogTitle, description: m.description, images: [{ url: '/og.jpg', width: 1200, height: 630, alt: 'Horizon LLP' }] },
   };
 }

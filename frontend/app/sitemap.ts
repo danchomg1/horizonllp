@@ -1,8 +1,26 @@
 import { MetadataRoute } from 'next';
 import { client } from './lib/sanity';
+import { LOCALES, localeUrl } from './lib/locale';
+
+type Entry = MetadataRoute.Sitemap[number];
+
+/** Один и тот же путь во всех языковых версиях. */
+function forAllLocales(
+  path: string,
+  lastModified: Date | string,
+  changeFrequency: NonNullable<Entry['changeFrequency']>,
+  priority: number,
+): MetadataRoute.Sitemap {
+  return LOCALES.map((locale) => ({
+    url: localeUrl(locale, path),
+    lastModified,
+    changeFrequency,
+    priority,
+  }));
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://horizon-llp.com';
+  const now = new Date();
 
   const rootPagesData = await client.fetch(`
     *[_type in [
@@ -25,7 +43,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   `);
 
-  // Static folders (hardcoded pages)
+  // Страницы, свёрстанные кодом
   const staticFolders = [
     'diagnostika-biot',
     'iosh-vs',
@@ -46,33 +64,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     'horizon-university',
   ];
 
-  // Root static pages
-  const staticUrls: MetadataRoute.Sitemap = [
-    { url: baseUrl, lastModified: new Date(), changeFrequency: 'yearly', priority: 1 },
-    { url: `${baseUrl}/en`, lastModified: new Date(), changeFrequency: 'yearly', priority: 1 },
-    { url: `${baseUrl}/news`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.8 },
-    { url: `${baseUrl}/en/news`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.8 },
-    { url: `${baseUrl}/about`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.9 },
-    { url: `${baseUrl}/en/about`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.9 },
+  return [
+    ...forAllLocales('', now, 'yearly', 1),
+    ...forAllLocales('/news', now, 'daily', 0.8),
+    ...forAllLocales('/about', now, 'monthly', 0.9),
+
+    ...staticFolders.flatMap((slug) => forAllLocales(`/${slug}`, now, 'monthly', 0.8)),
+
+    ...rootPagesData.flatMap((item: any) =>
+      forAllLocales(`/${item.slug}`, item._updatedAt || now, 'monthly', 0.8),
+    ),
+
+    ...newsData.flatMap((item: any) =>
+      forAllLocales(`/news/${item.slug}`, item.publishedAt || now, 'weekly', 0.7),
+    ),
   ];
-
-  // Hardcoded static pages + EN versions
-  const folderUrls: MetadataRoute.Sitemap = staticFolders.flatMap((slug) => [
-    { url: `${baseUrl}/${slug}`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.8 },
-    { url: `${baseUrl}/en/${slug}`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.8 },
-  ]);
-
-  // Dynamic Sanity pages + EN versions
-  const rootUrls: MetadataRoute.Sitemap = rootPagesData.flatMap((item: any) => [
-    { url: `${baseUrl}/${item.slug}`, lastModified: item._updatedAt || new Date(), changeFrequency: 'monthly' as const, priority: 0.8 },
-    { url: `${baseUrl}/en/${item.slug}`, lastModified: item._updatedAt || new Date(), changeFrequency: 'monthly' as const, priority: 0.8 },
-  ]);
-
-  // News articles + EN versions
-  const newsUrls: MetadataRoute.Sitemap = newsData.flatMap((item: any) => [
-    { url: `${baseUrl}/news/${item.slug}`, lastModified: item.publishedAt || new Date(), changeFrequency: 'weekly' as const, priority: 0.7 },
-    { url: `${baseUrl}/en/news/${item.slug}`, lastModified: item.publishedAt || new Date(), changeFrequency: 'weekly' as const, priority: 0.7 },
-  ]);
-
-  return [...staticUrls, ...folderUrls, ...rootUrls, ...newsUrls];
 }

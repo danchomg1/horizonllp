@@ -2,44 +2,44 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { client } from '../../lib/sanity';
 import NewsList from '../../components/NewsList';
+import { loc, pick, alternatesFor } from '../../lib/locale';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
-  const isEn = locale === 'en';
-  const canonical = isEn ? 'https://horizon-llp.com/en/news' : 'https://horizon-llp.com/news';
+  const title = pick({
+    ru: 'События и новости',
+    en: 'News & Events',
+    kz: 'Жаңалықтар мен оқиғалар',
+  }, locale);
   return {
-    title: isEn ? 'News & Events | Horizon LLP' : 'События и новости | Horizon LLP',
-    description: isEn
-      ? 'Latest news, events and updates from Horizon LLP — health, safety and environment training centre in Kazakhstan.'
-      : 'Последние новости, события и обновления от Horizon LLP — учебного центра по охране труда и промышленной безопасности в Казахстане.',
-    alternates: {
-      canonical,
-      languages: {
-        'ru': 'https://horizon-llp.com/news',
-        'en': 'https://horizon-llp.com/en/news',
-        'x-default': 'https://horizon-llp.com/news',
-      },
-    },
+    title,
+    description: pick({
+      ru: 'Последние новости, события и обновления от Horizon LLP — учебного центра по охране труда и промышленной безопасности в Казахстане.',
+      en: 'Latest news, events and updates from Horizon LLP — health, safety and environment training centre in Kazakhstan.',
+      kz: 'Horizon LLP жаңалықтары мен оқиғалары — Қазақстандағы еңбекті қорғау және өнеркәсіптік қауіпсіздік оқу орталығы.',
+    }, locale),
+    alternates: alternatesFor(locale, '/news'),
     openGraph: {
-      title: isEn ? 'News & Events | Horizon LLP' : 'События и новости | Horizon LLP',
-      description: isEn
-        ? 'Latest news and events from Horizon LLP.'
-        : 'Последние новости и события Horizon LLP.',
+      title,
+      description: pick({
+        ru: 'Последние новости и события Horizon LLP.',
+        en: 'Latest news and events from Horizon LLP.',
+        kz: 'Horizon LLP соңғы жаңалықтары мен оқиғалары.',
+      }, locale),
       images: [{ url: '/og.jpg', width: 1200, height: 630, alt: 'Horizon LLP' }],
     },
   };
 }
 
-async function getNews(locale: string) {
-  const isEn = locale === 'en';
-  const query = isEn
-    ? `*[_type == "news" && defined(slug.current) && defined(titleEn) && !(_id in path("drafts.**"))] | order(publishedAt desc) [0...40] {
-        _id, title, titleEn, slug, publishedAt, mainImage, description, descriptionEn
-      }`
-    : `*[_type == "news" && defined(slug.current) && !(_id in path("drafts.**"))] | order(publishedAt desc) [0...40] {
-        _id, title, slug, publishedAt, mainImage, description
-      }`;
-  return client.fetch(query, {}, { next: { revalidate: 10 } });
+async function getNews() {
+  return client.fetch(
+    `*[_type == "news" && defined(slug.current) && !(_id in path("drafts.**"))] | order(publishedAt desc) [0...40] {
+      _id, title, titleEn, titleKz, slug, publishedAt, mainImage,
+      description, descriptionEn, descriptionKz
+    }`,
+    {},
+    { next: { revalidate: 10 } }
+  );
 }
 
 export default async function NewsPage({
@@ -50,16 +50,12 @@ export default async function NewsPage({
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('News');
-  const news = await getNews(locale);
-  const isEn = locale === 'en';
-
-  const normalizedNews = isEn
-    ? news.map((item: any) => ({
-        ...item,
-        title: item.titleEn || item.title,
-        description: item.descriptionEn || item.description,
-      }))
-    : news;
+  const news = await getNews();
+  const normalizedNews = news.map((item: any) => ({
+    ...item,
+    title: loc(item, 'title', locale),
+    description: loc(item, 'description', locale),
+  }));
 
   return (
     <div className="min-h-screen bg-[#F4F4F4]">
