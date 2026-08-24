@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { setRequestLocale } from "next-intl/server";
 import Button from "../../components/Button";
+import { pick } from '../../lib/locale';
 
 const TEXT_H2 = "text-[22px] lg:text-[26px] font-semibold text-black opacity-90 leading-tight";
 const TEXT_BODY = "text-[12px] lg:text-[13px] font-normal text-black opacity-80 leading-relaxed";
@@ -40,12 +41,30 @@ const content = {
     benefits: ["Leadership that reflects a model of effective health and safety leadership.", "Health and safety will be considered in future business decision-making.", "Leaders who recognise that their own behaviour impacts health and safety culture."],
     cta: "Submit Request",
   },
+
+  kz: {
+    title: "NEBOSH Leadership Excellence",
+    subtitle: "Қауіпсіздік және еңбекті қорғау саласындағы көшбасшылық",
+    desc: "Өз көшбасшылығының корпоративтік мәдениетке нақты әсерін түсінгісі және адамдардың қауіпсіздігіне зиян келтірмей тиімді бизнес-шешім қабылдауды үйренгісі келетіндерге арналған курс.",
+    audTitle: "Мақсатты аудитория",
+    audItems: ["Жоғарғы және орта деңгей басшылары.", "Еңбекті қорғау менеджерлері.", "Жұмыс орнындағы қауіпсіздік және еңбекті қорғау тұрғысында көшбасшылық қасиеттерін жақсартуға мүдделі кез келген маман."],
+    goalTitle: "Бағдарламаның мақсаты",
+    goalItems: ["Еңбекті қорғауды басқару тұрғысында көшбасшылық дағдыларын дамыту.", "Көшбасшылықтың жұмыс орнындағы қауіпсіздік және еңбекті қорғауға әсерін түсіну.", "Қауіпсіздік мәдениетін қалыптастыру үшін үздік тәжірибелерді қолдану."],
+    topicsTitle: "Бағдарламаның негізгі тақырыптары",
+    topics: ["Қауіпсіздік және еңбекті қорғау саласындағы көшбасшылық дегеніміз не", "ЕҚҚ бойынша жақсы көшбасшылықтың моральдық, құқықтық және қаржылық себептері", "Көшбасшылық пен еңбекті қорғау және қауіпсіздік техникасы мәдениеті арасындағы байланыс", "Көшбасшылықтың әртүрлі стильдері қандай", "Адам қателіктері өнімділік пен мәдениетке қалай әсер етуі мүмкін", "Қауіпсіздік және еңбекті қорғау саласындағы тиімді басшылық моделі", "Көшбасшылар әріптестерімен тиімді қатынас қалай құра алады"],
+    formatTitle: "Бағдарлама форматы",
+    formatDur: "Ұзақтығы: 1 күн (қатысушылардың білім деңгейіне қарай өзгеруі мүмкін).",
+    formatMethod: "Оқыту әдістері: Интерактивті дәрістер, кейс-стади, топтық талқылаулар, практикалық жаттығулар.",
+    benefitsTitle: "Бағдарламаның артықшылықтары",
+    benefits: ["Қауіпсіздік және еңбекті қорғаудың тиімді басшылық моделін көрсететін көшбасшылық.", "Болашақта бизнес-шешім қабылдау кезінде денсаулық пен қауіпсіздік ескерілетін болады.", "Өз мінез-құлқының денсаулық сақтау және қауіпсіздік мәдениетіне әсер ететінін мойындайтын көшбасшылар."],
+    cta: "Өтінім қалдыру",
+  },
 };
 
 export default async function NeboshLpPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = content[locale as 'ru' | 'en'] ?? content.ru;
+  const t = pick(content, locale);
 
   return (
     <main className="bg-[#F4F4F4] min-h-screen pb-20">

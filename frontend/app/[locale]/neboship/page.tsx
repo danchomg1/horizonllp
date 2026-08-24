@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { setRequestLocale } from "next-intl/server";
 import Button from "../../components/Button";
+import { pick } from '../../lib/locale';
 
 const TEXT_H2 = "text-[22px] lg:text-[26px] font-semibold text-black opacity-90 leading-tight";
 const TEXT_BODY = "text-[12px] lg:text-[13px] font-normal text-black opacity-80 leading-relaxed";
@@ -34,12 +35,27 @@ const content = {
     evalDesc: "Analysis of interviews and evidence, compiling a structured action plan to prevent future incidents.",
     cta: "Submit Request",
   },
+
+  kz: {
+    heroSubtitle: "NEBOSH және HSE-дің қысқа бір күндік курсы",
+    heroDesc: "Курс үздік халықаралық тәжірибелерге сүйеніп, күрделі емес оқыс оқиғаларды тиімді тергеуге және олардың қайталануын болдырмауға үйретеді.",
+    audTitle: "Кімге арналған",
+    audItems: ["Басшыларға", "Еңбекті қорғау мамандарына", "SHE кураторларына", "Кәсіподақ және жауапты өкілдерге"],
+    empTitle: "Жұмыс беруші үшін",
+    empItems: ["Қайталанатын жағдайлар санының азаюы", "Ішкі тергеу сапасының артуы", "Сараптамалық деңгей мен сенімнің өсуі", "Имидж пен қауіпсіздік мәдениетінің жақсаруы"],
+    learnTitle: "Курста нені үйренесіз",
+    learnItems: ["Тергеуді өз бетінше жүргізуді", "Сұхбат жүргізіп, дәлелдер жинауды", "Оқыс оқиғалардың қайталануын болдырмау жоспарын әзірлеуді", "Командалық тергеулерге қатысуды", "Жалпы қауіпсіздік мәдениетін арттыруды"],
+    evalTitle: "Бағалау қалай өтеді",
+    evalSubtitle: "Практикалық тапсырма:",
+    evalDesc: "Сұхбат пен дәлелдерді талдау, болашақта оқыс оқиғаның алдын алу үшін құрылымдалған іс-қимыл жоспарын құру.",
+    cta: "Өтінім қалдыру",
+  },
 };
 
 export default async function NeboshIpPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = content[locale as 'ru' | 'en'] ?? content.ru;
+  const t = pick(content, locale);
 
   return (
     <main className="bg-[#F4F4F4] min-h-screen pb-20">

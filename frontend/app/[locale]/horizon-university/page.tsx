@@ -5,6 +5,7 @@ import {
   SlidersHorizontal, Award, Check, ShieldCheck, ArrowRight,
 } from 'lucide-react';
 import Button from '../../components/Button';
+import { pick } from '../../lib/locale';
 
 const content = {
   ru: {
@@ -94,7 +95,7 @@ const content = {
 export default async function HorizonUniversityPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = content[locale as 'ru' | 'en'] ?? content.ru;
+  const t = pick(content, locale);
 
   return (
     <main className="bg-[#F4F4F4] min-h-screen">

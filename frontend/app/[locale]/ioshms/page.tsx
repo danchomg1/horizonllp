@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { setRequestLocale } from "next-intl/server";
 import Button from "../../components/Button";
+import { pick } from '../../lib/locale';
 
 const TEXT_H2 = "text-[22px] lg:text-[26px] font-semibold text-black opacity-90 leading-tight";
 const TEXT_H3 = "text-[15px] font-bold text-black opacity-90 leading-snug";
@@ -83,12 +84,51 @@ const content = {
     resultDesc: "After successfully passing the test and project, you receive the IOSH Managing Safely certificate, which has no expiry date (although refresher courses are recommended every 3 years).",
     cta: "Submit Request",
   },
+
+  kz: {
+    heroSubtitle: "Қауіпсіз басқару",
+    heroDesc: "Бұл басшыларға арналған курс: ол командадағы қауіптер мен ресурстарды басқарудың практикалық құралдарын береді.",
+    audTitle: "Бұл курс кімге арналған?",
+    audItems: ["Курс кез келген сала мен ұйымдағы желілік менеджерлерге, бөлім басшыларына, бригадирлер мен тимлидтерге арналған.", "Оны өту үшін қауіпсіздік бойынша сарапшы болу қажет емес.", "Ол басқа адамдар немесе процестер үшін жауапты тұлғаларға жарамды."],
+    whyTitle: "Бұл не үшін керек?",
+    forCompany: "Компания үшін",
+    comp: [
+      { icon: "icon-comp-cost.png", title: "Шығындарды азайту:", desc: "Авария мен еңбекке жарамсыздық аз болса, қаржылық шығын да аз." },
+      { icon: "icon-comp-legal.png", title: "Құқықтық қорғау:", desc: "Менеджерлеріңіздің құзыретті екенін растайтын дәлел." },
+      { icon: "icon-comp-intl.png", title: "Халықаралық мәртебе:", desc: "IOSH сертификаты бүкіл әлемде танылады." },
+    ],
+    forManager: "Қызметкер (менеджер) үшін",
+    mgr: [
+      { icon: "icon-mgr-resp.png", title: "Жауапкершілікті түсіну:", desc: "Нақты неге жауап беретініңізді білесіз." },
+      { icon: "icon-mgr-skills.png", title: "Практикалық дағдылар:", desc: "Қауіптерді бағалауды және оқыс оқиғаларды тергеуді үйренесіз." },
+      { icon: "icon-mgr-career.png", title: "Мансап:", desc: "Халықаралық сертификат сіздің құндылығыңызды арттырады." },
+    ],
+    progTitle: "Курс бағдарламасы (7 модуль)",
+    progIntro: "Бағдарлама қадам-қадаммен менеджерді қауіпсіздік көшбасшысына айналдыратындай логикалық құрылған:",
+    modules: [
+      { img: "icon-mod-1.png", title: "Қауіпсіз басқаруға кіріспе", desc: "Қауіпсіздік неге тек моральдық қана емес, қаржылық тұрғыдан да маңызды. Менеджердің рөлі." },
+      { img: "icon-mod-2.png", title: "Қауіптерді бағалау", desc: "Негізгі модуль. Қауіп пен қауіптіліктің айырмашылығы. Қауіптер матрицасы (5x5)." },
+      { img: "icon-mod-3.png", title: "Қауіптерді бақылау", desc: "Қорғау шараларын қалай таңдау керек? Бақылау иерархиясы. Ақылға сыйымды практика ұғымы." },
+      { img: "icon-mod-4.png", title: "Жауапкершілікті түсіну", desc: "Заңнамаға шолу (азаматтық және қылмыстық құқық). Заң талаптары." },
+      { img: "icon-mod-5.png", title: "Қауіптерді түсіну", desc: "Қауіптерге шолу: механикалық, физикалық, химиялық, биологиялық және басқалары." },
+      { img: "icon-mod-6.png", title: "Оқыс оқиғаларды тергеу", desc: "Болуға шақ қалған аварияларды тергеудің маңызы. Түбегейлі себепті іздеу." },
+      { img: "icon-mod-7.png", title: "Тиімділікті өлшеу", desc: "Жүйенің жұмыс істеп тұрғанын қалай білуге болады? Белсенді және реактивті мониторинг." },
+    ],
+    formatTitle: "Оқыту және емтихан форматы",
+    durTitle: "Ұзақтығы:", durDesc: "Әдетте 3-4 күнді алатын қарқынды курс (шамамен 22-24 сағат оқу).",
+    evalTitle: "Бағалау (2 кезең):",
+    evalDesc1: "Тест: 45 минут, 30 сұрақ. 60 балдың кемінде 36-сы.",
+    evalDesc2: "Практикалық жоба: 2 апта ішінде нақты жұмыс орнындағы қауіптерді бағалау.",
+    resultTitle: "Нәтиже",
+    resultDesc: "Тест пен жобаны сәтті тапсырғаннан кейін сіз ескіру мерзімі жоқ IOSH Managing Safely сертификатын аласыз (дегенмен әрбір 3 жылда жаңарту курсынан өту ұсынылады).",
+    cta: "Өтінім қалдыру",
+  },
 };
 
 export default async function IoshManagingSafelyPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = content[locale as 'ru' | 'en'] ?? content.ru;
+  const t = pick(content, locale);
 
   return (
     <main className="bg-[#F4F4F4] min-h-screen pb-20">

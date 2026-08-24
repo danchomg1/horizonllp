@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { setRequestLocale } from "next-intl/server";
 import Button from "../../components/Button";
+import { pick } from '../../lib/locale';
 
 const TEXT_H2 = "text-[22px] lg:text-[26px] font-semibold text-black opacity-90 leading-tight";
 const TEXT_H3 = "text-[15px] font-bold text-black opacity-90 leading-snug";
@@ -55,12 +56,37 @@ const content = {
     evalTitle: "Assessment:", evalDesc: "To obtain the certificate, candidates must pass a test confirming mastery of the material.",
     cta: "Submit Request",
   },
+
+  kz: {
+    heroDesc: "Бұл курс қарапайымдылығымен және практикалығымен ерекшеленеді. Ол білім деңгейіне қарамастан кез келген қызметкер қауіпсіздік негіздерін және оқыс оқиғалардың алдын алудың маңызын түсінетіндей әзірленген.",
+    audienceTitle: "Бұл курс кімге арналған?",
+    audienceIntro: "Курс әмбебап және барлық деңгейдегі қызметкерлер мен салаларға жарамды:",
+    audienceItems: ["Жұмысшылар мен техникалық мамандар.", "Менеджерлер мен басшылар (кіріспе курс ретінде).", "Еңбекті қорғау саласындағы түсінігін арттырғысы келетін кез келген қызметкер."],
+    advTitle: "Артықшылықтары",
+    forEmployee: "Қызметкер үшін",
+    ben1Title: "Халықаралық сертификаттау:", ben1Desc: "Курс соңында бүкіл әлемде танылатын IOSH сертификаты берiледi.",
+    ben2Title: "Түсінікті білім:", ben2Desc: "Күрделі терминологияның болмауы нақты міндеттерге назар аударуға мүмкіндік береді.",
+    forCompany: "Компания үшін",
+    comp1Title: "Аварияның азаюы", comp1Desc: "Қызметкерлердің хабардарлығын арттырып, жазатайым оқиғалар санының азаюына ықпал етеді.",
+    comp2Title: "Нормаларға сәйкестік", comp2Desc: "Ұйымға еңбекті қорғау саласындағы заң талаптарын орындауға көмектеседі.",
+    comp3Title: "Бірыңғай стандарт", comp3Desc: "Компания ішінде қауіпсіздіктің ортақ тілін қалыптастырады.",
+    progTitle: "Курс бағдарламасы", progIntro: "Бағдарлама ықшам және ең маңызды аспектілерді қамтиды:",
+    prog1Title: "Қауіпсіз жұмыс қағидаттарына кіріспе", prog1Desc: "Жұмыс орнындағы денсаулықты сақтау және қауіпсіздік негіздері.",
+    prog2Title: "Қауіпті факторлар мен қауіптерді анықтау", prog2Desc: "Қауіп пен қауіптілікті қалай ажыратуға болады және бұл неге маңызды.",
+    prog3Title: "Жалпы қауіпті факторларды анықтау", prog3Desc: "Жұмыс орнындағы тән қауіптерге шолу.",
+    prog4Title: "Қауіпсіздік көрсеткіштерін арттыру", prog4Desc: "Әрбір қызметкер жалпы қауіпсіздікті жақсартуға қалай ықпал ете алады.",
+    formatTitle: "Оқыту және емтихан форматы",
+    durTitle: "Ұзақтығы:", durDesc: "1 күн (топ деңгейіне қарай өзгеруі мүмкін).",
+    methodTitle: "Оқыту әдістері:", methodDesc: "Бұл жай дәрістер емес, бейнематериалдар мен практикалық тапсырмаларды қамтитын интерактивті сабақтар.",
+    evalTitle: "Бағалау:", evalDesc: "Сертификат алу үшін материалдың игерілгенін растайтын бақылау тестінен өту қажет.",
+    cta: "Өтінім қалдыру",
+  },
 };
 
 export default async function IoshWorkingSafelyPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = content[locale as 'ru' | 'en'] ?? content.ru;
+  const t = pick(content, locale);
 
   return (
     <main className="bg-[#F4F4F4] min-h-screen pb-20">

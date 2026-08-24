@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { setRequestLocale } from "next-intl/server";
 import Button from "../../components/Button";
+import { pick } from '../../lib/locale';
 
 const TEXT_H2 = "text-[22px] lg:text-[26px] font-semibold text-black opacity-90 leading-tight";
 const TEXT_H3 = "text-[15px] font-bold text-black opacity-90 leading-snug";
@@ -85,12 +86,52 @@ const content = {
     resultDesc: "Upon completing the course you receive an IOSH certificate and a ready-made strategic plan for implementing Vision Zero in your organisation.",
     cta: "Submit Request",
   },
+
+  kz: {
+    heroSubtitle: "Нөлдік жарақаттану тұжырымдамасы",
+    heroDesc: "Курсты IOSH пен ISSA (International Social Security Association) бірлесіп әзірлеген. Оның негізінде өндірістегі барлық жазатайым оқиға мен кәсіптік ауруды жүйелі тәсілмен болдырмауға болады деген философия жатыр.",
+    heroRight: "Vision Zero тұжырымдамасы үш тірекке негізделген: Қауіпсіздік (Safety), Денсаулық (Health) және Әл-ауқат (Wellbeing).",
+    audTitle: "Бұл курс кімге арналған?",
+    audIntro: "Бұл курс өзгеріс көшбасшыларына — компанияның стратегиясы мен мәдениетін қалыптастыратындарға арналған:",
+    aud: [
+      { title: "Жоғары басшылық және басшылар:", desc: "Көшбасшылықтың қауіпсіздікке қалай әсер ететінін түсіну үшін." },
+      { title: "Еңбекті қорғау мамандары (HSE):", desc: "Заманауи алдын алу мәдениетін енгізу құралдарын алу үшін." },
+      { title: "Желілік менеджерлер:", desc: "Өз адамдарын қауіпсіздік мәселелеріне тарту үшін." },
+    ],
+    audLast: "Қауіпсіз ортаны қалыптастыруға жауапты кез келген қызметкер.",
+    progTitle: "Курс бағдарламасы",
+    prog: [
+      { icon: "icon-prog-what.png", title: "Vision Zero дегеніміз не:", desc: "Тұжырымдамаға алдын алу стратегиясы ретінде кіріспе." },
+      { icon: "icon-prog-rules.png", title: "7 Алтын қағида:", desc: "Қағидаттарды терең талдау." },
+      { icon: "icon-prog-ben.png", title: "Енгізудің артықшылықтары:", desc: "Бұл бизнеске неге тиімді (репутация, шығынды азайту, өнімділік)." },
+      { icon: "icon-prog-action.png", title: "Міндеттеме және іс-қимыл жоспары:", desc: "Теорияны практикаға қалай айналдыруға болады." },
+    ],
+    rulesTitle: "Жеті \"Алтын қағида\"",
+    rulesIntro: "Бұл курстың өзегі. Сіз олар туралы білуден басқа, әрбір қағиданы өз компанияңызға қатысты пысықтайсыз:",
+    rules: [
+      { img: "icon-rule-1.png", title: "Көшбасшылық (Take leadership)", desc: "Басшы қауіпсіздікке берілгендігін өз үлгісімен көрсетуі керек." },
+      { img: "icon-rule-2.png", title: "Қауіптерді анықтау (Identify hazards)", desc: "Қауіптерді жүйелі бақылау (тек физикалық емес, психоәлеуметтік те)." },
+      { img: "icon-rule-3.png", title: "Мақсаттарды белгілеу (Define targets)", desc: "Қауіпсіздік бойынша нақты бағдарламалар әзірлеу." },
+      { img: "icon-rule-4.png", title: "Қауіпсіздік жүйесін құру (Ensure a safe system)", desc: "Процестерді ұйымдастырудың жоғары деңгейі." },
+      { img: "icon-rule-5.png", title: "Жабдық қауіпсіздігі (Safety in machines)", desc: "Қауіпсіз технологиялар мен жұмыс орындарын пайдалану." },
+      { img: "icon-rule-6.png", title: "Біліктілікті арттыру (Improve qualifications)", desc: "Қызметкерлердің құзыреттерін дамыту." },
+      { img: "icon-rule-7.png", title: "Адамдарға инвестиция (Invest in people)", desc: "Персоналды шешім қабылдауға тарту арқылы мотивациялау." },
+    ],
+    formatTitle: "Оқыту форматы және бағалау",
+    durTitle: "Ұзақтығы:", durDesc: "1 күн (6 сағат оқу).",
+    methodTitle: "Әдістер:", methodDesc: "Дәрістер, интерактивті семинарлар, кейстерді талдау (case-studies) және топтық талқылаулар.",
+    evalTitle: "Бағалау (Action Plan):", evalDesc: "Емтиханның орнына әрбір қатысушы 7 Алтын қағиданың әрқайсысымен байланысты Жеке іс-қимыл жоспарын әзірлейді.",
+    evalNote: "Бұл көшбасшылық пен қауіпсіздік мәдениетін жақсарту үшін өз ұйымыңызда жасайтын нақты қадамдар тізімі.",
+    resultTitle: "Нәтиже",
+    resultDesc: "Курс аяқталғаннан кейін сіз IOSH сертификатын және компанияңызда Vision Zero енгізуге арналған дайын стратегиялық жоспар аласыз.",
+    cta: "Өтінім қалдыру",
+  },
 };
 
 export default async function IoshVisionZeroPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = content[locale as 'ru' | 'en'] ?? content.ru;
+  const t = pick(content, locale);
 
   return (
     <main className="bg-[#F4F4F4] min-h-screen pb-20">

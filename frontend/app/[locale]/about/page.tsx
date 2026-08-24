@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Button from "../../components/Button";
+import { pick } from '../../lib/locale';
 
 const TEXT_H2 = "text-[22px] lg:text-[26px] font-semibold text-black opacity-90 leading-tight";
 const TEXT_H3 = "text-[14px] font-bold text-black opacity-90 leading-snug";
@@ -51,12 +52,25 @@ const content = {
     missionText: '— to develop a safety culture and implement modern risk management approaches that protect people, assets and the environment, ensuring sustainable development of enterprises and industries as a whole.',
     cta: 'Submit Request',
   },
+
+  kz: {
+    heroText: 'Өнеркәсіптік қауіпсіздік, еңбекті қорғау, авариялық ден қою және жарылыстан қорғау саласында 2007 жылдан бері жұмыс істейтін қазақстандық компания. Біз кәсіпорындарға өндірістік қауіптерді азайтуға, бизнестің тұрақтылығын арттыруға және халықаралық стандарттар мен саланың үздік тәжірибелері негізінде кемел қауіпсіздік мәдениетін қалыптастыруға көмектесеміз.',
+    keyDirections: 'Негізгі бағыттар мен салалар',
+    dir1Title: 'Персоналды оқыту және құзыреттерін дамыту', dir1Desc: 'Мамандарды әлемдік стандарттар (NEBOSH, IOSH, OPITO, CompEx) және сарапшыларымыздың нақты далалық тәжірибесіне негізделген авторлық курстар бойынша дайындау.',
+    dir2Title: 'Инженерлік және инспекциялық қызметтер', dir2Desc: 'Өнеркәсіптік объектілердің өмірлік циклінің барлық кезеңдерінде кәсіби аудит, техникалық инспекция және инженерлік сүйемелдеу.',
+    dir3Title: 'ЕҚҚ және процестік қауіпсіздік бойынша консалтинг', dir3Desc: 'Бизнесіңіздің ерекшелігі мен міндеттеріне толық бейімделген қауіпсіздікті басқарудың кешенді жүйелерін әзірлеу және енгізу.',
+    expTitle: 'Тәжірибе және аккредитациялар',
+    expDesc: 'Өнеркәсіптік қауіпсіздік, еңбекті қорғау, авариялық ден қою және жарылыстан қорғау саласында 2007 жылдан бері жұмыс істейтін қазақстандық компания. Біз кәсіпорындарға өндірістік қауіптерді азайтуға, бизнестің тұрақтылығын арттыруға және кемел қауіпсіздік мәдениетін қалыптастыруға көмектесеміз.',
+    missionTitle: 'Біздің миссиямыз',
+    missionText: '— адамдарды, активтерді және қоршаған ортаны қорғайтын, кәсіпорындар мен салалардың тұрақты дамуын қамтамасыз ететін қауіпсіздік мәдениетін дамыту және қауіптерді басқарудың заманауи тәсілдерін енгізу.',
+    cta: 'Өтінім қалдыру',
+  },
 };
 
 export default function AboutPage() {
   const params = useParams();
   const locale = (params?.locale as string) || 'ru';
-  const t = content[locale as 'ru' | 'en'] ?? content.ru;
+  const t = pick(content, locale);
   const accrs = accreditations[locale as 'ru' | 'en'] ?? accreditations.ru;
   const [activeAccreditation, setActiveAccreditation] = useState(0);
 

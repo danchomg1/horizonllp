@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { setRequestLocale } from "next-intl/server";
 import Button from "../../components/Button";
+import { pick } from '../../lib/locale';
 
 const TEXT_H2 = "text-[22px] lg:text-[26px] font-semibold text-black opacity-90 leading-tight";
 const TEXT_H3 = "text-[14px] font-bold text-black opacity-90 leading-snug";
@@ -51,12 +52,35 @@ const content = {
     ],
     cta: "Submit Request",
   },
+
+  kz: {
+    heroSubtitle: "(Asset Incident Commander – Initial Response)",
+    heroRight: "Авариялық басқару штабының басшылары мен мүшелеріне арналған практикалық курс. Бағдарлама ірі авария басталған алғашқы сын-тағдырлы минуттарда әрекет етуге үйретеді: қателік құны шектен тыс жоғары, ал шешімдерді жылдам, нақты және фактілерге сүйеніп қабылдау қажет.",
+    icsTitle: "Incident Command System құрылымы бойынша\nоқыс оқиғаларды басқаруды пысықтау",
+    ics: [
+      { img: "icon-info.png", title: "Ақпарат жинау", desc: "және жағдайды бағалау;" },
+      { img: "icon-priority.png", title: "Басымдықтарды белгілеу", desc: "және ресурстарды бөлу;" },
+      { img: "icon-comm.png", title: "Коммуникацияларды басқару", desc: "және жедел қызметтермен өзара іс-қимыл;" },
+      { img: "icon-team.png", title: "Объект командасы, ұлғаюды бақылау және адамдарды, жабдықты, қоршаған ортаны қорғау." },
+      { img: "icon-method.png", title: "Әдістеме:", desc: "Курс нақты хаттамалары бар (SITREP, M/ETHANE және т.б.) қарқынды сценарийлерге негізделген." },
+    ],
+    simTitle: "Шынайылыққа барынша жақын симуляциялар",
+    sim1: "Басты ерекшелігі — оқиғалар динамикасы, күтпеген кірістірулер, ресурстардың шектеулігі, қарама-қайшы хабарламалар және уақыт қысымы.",
+    sim2: "Бұл қатысушыларға нақты аварияда болмай қоймайтын күйзеліс пен ауыртпалықты сезінуге, сонымен бірге басқарымдылықты, шешім тәртібін және команда бақылауын сақтауды үйренуге мүмкіндік береді.",
+    outcomesTitle: "Оқу қорытындысы бойынша қатысушылар:",
+    outcomes: [
+      { img: "icon-confident.png", title: "Сенімді қолданады", desc: "қысым астында шешім қабылдау құралдарын." },
+      { img: "icon-ready.png", title: "Арттырады", desc: "төтенше жағдайларға жалпы дайындықты." },
+      { img: "icon-reduce.png", title: "Азайтады", desc: "шығын, тоқтап қалу және репутациялық салдар қаупін." },
+    ],
+    cta: "Өтінім қалдыру",
+  },
 };
 
 export default async function NocnAicirPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = content[locale as 'ru' | 'en'] ?? content.ru;
+  const t = pick(content, locale);
 
   return (
     <main className="bg-[#F4F4F4] min-h-screen pb-20">

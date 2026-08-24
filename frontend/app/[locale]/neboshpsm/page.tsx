@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { setRequestLocale } from "next-intl/server";
 import Button from "../../components/Button";
+import { pick } from '../../lib/locale';
 
 const TEXT_H2 = "text-[22px] lg:text-[26px] font-semibold text-black opacity-90 leading-tight";
 const TEXT_H3 = "text-[16px] font-semibold text-black opacity-90 leading-tight";
@@ -79,12 +80,49 @@ const content = {
     ],
     cta: "Submit Request",
   },
+
+  kz: {
+    heroSubtitle: "Қауіптілігі жоғары өндірістік кәсіпорындарда қауіпсіздікті басқару",
+    heroRight: "Курс қауіпті процестер мен жабдықты басқаруға және бақылауға жауапты менеджерлерге, басшылар мен инженерлерге арнайы әзірленген.",
+    audTitle: "Мақсатты аудитория",
+    audDesc: "Курс технологиялық қауіпсіздікті басқару маңызды салаларда жұмыс істейтін мамандарға арналған: мұнай-газ, химия, фармацевтика және қауіптілік деңгейі жоғары басқа да өнеркәсіптер.",
+    goalsTitle: "Курс мақсаттары",
+    goals: [
+      { img: "icon-goal-knowledge.png", text: "Технологиялық қауіпсіздік туралы білім мен түсінікті жақсарту" },
+      { img: "icon-goal-risk.png", text: "Қауіптерді бағалау және технологиялық қауіпсіздікті басқару дағдыларын дамыту" },
+      { img: "icon-goal-competence.png", text: "Қауіпсіздік жүйелерін әзірлеу және енгізу бойынша құзыретті арттыру" },
+    ],
+    topicsTitle: "Бағдарламаның негізгі тақырыптары",
+    topics: ["Процестер қауіпсіздігін басқару", "Технологиялық қауіптерді басқару", "Процестердегі қауіптерді бақылау", "Өрт және төтенше жағдайлар кезіндегі әрекеттер"],
+    outcomesTitle: "Оқыту нәтижелері",
+    outcomes: [
+      { text: "Қауіпсіздікті басқару жүйесін құру", img: "icon-res-system.png" },
+      { text: "Активтерді басқару және техникалық қызмет көрсету стратегиялары", img: "icon-res-assets.png" },
+      { text: "Технологиялық жабдықты қауіпсіз іске қосу және тоқтату", img: "icon-res-startup.png" },
+      { text: "Сын-тағдырлы жүйелер мен жабдыққа арналған өнімділік стандарттары", img: "icon-res-standards.png" },
+      { text: "Химиялық реакциялар, қауіпті заттарды үлкен көлемде сақтау, өрт және жарылыстар үшін қауіптер мен бақылау шаралары", img: "icon-res-chemicals.png" },
+      { text: "Авариялық жоспарлардың мақсаты мен ерекшеліктері", img: "icon-res-emergency.png" },
+    ],
+    formatTitle: "Бағдарлама форматы",
+    format: [
+      { img: "icon-format-duration.png", title: "Ұзақтығы", desc: "4 күн. Қатысушылардың білім деңгейіне қарай өзгеруі мүмкін." },
+      { img: "icon-format-exam.png", title: "Бағалау әдістері", desc: "NEBOSH порталында ағылшын тілінде, ұзақтығы 90 минут болатын бақылау тестілеуі." },
+      { img: "icon-format-methods.png", title: "Оқыту әдістері", desc: "Дәрістер, топтық талқылаулар, практикалық тапсырмалар және кейс-стади жиынтығы." },
+    ],
+    benefitsTitle: "Курс артықшылықтары",
+    benefits: [
+      { img: "icon-ben-certificate.png", title: "Сертификаттау", desc: "Емтиханды сәтті тапсырған қатысушылар NEBOSH халықаралық сертификатын алады." },
+      { img: "icon-ben-safety.png", title: "Қауіпсіздікті жақсарту", desc: "Алынған білім мен дағдылар оқыс оқиға ықтималдығын азайтуға және технологиялық қауіпсіздік деңгейін арттыруға көмектеседі." },
+      { img: "icon-ben-career.png", title: "Мансаптық даму", desc: "Біліктілікті арттыру және халықаралық сертификат алу кәсіби өсуге ықпал етеді." },
+    ],
+    cta: "Өтінім қалдыру",
+  },
 };
 
 export default async function NeboshPsmPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = content[locale as 'ru' | 'en'] ?? content.ru;
+  const t = pick(content, locale);
 
   return (
     <main className="bg-[#F4F4F4] min-h-screen pb-20">
