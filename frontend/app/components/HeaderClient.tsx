@@ -7,6 +7,7 @@ import { ChevronDown, Send, Menu, X, Globe } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Button from './Button';
 import { urlFor } from '../lib/sanity';
+import { LOCALES, LOCALE_LABELS, DEFAULT_LOCALE, normalizeLocale, loc, pick, href as hrefFor } from '../lib/locale';
 
 import CoursesDropdown from './CoursesDropdown';
 import ConsultingDropdown from './ConsultingDropdown';
@@ -43,9 +44,9 @@ export default function HeaderClient({
   
   const pathname = usePathname();
   const t = useTranslations('Header');
-  const isEnglish = pathname.startsWith('/en');
-  const locale = isEnglish ? 'en' : 'ru';
-  const isHomePage = pathname === '/' || pathname === '/en';
+  // Язык берём из первого сегмента пути: /en/... , /kz/... , иначе русский
+  const locale = normalizeLocale(pathname.split('/')[1]);
+  const isHomePage = pathname === '/' || pathname === '/en' || pathname === '/kz';
   
   // =========================================================
   // 👇 НАСТРОЙКИ
@@ -173,7 +174,7 @@ export default function HeaderClient({
                 : 'opacity-0 translate-x-4 pointer-events-none' // Скрыт: прозрачный и сдвинут вправо (к центру)
             }
         `}>
-            <Link href={locale === 'en' ? '/en' : '/'} className="block">
+            <Link href={hrefFor('/', locale)} className="block">
                 <div className="w-[91px] h-[22px] relative flex items-center justify-center">
                     {logo ? (
                       <img src={urlFor(logo).url()} alt="Logo" className="w-full h-full object-contain" />
@@ -191,7 +192,7 @@ export default function HeaderClient({
 
             {/* Лого внутри (только для мобильных) */}
             <div className="flex items-center lg:hidden">
-                <Link href={locale === 'en' ? '/en' : '/'} className="block">
+                <Link href={hrefFor('/', locale)} className="block">
                     <div className="w-[80px] h-[20px] relative">
                           {logo ? (
                              <img src={urlFor(logo).url()} alt="Logo" className="w-full h-full object-contain" />
@@ -283,15 +284,15 @@ export default function HeaderClient({
                 <MobileAccordion label={t('about')}>
                     {aboutItems?.map((item: any) => {
                         const slugPath = item.slug.current === 'events' ? 'news' : item.slug.current;
-                        const href = locale === 'en' ? `/en/${slugPath}` : `/${slugPath}`;
+                        const itemHref = hrefFor(slugPath, locale);
                         return (
                             <Link
                                 key={item._id}
-                                href={href}
+                                href={itemHref}
                                 onClick={() => setIsMobileMenuOpen(false)} 
                                 className="block py-2 pl-4 text-sm text-gray-600 border-l-2 border-gray-100 hover:text-[#0B0073]"
                             >
-                                {item.title}
+                                {loc(item, 'title', locale)}
                             </Link>
                         )
                     })}
@@ -300,16 +301,16 @@ export default function HeaderClient({
                 <MobileAccordion label={t('courses')}>
                     {categories?.map((cat: any) => (
                         <div key={cat._id} className="pl-4 py-2 text-sm text-gray-600 border-l-2 border-gray-100 mb-2">
-                            <div className="font-semibold text-black mb-1">{cat.title}</div>
+                            <div className="font-semibold text-black mb-1">{loc(cat, 'title', locale)}</div>
                             <div className="flex flex-col gap-1">
                                 {cat.courses?.map((c: any) => (
                                     <Link
                                         key={c.slug?.current}
-                                        href={locale === 'en' ? `/en/${c.slug?.current}` : `/${c.slug?.current}`}
+                                        href={hrefFor(c.slug?.current, locale)}
                                         onClick={() => setIsMobileMenuOpen(false)}
                                         className="block py-1 hover:text-[#0B0073]"
                                     >
-                                        {c.title}
+                                        {loc(c, 'title', locale)}
                                     </Link>
                                 ))}
                             </div>
@@ -317,11 +318,11 @@ export default function HeaderClient({
                     ))}
                     <div className="pl-4 py-2 text-sm text-gray-600 border-l-2 border-gray-100 mb-2">
                         <div className="font-semibold text-black mb-1">
-                            {locale === 'en' ? 'Online Courses' : 'Онлайн курсы'}
+                            {pick({ ru: 'Онлайн курсы', en: 'Online Courses', kz: 'Онлайн курстар' }, locale)}
                         </div>
                         <div className="flex flex-col gap-1">
                             <Link
-                                href={locale === 'en' ? '/en/horizon-university' : '/horizon-university'}
+                                href={hrefFor('horizon-university', locale)}
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className="block py-1 hover:text-[#0B0073]"
                             >
@@ -333,16 +334,16 @@ export default function HeaderClient({
                 
                 <MobileAccordion label={t('consulting')}>
                     {consultingItems?.map((item: any) => (
-                        <Link key={item._id} href={locale === 'en' ? `/en/${item.slug?.current}` : `/${item.slug?.current}`} onClick={() => setIsMobileMenuOpen(false)} className="block py-2 pl-4 text-sm text-gray-600 border-l-2 border-gray-100 hover:text-[#0B0073]">
-                            {item.title}
+                        <Link key={item._id} href={hrefFor(item.slug?.current, locale)} onClick={() => setIsMobileMenuOpen(false)} className="block py-2 pl-4 text-sm text-gray-600 border-l-2 border-gray-100 hover:text-[#0B0073]">
+                            {loc(item, 'title', locale)}
                         </Link>
                     ))}
                 </MobileAccordion>
 
                 <MobileAccordion label={t('explosion')}>
                     {explosionItems?.map((item: any) => (
-                        <Link key={item._id} href={locale === 'en' ? `/en/${item.slug?.current}` : `/${item.slug?.current}`} onClick={() => setIsMobileMenuOpen(false)} className="block py-2 pl-4 text-sm text-gray-600 border-l-2 border-gray-100 hover:text-[#0B0073]">
-                            {item.title}
+                        <Link key={item._id} href={hrefFor(item.slug?.current, locale)} onClick={() => setIsMobileMenuOpen(false)} className="block py-2 pl-4 text-sm text-gray-600 border-l-2 border-gray-100 hover:text-[#0B0073]">
+                            {loc(item, 'title', locale)}
                         </Link>
                     ))}
                 </MobileAccordion>
@@ -355,7 +356,7 @@ export default function HeaderClient({
                     <div className="pl-4 text-sm text-gray-600 space-y-4">
                         {contactCities?.map((city: any) => (
                             <div key={city._id}>
-                                <div className="font-bold text-[#0B0073]">{city.city}</div>
+                                <div className="font-bold text-[#0B0073]">{loc(city, 'city', locale)}</div>
                                 <div>{city.phones?.[0]}</div>
                             </div>
                         ))}
@@ -409,34 +410,41 @@ function LanguageSwitcher({ locale, pathname }: { locale: string; pathname: stri
     }, []);
 
     const switchTo = (newLocale: string) => {
-        if (newLocale === locale) { setOpen(false); return; }
-        if (newLocale === 'en') {
-            router.push('/en' + (pathname === '/' ? '' : pathname));
-        } else {
-            router.push(pathname.replace(/^\/en/, '') || '/');
-        }
         setOpen(false);
+        if (newLocale === locale) return;
+
+        // Снимаем текущий префикс языка, иначе получится /en/kz/...
+        const seg = pathname.split('/')[1];
+        const bare = (seg === 'en' || seg === 'kz') ? (pathname.slice(seg.length + 1) || '/') : pathname;
+        const prefix = newLocale === DEFAULT_LOCALE ? '' : '/' + newLocale;
+        router.push(prefix + (bare === '/' ? '' : bare) || '/');
     };
 
     return (
         <div ref={ref} className="relative">
             <button
                 onClick={() => setOpen(!open)}
+                aria-label="Выбор языка"
                 className="w-[50px] h-[50px] rounded-[15px] bg-[#0B0073] text-white flex flex-col items-center justify-center gap-0.5 shadow-xl hover:shadow-[0_10px_20px_rgba(11,0,115,0.4)] active:scale-95 transition-all duration-300"
             >
                 <Globe className="w-4 h-4" />
-                <span className="text-[11px] font-bold uppercase leading-none">{locale}</span>
+                <span className="text-[11px] font-bold uppercase leading-none">
+                    {LOCALE_LABELS[normalizeLocale(locale)]}
+                </span>
             </button>
             {open && (
-                <div className="absolute top-full right-0 mt-2 bg-white rounded-[10px] shadow-lg overflow-hidden z-50 w-[60px]">
-                    <button
-                        onClick={() => switchTo('ru')}
-                        className={`w-full px-3 py-2.5 text-sm text-left transition-colors ${locale === 'ru' ? 'text-[#0B0073] font-bold bg-blue-50' : 'hover:bg-gray-50'}`}
-                    >RU</button>
-                    <button
-                        onClick={() => switchTo('en')}
-                        className={`w-full px-3 py-2.5 text-sm text-left transition-colors ${locale === 'en' ? 'text-[#0B0073] font-bold bg-blue-50' : 'hover:bg-gray-50'}`}
-                    >EN</button>
+                <div className="absolute top-full right-0 mt-2 bg-white rounded-[10px] shadow-lg overflow-hidden z-50 w-[64px]">
+                    {LOCALES.map((code) => (
+                        <button
+                            key={code}
+                            onClick={() => switchTo(code)}
+                            className={`w-full px-3 py-2.5 text-sm text-left transition-colors ${
+                                locale === code ? 'text-[#0B0073] font-bold bg-blue-50' : 'hover:bg-gray-50'
+                            }`}
+                        >
+                            {LOCALE_LABELS[code]}
+                        </button>
+                    ))}
                 </div>
             )}
         </div>

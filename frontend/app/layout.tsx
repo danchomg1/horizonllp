@@ -1,5 +1,6 @@
 import { getLocale } from 'next-intl/server';
 import { Montserrat } from 'next/font/google';
+import { HREFLANG, normalizeLocale } from './lib/locale';
 
 const montserrat = Montserrat({
   subsets: ['latin', 'cyrillic'],
@@ -16,7 +17,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
 
   return (
-    <html lang={locale}>
+    <html lang={HREFLANG[normalizeLocale(locale)]}>
       <body className={`${montserrat.variable} font-sans antialiased bg-[#F4F4F4] min-h-screen flex flex-col overflow-x-hidden`}>
         {children}
       </body>

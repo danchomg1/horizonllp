@@ -1,0 +1,35 @@
+{
+  "Header": {
+    "about": "Біз туралы",
+    "courses": "Халықаралық курстар",
+    "consulting": "Консалтинг",
+    "explosion": "Жарылыстан қорғау (IECEx)",
+    "emergency": "Авариялық ден қою",
+    "engineering": "Инжиниринг",
+    "ppe": "ЖҚҚ",
+    "contacts": "Байланыс",
+    "university": "Horizon University",
+    "cta": "Өтінім қалдыру",
+    "mobileEmergency": "Авариялық ден қою",
+    "mobileEngineering": "Инжиниринг",
+    "mobilePpe": "ЖҚҚ",
+    "email": "Email"
+  },
+  "Home": {
+    "cta": "Өтінім қалдыру",
+    "learnMore": "компания туралы толығырақ ▸",
+    "newsTitle": "Соңғы жаңалықтар",
+    "viewAll": "барлық жаңалықтар ▸",
+    "noPhoto": "Сурет жоқ",
+    "noNews": "Әзірге жаңалықтар жоқ."
+  },
+  "News": {
+    "pageTitle": "Жаңалықтар",
+    "back": "Барлық жаңалықтарға қайту",
+    "notFound": "Жаңалық табылмады :("
+  },
+  "Common": {
+    "cta": "Өтінім қалдыру",
+    "notFoundTitle": "Бет табылмады | Horizon LLP"
+  }
+}
