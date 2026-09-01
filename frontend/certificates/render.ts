@@ -1,8 +1,12 @@
 import { readFile } from 'fs/promises';
 import path from 'path';
-import { PDFDocument, rgb, setCharacterSpacing, type PDFFont, type PDFPage } from 'pdf-lib';
+import { LineCapStyle, PDFDocument, rgb, setCharacterSpacing, type PDFFont, type PDFPage } from 'pdf-lib';
 import realFontkit from '@pdf-lib/fontkit';
-import { LAYOUTS, DEFAULT_MARKS, NAVY, BLUE, type FieldSpec, type FontKey } from './layout';
+import {
+  LAYOUTS, DEFAULT_MARKS, CAP_HALF, INFO, INFO_ROW, NAVY, BLUE, WHITE,
+  type FieldSpec, type FontKey, type InfoField,
+} from './layout';
+import { ICONS, type Icon } from './icons';
 import type { CertLocale } from '../app/lib/certificates';
 
 const ASSETS = path.join(process.cwd(), 'certificates');
@@ -124,15 +128,36 @@ function drawField(
 
   const tracking = spec.tracking ?? 0;
   const tc = tracking * placed.size;
+  const first = spec.centerOn !== undefined
+    ? spec.centerOn - CAP_HALF * placed.size
+    : placed.first;
 
   page.pushOperators(setCharacterSpacing(tc));
   placed.lines.forEach((line, i) => {
     const width = measure(font, line, placed.size, tracking);
     const x = spec.align === 'center' ? spec.x - width / 2 : spec.x;
-    const y = placed.first - i * placed.size * placed.lineHeight;
+    const y = first - i * placed.size * placed.lineHeight;
     page.drawText(line, { x, y, size: placed.size, font, color: rgb(color.r, color.g, color.b) });
   });
   page.pushOperators(setCharacterSpacing(0));
+}
+
+/**
+ * Рисует иконку нижнего ряда. Точка отсчёта — левый верхний угол viewBox:
+ * pdf-lib сам переворачивает ось Y для контуров SVG.
+ */
+function drawIcon(page: PDFPage, icon: Icon, x: number, top: number) {
+  const color = rgb(BLUE.r, BLUE.g, BLUE.b);
+  for (const shape of icon.paths) {
+    page.drawSvgPath(shape.d, shape.mode === 'fill'
+      ? { x, y: top, color }
+      : {
+          x, y: top,
+          borderColor: color,
+          borderWidth: 1,
+          ...(shape.round ? { borderLineCap: LineCapStyle.Round } : {}),
+        });
+  }
 }
 
 /**
@@ -165,6 +190,8 @@ export interface CertificateData {
   completed?: string;
   hours?: string;
   trainingDate?: string;
+  /** Две даты вместо одной — тогда столбец подписан «Период обучения». */
+  trainingIsRange?: boolean;
   location?: string;
   instructor?: string;
   director: string;
@@ -218,13 +245,37 @@ export async function renderCertificate(
   draw('name', data.name);
   draw('completed', data.completed);
   draw('course', data.course);
-  draw('hours', data.hours);
-  draw('trainingDate', data.trainingDate);
-  draw('location', data.location);
   draw('director', data.director);
   draw('instructor', data.instructor);
-  draw('code', data.code, BLUE);
+  draw('code', data.code.toUpperCase(), WHITE);
   draw('validUntil', data.validUntil, BLUE);
+
+  // Нижний ряд собираем целиком: бланк даёт только полоски-разделители.
+  // Столбец без значения пропускаем вместе с иконкой и подписью — соседние
+  // столбцы при этом остаются на месте.
+  const cells: Record<InfoField, { text?: string; label: string }> = {
+    hours: { text: data.hours, label: layout.labels.hours },
+    trainingDate: {
+      text: data.trainingDate,
+      label: data.trainingIsRange ? layout.labels.trainingPeriod : layout.labels.trainingDate,
+    },
+    location: { text: data.location, label: layout.labels.location },
+  };
+
+  for (const column of INFO_ROW) {
+    const cell = cells[column.field];
+    if (!cell.text?.trim()) continue;
+
+    drawIcon(page, ICONS[column.icon], column.iconX, INFO.iconTop);
+    page.drawText(cell.label, {
+      x: column.textX,
+      y: INFO.labelBaseline,
+      size: INFO.labelSize,
+      font: onestRegular,
+      color: rgb(BLUE.r, BLUE.g, BLUE.b),
+    });
+    drawField(page, onestRegular, column.value, cell.text, NAVY);
+  }
 
   // Печать и подпись: положение общее для всех языков, печать кладётся
   // поверх подписи — в этом порядке их и ставят от руки.

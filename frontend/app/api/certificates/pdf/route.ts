@@ -36,9 +36,13 @@ function pickField(row: CertificateRow, base: string, locale: CertLocale): strin
 function toCertificateData(row: CertificateRow, locale: CertLocale, director: string): CertificateData {
   const labels = LABELS[locale];
 
+  // Дат может не быть вовсе — тогда столбец на бланке остаётся пустым.
+  // Одна дата подписывается «Дата проведения», две — «Период обучения».
+  // Совпадающие концы считаем одним днём: курс на один день так и заводят.
+  const isRange = Boolean(row.training_from && row.training_to && row.training_to !== row.training_from);
   const trainingDate = row.training_from
-    ? (row.training_to
-        ? formatDateRange(row.training_from, row.training_to, locale)
+    ? (isRange
+        ? formatDateRange(row.training_from, row.training_to!, locale)
         : formatCertDate(row.training_from, locale))
     : undefined;
 
@@ -56,6 +60,7 @@ function toCertificateData(row: CertificateRow, locale: CertLocale, director: st
     completed: pickField(row, 'completed', locale) || undefined,
     hours: row.hours ? formatHours(row.hours, locale) : undefined,
     trainingDate,
+    trainingIsRange: isRange,
     location: pickField(row, 'location', locale) || undefined,
     instructor: pickField(row, 'instructor', locale) || undefined,
     director,
@@ -107,8 +112,10 @@ const SAMPLE: CertificateRow = {
   location_kz: 'Қазақстан, Атырау қаласы',
   completed_kz: 'оқу курсын сәтті аяқтады',
 
+  // Период, а не один день: это самое широкое значение в нижнем ряду,
+  // на образце сразу видно, влезает ли оно в столбец.
   training_from: '2026-03-15',
-  training_to: null,
+  training_to: '2026-03-19',
   hours: 16,
   issued_at: '2026-03-15',
   perpetual: false,

@@ -1,3 +1,4 @@
+import { ICONS, type IconKey } from './icons';
 import type { CertLocale } from '../app/lib/certificates';
 
 /**
@@ -34,12 +35,23 @@ export interface FieldSpec {
   maxWidth: number;
   /** Межбуквенный интервал в долях кегля. */
   tracking?: number;
+  /**
+   * Отметка, по которой текст центрируется по высоте вместо базовой линии
+   * из варианта. Нужна номеру на плашке: у длинных номеров кегль меньше,
+   * а сидеть в плашке они должны так же ровно.
+   */
+  centerOn?: number;
   variants: Variant[];
 }
+
+/** Половина высоты прописных Onest в долях кегля — для centerOn. */
+export const CAP_HALF = 0.36;
 
 /** Тёмно-синий основного текста и синий нижней строки — сняты с бланка. */
 export const NAVY = { r: 0x05 / 255, g: 0x1b / 255, b: 0x38 / 255 };
 export const BLUE = { r: 0x05 / 255, g: 0x38 / 255, b: 0x7f / 255 };
+/** Номер сертификата лежит на тёмной плашке, поэтому он вывернутый. */
+export const WHITE = { r: 1, g: 1, b: 1 };
 
 /** Поля, одинаковые во всех трёх бланках. */
 const COMMON = {
@@ -56,14 +68,15 @@ const COMMON = {
     ],
   },
 
-  // Нижний ряд подписей: директор слева, преподаватель справа.
+  // Нижний ряд подписей: директор слева, преподаватель справа. Подписи полей
+  // напечатаны на бланке в полосе 114–126, имена идут под ними на одной высоте.
   director: {
     font: 'onestBold' as FontKey,
     align: 'left' as const,
     x: 94,
     maxWidth: 200,
     tracking: 0.017,
-    variants: [{ max: 12, min: 8, lineHeight: 1.2, first: 101.5 }],
+    variants: [{ max: 12, min: 8, lineHeight: 1.2, first: 97 }],
   },
   instructor: {
     font: 'onestBold' as FontKey,
@@ -71,49 +84,112 @@ const COMMON = {
     x: 543,
     maxWidth: 205,
     tracking: 0.017,
-    variants: [{ max: 12, min: 8, lineHeight: 1.2, first: 101.5 }],
+    variants: [{ max: 12, min: 8, lineHeight: 1.2, first: 97 }],
   },
 
-  // Подвал: номер и срок действия.
+  /**
+   * Номер сертификата лежит на тёмной плашке бланка: 94–168 по горизонтали,
+   * 40.1–64 по вертикали. Ставим его по центру плашки белым жирным, между
+   * символами 2 пт воздуха — отсюда и tracking.
+   *
+   * Новые номера пятизначные и печатаются полным кеглем. Старые бывают
+   * длиннее (в архиве встречаются до четырнадцати знаков), поэтому кегль
+   * снижается: 62 пт ширины оставляют по 6 пт полей внутри плашки.
+   */
   code: {
-    font: 'onestRegular' as FontKey,
-    align: 'left' as const,
-    x: 101,
-    maxWidth: 240,
-    tracking: 0.02,
-    variants: [{ max: 14, min: 9, lineHeight: 1.2, first: 47 }],
+    font: 'onestBold' as FontKey,
+    align: 'center' as const,
+    x: 131,
+    maxWidth: 62,
+    tracking: 2 / 13,
+    centerOn: 52.06,
+    // first здесь не используется: базовую линию задаёт centerOn.
+    variants: [{ max: 13, min: 6.5, lineHeight: 1.2, first: 47.4 }],
   },
+  // Срок действия стоит рядом с плашкой и выравнен по её оптическому центру.
   validUntil: {
     font: 'onestRegular' as FontKey,
     align: 'left' as const,
     x: 351,
     maxWidth: 250,
     tracking: 0.02,
-    variants: [{ max: 10, min: 7, lineHeight: 1.2, first: 57 }],
+    variants: [{ max: 10, min: 7, lineHeight: 1.2, first: 48.5 }],
   },
 } satisfies Record<string, FieldSpec>;
 
-/** Ряд «Продолжительность — Дата — Место» на y=195, кегль общий на три колонки. */
-function infoRow(xs: [number, number, number]) {
-  const spec = (x: number, maxWidth: number): FieldSpec => ({
-    font: 'onestRegular',
-    align: 'left',
-    x,
-    maxWidth,
-    tracking: 0,
-    variants: [{ max: 12, min: 7.5, lineHeight: 1.2, first: 195 }],
-  });
-  // Правая граница содержимого бланка — 748 пт, дальше идёт золотая диагональ.
+/* ------------------------------------------------------------------ *
+ * Нижний ряд: продолжительность, даты, место                          *
+ * ------------------------------------------------------------------ */
+
+/**
+ * От этого ряда в бланке остались только три вертикальные полоски — по одной
+ * слева от каждого столбца (115.5, 310.8 и 531.8). Иконку, подпись и значение
+ * рисуем сами: столбец с датами появляется не всегда, а подпись без значения
+ * смотрелась бы браком.
+ */
+export type InfoField = 'hours' | 'trainingDate' | 'location';
+
+export interface InfoColumn {
+  field: InfoField;
+  icon: IconKey;
+  /** Левый край иконки; её верх — на INFO.iconTop. */
+  iconX: number;
+  /** Левый край подписи и значения. */
+  textX: number;
+  /** Значение идёт второй строкой, под подписью. */
+  value: FieldSpec;
+}
+
+export const INFO = {
+  /** Верх иконки и базовая линия подписи. */
+  iconTop: 221,
+  labelBaseline: 211,
+  labelSize: 10,
+};
+
+/** Воздух между иконкой и текстом — снят со старого бланка. */
+const ICON_GAP = 10;
+
+export const INFO_ROW: InfoColumn[] = (
+  [
+    // limit — правая граница столбца: у первых двух это следующая полоска
+    // минус воздух, у последнего — правый край содержимого бланка.
+    { field: 'hours', icon: 'duration', iconX: 135.5, limit: 298.7 },
+    { field: 'trainingDate', icon: 'calendar', iconX: 330.8, limit: 519.7 },
+    { field: 'location', icon: 'pin', iconX: 551.8, limit: 748 },
+  ] as const
+).map(({ field, icon, iconX, limit }) => {
+  const textX = iconX + ICONS[icon].width + ICON_GAP;
   return {
-    hours: spec(xs[0], xs[1] - xs[0] - 12),
-    trainingDate: spec(xs[1], xs[2] - xs[1] - 12),
-    location: spec(xs[2], 748 - xs[2]),
+    field,
+    icon,
+    iconX,
+    textX,
+    value: {
+      font: 'onestRegular' as FontKey,
+      align: 'left' as const,
+      x: textX,
+      maxWidth: limit - textX,
+      tracking: 0,
+      variants: [{ max: 12, min: 7.5, lineHeight: 1.2, first: 195 }],
+    },
   };
+});
+
+/** Подписи нижнего ряда — печатаются вместе со значениями. */
+export interface InfoLabels {
+  hours: string;
+  /** Курс уложился в один день. */
+  trainingDate: string;
+  /** Две даты, начало и конец. */
+  trainingPeriod: string;
+  location: string;
 }
 
 export interface Layout {
   template: string;
   fields: Record<string, FieldSpec>;
+  labels: InfoLabels;
 }
 
 /**
@@ -124,9 +200,14 @@ export interface Layout {
 export const LAYOUTS: Record<CertLocale, Layout> = {
   ru: {
     template: 'ru.pdf',
+    labels: {
+      hours: 'Продолжительность',
+      trainingDate: 'Дата проведения',
+      trainingPeriod: 'Период обучения',
+      location: 'Место проведения',
+    },
     fields: {
       ...COMMON,
-      ...infoRow([168.7, 392.7, 604.7]),
       completed: {
         font: 'onestRegular', align: 'center', x: CENTER, maxWidth: 300, tracking: 0.017,
         variants: [
@@ -147,9 +228,14 @@ export const LAYOUTS: Record<CertLocale, Layout> = {
 
   en: {
     template: 'en.pdf',
+    labels: {
+      hours: 'Duration',
+      trainingDate: 'Delivery Date',
+      trainingPeriod: 'Training Period',
+      location: 'Location',
+    },
     fields: {
       ...COMMON,
-      ...infoRow([231.2, 397.2, 591.2]),
       completed: {
         font: 'onestRegular', align: 'center', x: CENTER, maxWidth: 340, tracking: 0.017,
         variants: [
@@ -170,9 +256,14 @@ export const LAYOUTS: Record<CertLocale, Layout> = {
 
   kz: {
     template: 'kz.pdf',
+    labels: {
+      hours: 'Ұзақтығы',
+      trainingDate: 'Өткізілген күні',
+      trainingPeriod: 'Оқу кезеңі',
+      location: 'Өткізілген жері',
+    },
     fields: {
       ...COMMON,
-      ...infoRow([212.2, 382.2, 580.2]),
       completed: {
         font: 'onestRegular', align: 'center', x: CENTER, maxWidth: 330, tracking: 0.017,
         variants: [
