@@ -112,40 +112,32 @@ export function formatHours(value: number, locale: CertLocale): string {
  * Даты                                                                *
  * ------------------------------------------------------------------ */
 
-const MONTHS: Record<CertLocale, string[]> = {
-  ru: ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-       'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'],
-  en: ['January', 'February', 'March', 'April', 'May', 'June',
-       'July', 'August', 'September', 'October', 'November', 'December'],
-  kz: ['қаңтар', 'ақпан', 'наурыз', 'сәуір', 'мамыр', 'маусым',
-       'шілде', 'тамыз', 'қыркүйек', 'қазан', 'қараша', 'желтоқсан'],
-};
+/**
+ * Даты на бланке числовые — так они набраны в образцах, которые выдаёт
+ * компания: «15.03.2026 г.» по-русски, «15.03.2026 ж.» по-казахски и
+ * просто «15.03.2026» по-английски, где подпись поля уже всё поясняет.
+ */
+const DATE_SUFFIX: Record<CertLocale, string> = { ru: ' г.', en: '', kz: ' ж.' };
 
-/** «15 января 2026 г.» / «15 January 2026» / «2026 жылғы 15 қаңтар». */
-export function formatCertDate(iso: string, locale: CertLocale): string {
+function plainDate(iso: string): string | null {
   const [y, m, d] = iso.split('-').map(Number);
-  if (!y || !m || !d) return iso;
-
-  const month = MONTHS[locale][m - 1];
-  if (locale === 'en') return `${d} ${month} ${y}`;
-  if (locale === 'kz') return `${y} жылғы ${d} ${month}`;
-  return `${d} ${month} ${y} г.`;
+  if (!y || !m || !d) return null;
+  return `${String(d).padStart(2, '0')}.${String(m).padStart(2, '0')}.${y}`;
 }
 
-/** Диапазон обучения: «15–19 января 2026 г.», месяц не повторяется. */
+/** «15.03.2026 г.» / «15.03.2026» / «15.03.2026 ж.». */
+export function formatCertDate(iso: string, locale: CertLocale): string {
+  const plain = plainDate(iso);
+  return plain ? plain + DATE_SUFFIX[locale] : iso;
+}
+
+/** Диапазон обучения: «15.03.2026 – 19.03.2026 г.», суффикс один на оба конца. */
 export function formatDateRange(fromIso: string, toIso: string, locale: CertLocale): string {
   if (!toIso || fromIso === toIso) return formatCertDate(fromIso, locale);
 
-  const [fy, fm, fd] = fromIso.split('-').map(Number);
-  const [ty, tm] = toIso.split('-').map(Number);
+  const from = plainDate(fromIso);
+  const to = plainDate(toIso);
+  if (!from || !to) return formatCertDate(fromIso, locale);
 
-  if (fy === ty && fm === tm) {
-    const tail = formatCertDate(toIso, locale);
-    // Подменяем в готовой строке только день начала — так падежи и
-    // порядок слов остаются правильными для каждого языка.
-    return locale === 'kz'
-      ? tail.replace(/(\d+)\s/, `${fd}–$1 `)
-      : `${fd}–${tail}`;
-  }
-  return `${formatCertDate(fromIso, locale)} — ${formatCertDate(toIso, locale)}`;
+  return `${from} – ${to}${DATE_SUFFIX[locale]}`;
 }

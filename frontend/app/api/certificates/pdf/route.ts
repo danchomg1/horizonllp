@@ -2,7 +2,8 @@ import JSZip from 'jszip';
 import { isAuthorized, unauthorized } from '../../../lib/adminAuth';
 import { getById, type CertificateRow } from '../../../lib/db';
 import { formatCertDate, formatDateRange, formatHours, type CertLocale } from '../../../lib/certificates';
-import { renderCertificate, type CertificateData } from '../../../../certificates/render';
+import { renderCertificate, type CertificateData, type StampPlacement } from '../../../../certificates/render';
+import { getCertSettings, clearCertSettingsCache, type CertSettings } from '../../../lib/certSettings';
 
 export const runtime = 'nodejs';
 // Пакет из десятков сертификатов не укладывается в стандартный лимит
@@ -10,11 +11,16 @@ export const maxDuration = 60;
 
 const LOCALES: CertLocale[] = ['ru', 'en', 'kz'];
 
-/** Подписи «действует до» и «бессрочно» на каждом языке. */
+/**
+ * Срок действия. Подпись поля напечатана на бланке («Срок действия
+ * сертификата», «Valid until», «Жарамдылық мерзімі»), поэтому в значении
+ * повторять её не нужно — по образцам там стоит одна дата, и только
+ * по-русски перед ней есть «до».
+ */
 const LABELS: Record<CertLocale, { until: (d: string) => string; perpetual: string }> = {
   ru: { until: (d) => `до ${d}`, perpetual: 'бессрочный' },
-  en: { until: (d) => `until ${d}`, perpetual: 'unlimited' },
-  kz: { until: (d) => `${d} дейін`, perpetual: 'мерзімсіз' },
+  en: { until: (d) => d, perpetual: 'unlimited' },
+  kz: { until: (d) => d, perpetual: 'мерзімсіз' },
 };
 
 /** Значение поля на нужном языке с откатом на русское. */
@@ -60,6 +66,91 @@ function availableLocales(row: CertificateRow, requested: CertLocale[]): CertLoc
   return requested.filter((l) => l === 'ru' || (l === 'en' && row.has_en) || (l === 'kz' && row.has_kz));
 }
 
+/** Положение меток в том виде, в котором его ждёт отрисовка. */
+function placementOf(settings: CertSettings): StampPlacement {
+  return { signature: settings.signature, stamp: settings.stamp };
+}
+
+/**
+ * Запись-образец для проверки настроек. Заполнены все поля бланка, включая
+ * самое длинное — название курса, чтобы сразу было видно перенос строк.
+ */
+const SAMPLE: CertificateRow = {
+  id: 0,
+  code: 'ABC23',
+
+  first_name_ru: 'Асхат',
+  last_name_ru: 'Ералиев',
+  company_ru: null,
+  course_ru: 'Управление технологической безопасностью на опасных производственных объектах',
+  instructor_ru: 'Абулханова Гульнара',
+  location_ru: 'Казахстан, г. Атырау',
+  completed_ru: 'успешно прошёл(а) курс обучения',
+
+  has_en: true,
+  first_name_en: 'Askhat',
+  last_name_en: 'Yeraliyev',
+  company_en: null,
+  course_en: 'Process Safety Management at Hazardous Production Facilities',
+  instructor_en: 'Abulkhanova Gulnara',
+  location_en: 'Kazakhstan, Atyrau',
+  completed_en: 'has successfully completed the training course',
+
+  has_kz: true,
+  first_name_kz: 'Асхат',
+  last_name_kz: 'Ералиев',
+  company_kz: null,
+  course_kz: 'Қауіпті өндірістік объектілердегі технологиялық қауіпсіздікті басқару',
+  instructor_kz: 'Әбілқанова Гүлнара',
+  location_kz: 'Қазақстан, Атырау қаласы',
+  completed_kz: 'оқу курсын сәтті аяқтады',
+
+  training_from: '2026-03-15',
+  training_to: null,
+  hours: 16,
+  issued_at: '2026-03-15',
+  perpetual: false,
+  valid_until: '2027-03-15',
+
+  course_ref: null,
+  instructor_ref: null,
+  notes: null,
+  created_at: '',
+  updated_at: '',
+};
+
+/**
+ * Образец с текущими настройками печати и подписи.
+ * Кэш сбрасываем, иначе только что сохранённая в Studio правка
+ * не будет видна ещё минуту — а смотрят образец именно ради неё.
+ */
+export async function GET(req: Request) {
+  if (!isAuthorized(req)) return unauthorized();
+
+  const asked = new URL(req.url).searchParams.get('locale');
+  const locale = LOCALES.includes(asked as CertLocale) ? (asked as CertLocale) : 'ru';
+
+  clearCertSettingsCache();
+  const settings = await getCertSettings();
+
+  try {
+    const bytes = await renderCertificate(
+      locale,
+      toCertificateData(SAMPLE, locale, settings.director[locale]),
+      placementOf(settings),
+    );
+    return new Response(bytes as BodyInit, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `inline; filename="obrazec-${locale}.pdf"`,
+      },
+    });
+  } catch (error) {
+    console.error('Не удалось собрать образец:', error);
+    return Response.json({ error: 'Ошибка генерации образца' }, { status: 500 });
+  }
+}
+
 export async function POST(req: Request) {
   if (!isAuthorized(req)) return unauthorized();
 
@@ -77,7 +168,11 @@ export async function POST(req: Request) {
     .filter((l): l is CertLocale => LOCALES.includes(l as CertLocale));
   if (!requested.length) return Response.json({ error: 'Не выбран язык' }, { status: 400 });
 
-  const director = String(body.director ?? 'Малик Бакытбек');
+  // Подписант и положение печати задаются в Studio; из запроса приходит
+  // только явная замена подписанта для конкретной пачки.
+  const settings = await getCertSettings();
+  const override = typeof body.director === 'string' ? body.director.trim() : '';
+  const placement = placementOf(settings);
 
   try {
     const files: { name: string; bytes: Uint8Array }[] = [];
@@ -94,7 +189,8 @@ export async function POST(req: Request) {
       }
 
       for (const locale of locales) {
-        const bytes = await renderCertificate(locale, toCertificateData(row, locale, director));
+        const director = override || settings.director[locale];
+        const bytes = await renderCertificate(locale, toCertificateData(row, locale, director), placement);
         const person = pickField(row, 'last_name', 'en') || pickField(row, 'last_name', 'ru');
         files.push({
           name: `${row.code}-${locale.toUpperCase()}-${person}.pdf`.replace(/[\\/:*?"<>|]/g, '_'),

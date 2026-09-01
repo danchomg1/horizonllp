@@ -193,11 +193,22 @@ export const LAYOUTS: Record<CertLocale, Layout> = {
 };
 
 /**
- * Печать и подпись. Позиция одна на все языки — задаётся один раз
- * и переопределяется настройкой в Studio, не трогая код.
- * x/y — левый нижний угол, width — ширина в пунктах.
+ * Печать и подпись по умолчанию — действуют, пока в Studio не задали своё
+ * положение. Одно на все три языка: нижний блок у бланков совпадает.
+ *
+ * Здесь миллиметры от левого верхнего угла листа, как в Studio; в пункты
+ * PDF переводит app/lib/certSettings.ts. x/y — центр картинки, высота
+ * берётся по пропорциям файла.
  */
-export const STAMPS = {
-  signature: { file: 'signature.png', x: 108, y: 89, width: 86 },
-  stamp: { file: 'stamp.png', x: 230, y: 124, width: 72 },
+const MM = 72 / 25.4;
+
+function mark(xMm: number, yMm: number, widthMm: number) {
+  return { x: xMm * MM, y: PAGE.height - yMm * MM, width: widthMm * MM };
+}
+
+export const DEFAULT_MARKS = {
+  // Подпись ложится на линию над словами «Генеральный директор»,
+  // печать перекрывает её правый край — как ставят от руки.
+  signature: mark(53.6, 152.2, 42),
+  stamp: mark(88, 152, 32),
 };
