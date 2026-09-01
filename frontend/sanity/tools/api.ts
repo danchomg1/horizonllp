@@ -55,6 +55,59 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export type CertLocale = 'ru' | 'en' | 'kz';
+
+/** Имя файла из Content-Disposition; если сервер его не прислал — запасное. */
+function filenameFrom(res: Response, fallback: string): string {
+  const match = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '');
+  return match ? match[1] : fallback;
+}
+
+/**
+ * Скачивает бинарный ответ. Обычный fetch не умеет сохранять файл сам,
+ * поэтому заворачиваем тело в blob и кликаем по временной ссылке.
+ * Возвращает число записей, пропущенных сервером.
+ */
+async function download(path: string, init: RequestInit, fallbackName: string): Promise<number> {
+  const res = await fetch(`/api/certificates${path}`, {
+    ...init,
+    headers: { 'Content-Type': 'application/json', 'x-admin-key': getKey(), ...(init.headers ?? {}) },
+  });
+
+  if (!res.ok) {
+    let message = `Ошибка ${res.status}`;
+    try {
+      const body = await res.json();
+      if (body?.error) message = body.error;
+    } catch {
+      // тело не JSON — оставляем общий текст
+    }
+    throw new ApiError(message, res.status);
+  }
+
+  const url = URL.createObjectURL(await res.blob());
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filenameFrom(res, fallbackName);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  // Ссылку освобождаем с запасом: часть браузеров читает blob уже после клика
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+
+  return Number(res.headers.get('X-Skipped') ?? 0);
+}
+
+/** Готовит выбранные сертификаты: один файл — PDF, несколько — архив. */
+export function downloadCertificates(ids: number[], locales: CertLocale[]): Promise<number> {
+  return download('/pdf', { method: 'POST', body: JSON.stringify({ ids, locales }) }, 'certificates.zip');
+}
+
+/** Образец с текущими настройками печати и подписи из Studio. */
+export function downloadSample(locale: CertLocale): Promise<number> {
+  return download(`/pdf?locale=${locale}`, {}, `obrazec-${locale}.pdf`);
+}
+
 export interface Certificate {
   id: number;
   code: string;

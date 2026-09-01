@@ -1,7 +1,9 @@
 import JSZip from 'jszip';
 import { isAuthorized, unauthorized } from '../../../lib/adminAuth';
 import { getById, type CertificateRow } from '../../../lib/db';
-import { formatCertDate, formatDateRange, formatHours, type CertLocale } from '../../../lib/certificates';
+import {
+  formatCertDate, formatDateRange, formatHours, transliterate, type CertLocale,
+} from '../../../lib/certificates';
 import { renderCertificate, type CertificateData, type StampPlacement } from '../../../../certificates/render';
 import { getCertSettings, clearCertSettingsCache, type CertSettings } from '../../../lib/certSettings';
 
@@ -191,9 +193,12 @@ export async function POST(req: Request) {
       for (const locale of locales) {
         const director = override || settings.director[locale];
         const bytes = await renderCertificate(locale, toCertificateData(row, locale, director), placement);
-        const person = pickField(row, 'last_name', 'en') || pickField(row, 'last_name', 'ru');
+        // Фамилия в имени файла всегда латиницей: кириллица в архивах
+        // читается не во всех распаковщиках. Английское поле берём напрямую,
+        // потому что pickField откатился бы на русское написание.
+        const person = row.last_name_en?.trim() || transliterate(row.last_name_ru);
         files.push({
-          name: `${row.code}-${locale.toUpperCase()}-${person}.pdf`.replace(/[\\/:*?"<>|]/g, '_'),
+          name: `${row.code}-${locale.toUpperCase()}-${person}.pdf`.replace(/[^A-Za-z0-9._-]/g, '_'),
           bytes,
         });
       }

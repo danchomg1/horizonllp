@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { listCertificates, removeCertificate, type Certificate, type SortKey } from './api';
+import {
+  listCertificates, removeCertificate, downloadCertificates, downloadSample,
+  type Certificate, type SortKey, type CertLocale,
+} from './api';
 import { s } from './styles';
 
 const COLUMNS: { key: SortKey; title: string }[] = [
@@ -13,6 +16,12 @@ const COLUMNS: { key: SortKey; title: string }[] = [
 ];
 
 const PER_PAGE = 25;
+
+const LOCALES: { key: CertLocale; title: string }[] = [
+  { key: 'ru', title: 'Русский' },
+  { key: 'en', title: 'English' },
+  { key: 'kz', title: 'Қазақша' },
+];
 
 function validity(row: Certificate): { text: string; tone: 'ok' | 'warn' | 'off' } {
   if (row.perpetual) return { text: 'бессрочный', tone: 'ok' };
@@ -41,6 +50,13 @@ export function CertificateList({ onEdit, onCreate, refreshToken }: Props) {
   const [dir, setDir] = useState<'asc' | 'desc'>('desc');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Отметки живут по id и переживают смену страницы: выдачу часто собирают
+  // из людей, найденных разными запросами.
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [locales, setLocales] = useState<CertLocale[]>(['ru']);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState('');
 
   // Запросы могут вернуться не в том порядке, в каком ушли; помечаем актуальный
   const requestId = useRef(0);
@@ -74,11 +90,73 @@ export function CertificateList({ onEdit, onCreate, refreshToken }: Props) {
     setPage(1);
   };
 
+  const allOnPage = rows.length > 0 && rows.every((row) => selected.has(row.id));
+
+  const toggleRow = (id: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const togglePage = () => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const row of rows) {
+        if (allOnPage) next.delete(row.id);
+        else next.add(row.id);
+      }
+      return next;
+    });
+  };
+
+  const toggleLocale = (key: CertLocale) => {
+    setLocales((prev) => (prev.includes(key) ? prev.filter((l) => l !== key) : [...prev, key]));
+  };
+
+  const handleDownload = async () => {
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      const skipped = await downloadCertificates([...selected], locales);
+      setNotice(
+        skipped
+          ? `Файл собран. Пропущено записей без выбранных языков: ${skipped}`
+          : 'Файл собран и скачивается',
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось собрать PDF');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleSample = async () => {
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      await downloadSample(locales[0] ?? 'ru');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось собрать образец');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleDelete = async (row: Certificate) => {
     const name = `${row.last_name_ru} ${row.first_name_ru}`;
     if (!confirm(`Удалить сертификат ${row.code} (${name})?\n\nДействие необратимо.`)) return;
     try {
       await removeCertificate(row.id);
+      setSelected((prev) => {
+        const next = new Set(prev);
+        next.delete(row.id);
+        return next;
+      });
       load(query);
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Не удалось удалить');
@@ -104,7 +182,43 @@ export function CertificateList({ onEdit, onCreate, refreshToken }: Props) {
         <button style={s.primary} onClick={onCreate}>+ Выдать сертификат</button>
       </div>
 
+      <div style={{ ...s.spread, ...s.bar, marginBottom: '14px' }}>
+        <div style={{ ...s.row, flexWrap: 'wrap' }}>
+          <span style={s.muted}>Языки:</span>
+          {LOCALES.map((locale) => (
+            <label key={locale.key} style={s.check}>
+              <input
+                type="checkbox"
+                checked={locales.includes(locale.key)}
+                onChange={() => toggleLocale(locale.key)}
+              />
+              {locale.title}
+            </label>
+          ))}
+          <button style={s.button} onClick={handleSample} disabled={busy} title="PDF с текущей печатью и подписью">
+            Образец
+          </button>
+        </div>
+
+        <div style={{ ...s.row, flexWrap: 'wrap' }}>
+          <span style={s.muted}>
+            {selected.size ? `Отмечено: ${selected.size}` : 'Отметьте строки для выдачи'}
+          </span>
+          <button
+            style={s.primary}
+            onClick={handleDownload}
+            disabled={busy || !selected.size || !locales.length}
+          >
+            {busy ? 'Собираем…' : 'Скачать PDF'}
+          </button>
+          {selected.size > 0 && (
+            <button style={s.button} onClick={() => setSelected(new Set())}>Снять отметки</button>
+          )}
+        </div>
+      </div>
+
       {error && <div style={{ ...s.error, marginBottom: '14px' }}>{error}</div>}
+      {notice && <div style={{ ...s.notice, marginBottom: '14px' }}>{notice}</div>}
 
       <div style={{ ...s.muted, marginBottom: '10px' }}>
         {loading ? 'Загрузка…' : `Найдено: ${total}`}
@@ -114,6 +228,15 @@ export function CertificateList({ onEdit, onCreate, refreshToken }: Props) {
         <table style={s.table}>
           <thead>
             <tr>
+              <th style={{ ...s.th, width: '36px' }}>
+                <input
+                  type="checkbox"
+                  checked={allOnPage}
+                  onChange={togglePage}
+                  disabled={!rows.length}
+                  title="Отметить всю страницу"
+                />
+              </th>
               {COLUMNS.map((col) => (
                 <th
                   key={col.key}
@@ -134,6 +257,13 @@ export function CertificateList({ onEdit, onCreate, refreshToken }: Props) {
               const v = validity(row);
               return (
                 <tr key={row.id}>
+                  <td style={s.td}>
+                    <input
+                      type="checkbox"
+                      checked={selected.has(row.id)}
+                      onChange={() => toggleRow(row.id)}
+                    />
+                  </td>
                   <td style={{ ...s.td, ...s.code }}>{row.code}</td>
                   <td style={s.td}>{row.last_name_ru}</td>
                   <td style={s.td}>{row.first_name_ru}</td>
@@ -158,7 +288,7 @@ export function CertificateList({ onEdit, onCreate, refreshToken }: Props) {
 
             {!loading && !rows.length && (
               <tr>
-                <td style={{ ...s.td, ...s.muted, textAlign: 'center', padding: '32px' }} colSpan={9}>
+                <td style={{ ...s.td, ...s.muted, textAlign: 'center', padding: '32px' }} colSpan={10}>
                   {query ? 'Ничего не найдено' : 'Пока ни одного сертификата'}
                 </td>
               </tr>

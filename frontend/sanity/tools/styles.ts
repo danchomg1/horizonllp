@@ -116,6 +116,33 @@ export const s = {
     background: 'rgba(128,128,128,0.04)',
   } as CSSProperties,
 
+  /** Полоса действий над таблицей. */
+  bar: {
+    flexWrap: 'wrap',
+    padding: '10px 14px',
+    borderRadius: '8px',
+    border: '1px solid rgba(128,128,128,0.25)',
+    background: 'rgba(128,128,128,0.05)',
+  } as CSSProperties,
+
+  check: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontSize: '13px',
+    cursor: 'pointer',
+    userSelect: 'none',
+  } as CSSProperties,
+
+  notice: {
+    padding: '10px 14px',
+    borderRadius: '6px',
+    border: '1px solid rgba(40,160,90,0.4)',
+    background: 'rgba(40,160,90,0.08)',
+    color: '#2ea36a',
+    fontSize: '13px',
+  } as CSSProperties,
+
   error: {
     padding: '10px 14px',
     borderRadius: '6px',
