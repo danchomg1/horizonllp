@@ -4,8 +4,8 @@ import { getById, type CertificateRow } from '../../../lib/db';
 import {
   formatCertDate, formatDateRange, formatHours, transliterate, type CertLocale,
 } from '../../../lib/certificates';
-import { renderCertificate, type CertificateData, type StampPlacement } from '../../../../certificates/render';
-import { getCertSettings, clearCertSettingsCache, type CertSettings } from '../../../lib/certSettings';
+import { renderCertificate, type CertificateData } from '../../../../certificates/render';
+import { getCertSettings } from '../../../lib/certSettings';
 
 export const runtime = 'nodejs';
 // Пакет из десятков сертификатов не укладывается в стандартный лимит
@@ -73,11 +73,6 @@ function availableLocales(row: CertificateRow, requested: CertLocale[]): CertLoc
   return requested.filter((l) => l === 'ru' || (l === 'en' && row.has_en) || (l === 'kz' && row.has_kz));
 }
 
-/** Положение меток в том виде, в котором его ждёт отрисовка. */
-function placementOf(settings: CertSettings): StampPlacement {
-  return { signature: settings.signature, stamp: settings.stamp };
-}
-
 /**
  * Запись-образец для проверки настроек. Заполнены все поля бланка, включая
  * самое длинное — название курса, чтобы сразу было видно перенос строк.
@@ -128,25 +123,19 @@ const SAMPLE: CertificateRow = {
   updated_at: '',
 };
 
-/**
- * Образец с текущими настройками печати и подписи.
- * Кэш сбрасываем, иначе только что сохранённая в Studio правка
- * не будет видна ещё минуту — а смотрят образец именно ради неё.
- */
+/** Образец для проверки вёрстки: реальная запись из реестра не нужна. */
 export async function GET(req: Request) {
   if (!isAuthorized(req)) return unauthorized();
 
   const asked = new URL(req.url).searchParams.get('locale');
   const locale = LOCALES.includes(asked as CertLocale) ? (asked as CertLocale) : 'ru';
 
-  clearCertSettingsCache();
   const settings = await getCertSettings();
 
   try {
     const bytes = await renderCertificate(
       locale,
       toCertificateData(SAMPLE, locale, settings.director[locale]),
-      placementOf(settings),
     );
     return new Response(bytes as BodyInit, {
       headers: {
@@ -177,11 +166,10 @@ export async function POST(req: Request) {
     .filter((l): l is CertLocale => LOCALES.includes(l as CertLocale));
   if (!requested.length) return Response.json({ error: 'Не выбран язык' }, { status: 400 });
 
-  // Подписант и положение печати задаются в Studio; из запроса приходит
-  // только явная замена подписанта для конкретной пачки.
+  // Подписант задаётся в Studio; из запроса приходит только явная
+  // замена подписанта для конкретной пачки.
   const settings = await getCertSettings();
   const override = typeof body.director === 'string' ? body.director.trim() : '';
-  const placement = placementOf(settings);
 
   try {
     const files: { name: string; bytes: Uint8Array }[] = [];
@@ -199,7 +187,7 @@ export async function POST(req: Request) {
 
       for (const locale of locales) {
         const director = override || settings.director[locale];
-        const bytes = await renderCertificate(locale, toCertificateData(row, locale, director), placement);
+        const bytes = await renderCertificate(locale, toCertificateData(row, locale, director));
         // Фамилия в имени файла всегда латиницей: кириллица в архивах
         // читается не во всех распаковщиках. Английское поле берём напрямую,
         // потому что pickField откатился бы на русское написание.

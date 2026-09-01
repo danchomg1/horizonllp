@@ -228,6 +228,52 @@ export async function insertCertificate(input: CertificateInput): Promise<Certif
   return normalizeRow((rows as Record<string, unknown>[])[0]) as unknown as CertificateRow;
 }
 
+/**
+ * Пакетная вставка для загрузки таблицы.
+ *
+ * Драйвер Neon ходит по HTTP, поэтому на каждый запрос уходит целый круг
+ * до сервера — три тысячи отдельных INSERT заняли бы минуты. Пишем пачками
+ * многострочным запросом; размер подобран так, чтобы число параметров
+ * оставалось далеко от предела Postgres в 65535.
+ */
+export async function insertMany(inputs: CertificateInput[], batchSize = 200): Promise<number> {
+  if (!inputs.length) return 0;
+
+  // Набор колонок один на всю пачку: у строк из таблицы он одинаковый
+  const cols = WRITABLE.filter((col) => inputs.some((row) => col in row));
+  if (!cols.length) throw new Error('Нет полей для записи');
+
+  let written = 0;
+
+  for (let start = 0; start < inputs.length; start += batchSize) {
+    const chunk = inputs.slice(start, start + batchSize);
+    const values: unknown[] = [];
+    const tuples = chunk.map((row) => {
+      const placeholders = cols.map((col) => {
+        const raw = row[col];
+        values.push(raw === '' || raw === undefined ? null : raw);
+        return `$${values.length}`;
+      });
+      return `(${placeholders.join(', ')})`;
+    });
+
+    const rows = await sql.query(
+      `INSERT INTO certificates (${cols.join(', ')}) VALUES ${tuples.join(', ')} RETURNING id`,
+      values,
+    );
+    written += (rows as unknown[]).length;
+  }
+
+  return written;
+}
+
+/** Какие из перечисленных номеров уже заняты. Один запрос на весь список. */
+export async function takenCodes(codes: string[]): Promise<Set<string>> {
+  if (!codes.length) return new Set();
+  const rows = await sql.query('SELECT code FROM certificates WHERE code = ANY($1::text[])', [codes]);
+  return new Set((rows as { code: string }[]).map((r) => r.code));
+}
+
 export async function updateCertificate(
   id: number,
   input: CertificateInput,

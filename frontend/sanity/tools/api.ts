@@ -103,9 +103,64 @@ export function downloadCertificates(ids: number[], locales: CertLocale[]): Prom
   return download('/pdf', { method: 'POST', body: JSON.stringify({ ids, locales }) }, 'certificates.zip');
 }
 
-/** Образец с текущими настройками печати и подписи из Studio. */
+/** Образец бланка со всеми заполненными полями — проверить вёрстку. */
 export function downloadSample(locale: CertLocale): Promise<number> {
   return download(`/pdf?locale=${locale}`, {}, `obrazec-${locale}.pdf`);
+}
+
+/* ------------------------------------------------------------------ *
+ * Загрузка реестра из Excel                                           *
+ * ------------------------------------------------------------------ */
+
+/** Пустой шаблон со списками курсов и преподавателей на момент скачивания. */
+export function downloadTemplate(): Promise<number> {
+  return download('/template', {}, 'horizon-certificates-template.xlsx');
+}
+
+export interface ImportIssue {
+  sheet: string;
+  row: number;
+  column: string;
+  message: string;
+}
+
+export interface ImportResult {
+  ok: boolean;
+  /** Сколько записей появилось в реестре. */
+  imported?: number;
+  /** Сколько строк прошло бы проверку — для режима «только проверить». */
+  checked?: number;
+  ready?: number;
+  errors: ImportIssue[];
+  /** Замечаний может быть больше, чем прислано: список обрезан. */
+  errorsTotal?: number;
+}
+
+/**
+ * Отправляет книгу как есть, без multipart: на той стороне всё равно нужен
+ * только сам файл. Ответ с замечаниями приходит со статусом 422 — это не
+ * сбой, а результат проверки, поэтому ошибкой его не считаем.
+ */
+export async function importRegistry(file: File, dryRun: boolean): Promise<ImportResult> {
+  const res = await fetch(`/api/certificates/import${dryRun ? '?dry=1' : ''}`, {
+    method: 'POST',
+    headers: { 'x-admin-key': getKey() },
+    body: file,
+  });
+
+  let body: unknown = null;
+  try {
+    body = await res.json();
+  } catch {
+    // тело не JSON — ниже отдадим общий текст
+  }
+
+  if (res.status === 422 && body) return body as ImportResult;
+  if (!res.ok) {
+    const message = (body as { error?: string })?.error ?? `Ошибка ${res.status}`;
+    throw new ApiError(message, res.status);
+  }
+  return body as ImportResult;
 }
 
 export interface Certificate {

@@ -125,6 +125,23 @@ function plainDate(iso: string): string | null {
   return `${String(d).padStart(2, '0')}.${String(m).padStart(2, '0')}.${y}`;
 }
 
+/**
+ * Дата плюс несколько лет — так считается «действует до» от даты выдачи.
+ * 29 февраля переносится на 28-е: годовщины високосного дня в обычном году
+ * не существует, а продлевать срок на сутки вперёд нельзя.
+ */
+export function addYears(iso: string, years: number): string | null {
+  const parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
+  if (!parts) return null;
+
+  const year = Number(parts[1]) + years;
+  const month = Number(parts[2]);
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const day = Math.min(Number(parts[3]), lastDay);
+
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
 /** «15.03.2026 г.» / «15.03.2026» / «15.03.2026 ж.». */
 export function formatCertDate(iso: string, locale: CertLocale): string {
   const plain = plainDate(iso);

@@ -3,7 +3,7 @@ import path from 'path';
 import { LineCapStyle, PDFDocument, rgb, setCharacterSpacing, type PDFFont, type PDFPage } from 'pdf-lib';
 import realFontkit from '@pdf-lib/fontkit';
 import {
-  LAYOUTS, DEFAULT_MARKS, CAP_HALF, INFO, INFO_ROW, NAVY, BLUE, WHITE,
+  LAYOUTS, CAP_HALF, INFO, INFO_ROW, NAVY, BLUE, WHITE,
   type FieldSpec, type FontKey, type InfoField,
 } from './layout';
 import { ICONS, type Icon } from './icons';
@@ -30,18 +30,16 @@ const ASSETS = path.join(process.cwd(), 'certificates');
  * генератора не подходят: в них 509 глифов и нет ә ғ қ ң ө ұ ү һ.
  */
 
-let cache: { lora: Buffer; onestRegular: Buffer; onestBold: Buffer; signature: Buffer; stamp: Buffer } | null = null;
+let cache: { lora: Buffer; onestRegular: Buffer; onestBold: Buffer } | null = null;
 
 async function loadAssets() {
   if (cache) return cache;
-  const [lora, onestRegular, onestBold, signature, stamp] = await Promise.all([
+  const [lora, onestRegular, onestBold] = await Promise.all([
     readFile(path.join(ASSETS, 'fonts/Lora-Bold.ttf')),
     readFile(path.join(ASSETS, 'fonts/Onest-Regular.ttf')),
     readFile(path.join(ASSETS, 'fonts/Onest-Bold.ttf')),
-    readFile(path.join(ASSETS, 'stamps/signature.png')),
-    readFile(path.join(ASSETS, 'stamps/stamp.png')),
   ]);
-  cache = { lora, onestRegular, onestBold, signature, stamp };
+  cache = { lora, onestRegular, onestBold };
   return cache;
 }
 
@@ -160,29 +158,6 @@ function drawIcon(page: PDFPage, icon: Icon, x: number, top: number) {
   }
 }
 
-/**
- * Ставит печать или подпись по центру заданной точки.
- *
- * Формат определяем по сигнатуре файла: в Studio можно загрузить и JPEG,
- * а pdf-lib встраивает PNG и JPEG разными методами.
- */
-async function drawMark(
-  doc: PDFDocument, page: PDFPage, spec: MarkSpec, fallback: Uint8Array,
-) {
-  const bytes = spec.image ?? fallback;
-  const isPng = bytes[0] === 0x89 && bytes[1] === 0x50;
-
-  const img = isPng ? await doc.embedPng(bytes) : await doc.embedJpg(bytes);
-  const height = (img.height / img.width) * spec.width;
-
-  page.drawImage(img, {
-    x: spec.x - spec.width / 2,
-    y: spec.y - height / 2,
-    width: spec.width,
-    height,
-  });
-}
-
 export interface CertificateData {
   code: string;
   name: string;
@@ -198,27 +173,10 @@ export interface CertificateData {
   validUntil?: string;
 }
 
-export interface MarkSpec {
-  /** Готовый файл картинки. Не задан — берём тот, что лежит в stamps/. */
-  image?: Uint8Array;
-  /** Центр картинки в пунктах; начало отсчёта — левый нижний угол страницы. */
-  x: number;
-  y: number;
-  /** Ширина в пунктах, высота считается по пропорциям файла. */
-  width: number;
-}
-
-/** null — метку не ставить, undefined — взять положение по умолчанию. */
-export interface StampPlacement {
-  signature?: MarkSpec | null;
-  stamp?: MarkSpec | null;
-}
-
 /** Собирает готовый PDF сертификата на бланке нужного языка. */
 export async function renderCertificate(
   locale: CertLocale,
   data: CertificateData,
-  placement: StampPlacement = {},
 ): Promise<Uint8Array> {
   const layout = LAYOUTS[locale];
   const assets = await loadAssets();
@@ -276,14 +234,6 @@ export async function renderCertificate(
     });
     drawField(page, onestRegular, column.value, cell.text, NAVY);
   }
-
-  // Печать и подпись: положение общее для всех языков, печать кладётся
-  // поверх подписи — в этом порядке их и ставят от руки.
-  const sig = placement.signature === undefined ? DEFAULT_MARKS.signature : placement.signature;
-  const stm = placement.stamp === undefined ? DEFAULT_MARKS.stamp : placement.stamp;
-
-  if (sig) await drawMark(doc, page, sig, assets.signature);
-  if (stm) await drawMark(doc, page, stm, assets.stamp);
 
   return doc.save();
 }

@@ -1,13 +1,22 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useClient } from 'sanity';
 import { createCertificate, updateCertificate, type Certificate } from './api';
+import { addYears } from '../../app/lib/certificates';
 import { s } from './styles';
 
 /* ------------------------------------------------------------------ *
  * Справочники из Sanity                                               *
  * ------------------------------------------------------------------ */
 
-interface CourseRef { _id: string; titleRu: string; titleEn?: string; titleKz?: string }
+interface CourseRef {
+  _id: string;
+  titleRu: string;
+  titleEn?: string;
+  titleKz?: string;
+  /** Срок действия закреплён за курсом — см. schemaTypes/certCourse.ts. */
+  perpetual?: boolean;
+  validityYears?: number;
+}
 interface InstructorRef { _id: string; nameRu: string; nameEn?: string; nameKz?: string }
 interface CityRef { nameRu: string; nameEn?: string; nameKz?: string }
 interface Settings {
@@ -184,7 +193,7 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
     (async () => {
       try {
         const [c, i, ct, st] = await Promise.all([
-          client.fetch<CourseRef[]>(`*[_type=="certCourse" && active != false]|order(titleRu asc){_id,titleRu,titleEn,titleKz}`),
+          client.fetch<CourseRef[]>(`*[_type=="certCourse" && active != false]|order(titleRu asc){_id,titleRu,titleEn,titleKz,perpetual,validityYears}`),
           client.fetch<InstructorRef[]>(`*[_type=="certInstructor" && active != false]|order(nameRu asc){_id,nameRu,nameEn,nameKz}`),
           client.fetch<CityRef[]>(`*[_type=="certCity"]{nameRu,nameEn,nameKz}`),
           client.fetch<Settings>(`*[_type=="certSettings"][0]{completedRu,completedEn,completedKz}`),
@@ -214,8 +223,28 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
   // Дата выдачи «сегодня»
   useEffect(() => {
     if (issueToday) set({ issued_at: todayLocal() });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [issueToday]);
+
+  /** Выбранный курс — источник срока действия. */
+  const course = courses.find((c) => c._id === str('course_ref'));
+
+  /**
+   * «Действует до» считается по курсу и дате выдачи и руками не правится:
+   * срок — свойство курса, а не отдельной выдачи.
+   */
+  const validityOf = (picked: CourseRef | undefined, issuedAt: string): FormState => {
+    if (!picked || !issuedAt) return { perpetual: false, valid_until: '' };
+    if (picked.perpetual) return { perpetual: true, valid_until: '' };
+    const years = picked.validityYears ?? 0;
+    return { perpetual: false, valid_until: years ? addYears(issuedAt, years) ?? '' : '' };
+  };
+
+  // Пересчёт при смене даты выдачи: курс тот же, а срок сдвигается
+  useEffect(() => {
+    if (!course) return;
+    set(validityOf(course, str('issued_at')));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [course, form.issued_at]);
 
   /** Английские и казахские написания подставляются из русских, но только
    *  если их ещё не трогали руками — иначе правки затирались бы. */
@@ -255,6 +284,21 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
     setError('');
     for (const [field, title] of [['first_name_ru', 'Имя'], ['last_name_ru', 'Фамилия'], ['course_ru', 'Курс']]) {
       if (!str(field).trim()) { setError(`Не заполнено обязательное поле: ${title}`); return; }
+    }
+
+    // Курс и преподаватель хранятся в трёх написаниях, поэтому произвольный
+    // текст не годится: из него неоткуда взять казахское название и срок.
+    if (!course) {
+      setError('Выберите курс из списка. Если нужного курса нет, заведите его в разделе «Сертификаты → Курсы».');
+      return;
+    }
+    if (str('instructor_ru').trim() && !str('instructor_ref')) {
+      setError('Выберите преподавателя из списка или очистите поле.');
+      return;
+    }
+    if (!course.perpetual && !course.validityYears) {
+      setError(`У курса «${course.titleRu}» не задан срок действия — укажите его в разделе «Сертификаты → Курсы».`);
+      return;
     }
 
     setSaving(true);
@@ -357,22 +401,33 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
           <input style={s.input} value={str('company_ru')} onChange={(e) => fillFromRu('company', e.target.value)} />
         </Field>
 
-        <Field label="Курс *" hint="Выберите из справочника — английское и казахское названия подставятся сами">
+        <Field
+          label="Курс *"
+          hint={course
+            ? `Срок действия: ${course.perpetual ? 'бессрочный' : course.validityYears ? `${course.validityYears} г.` : 'не задан в справочнике'}`
+            : 'Только из справочника: вместе с названием подтягиваются перевод и срок действия'}
+        >
           <Suggest<CourseRef>
             value={str('course_ru')}
             options={courses}
             match={(c) => [c.titleRu, c.titleEn ?? '', c.titleKz ?? '']}
             label={(c) => c.titleRu}
-            hint={(c) => c.titleEn ?? ''}
-            onChange={(v) => set({ course_ru: v, course_ref: '' })}
+            hint={(c) => (c.perpetual ? 'бессрочный' : c.validityYears ? `${c.validityYears} г.` : '')}
+            onChange={(v) => set({ course_ru: v, course_ref: '', course_en: '', course_kz: '' })}
             onPick={(c) => set({
               course_ru: c.titleRu,
               course_en: c.titleEn ?? '',
               course_kz: c.titleKz ?? '',
               course_ref: c._id,
+              ...validityOf(c, str('issued_at')),
             })}
             placeholder="Начните вводить название"
           />
+          {str('course_ru').trim() && !course && (
+            <div style={{ ...s.muted, marginTop: '6px', color: '#e05252' }}>
+              Выберите курс из списка. Нужного нет — заведите его в разделе «Сертификаты → Курсы».
+            </div>
+          )}
         </Field>
 
         <Field label="Преподаватель" hint="Можно вводить на любом языке — подставится нужное написание">
@@ -382,7 +437,7 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
             match={(i) => [i.nameRu, i.nameEn ?? '', i.nameKz ?? '']}
             label={(i) => i.nameRu}
             hint={(i) => i.nameEn ?? ''}
-            onChange={(v) => set({ instructor_ru: v, instructor_ref: '' })}
+            onChange={(v) => set({ instructor_ru: v, instructor_ref: '', instructor_en: '', instructor_kz: '' })}
             onPick={(i) => set({
               instructor_ru: i.nameRu,
               instructor_en: i.nameEn ?? '',
@@ -391,6 +446,11 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
             })}
             placeholder="Начните вводить фамилию"
           />
+          {str('instructor_ru').trim() && !str('instructor_ref') && (
+            <div style={{ ...s.muted, marginTop: '6px', color: '#e05252' }}>
+              Выберите преподавателя из списка — иначе неоткуда взять казахское и английское написание.
+            </div>
+          )}
         </Field>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
@@ -430,22 +490,15 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
             </label>
           </Field>
 
-          <Field label="Действует до">
-            <input
-              style={{ ...s.input, opacity: form.perpetual ? 0.6 : 1 }}
-              type="date"
-              value={str('valid_until')}
-              disabled={Boolean(form.perpetual)}
-              onChange={(e) => set({ valid_until: e.target.value })}
-            />
-            <label style={{ ...s.row, marginTop: '6px', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={Boolean(form.perpetual)}
-                onChange={(e) => set({ perpetual: e.target.checked, valid_until: e.target.checked ? '' : str('valid_until') })}
-              />
-              <span style={s.muted}>бессрочный</span>
-            </label>
+          {/* Считается по курсу и дате выдачи — руками не правится */}
+          <Field label="Действует до" hint="Срок задан у курса в разделе «Сертификаты → Курсы»">
+            <div style={{ ...s.input, display: 'flex', alignItems: 'center', opacity: 0.75 }}>
+              {form.perpetual
+                ? 'бессрочный'
+                : str('valid_until')
+                  ? str('valid_until').split('-').reverse().join('.')
+                  : course ? 'нужна дата выдачи' : 'выберите курс'}
+            </div>
           </Field>
         </div>
 

@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { checkKey, getKey, setKey, type Certificate } from './api';
 import { CertificateList } from './CertificateList';
 import { CertificateForm } from './CertificateForm';
+import { CertificateImport } from './CertificateImport';
 import { s } from './styles';
 
-type View = { name: 'list' } | { name: 'form'; row: Certificate | null };
+type View = { name: 'list' } | { name: 'form'; row: Certificate | null } | { name: 'import' };
 
 /** Экран ввода ключа доступа. */
 function KeyGate({ onUnlock }: { onUnlock: () => void }) {
@@ -83,6 +84,24 @@ export default function CertificatesTool() {
 
   if (!unlocked) return <KeyGate onUnlock={() => setUnlocked(true)} />;
 
+  if (view.name === 'import') {
+    return (
+      <div style={s.page}>
+        <div style={{ ...s.spread, marginBottom: '20px' }}>
+          <div>
+            <h1 style={s.h1}>Загрузка из Excel</h1>
+            <p style={{ ...s.muted, margin: '4px 0 0' }}>
+              Пополнение реестра таблицей
+            </p>
+          </div>
+          <button style={s.button} onClick={() => setView({ name: 'list' })}>К реестру</button>
+        </div>
+
+        <CertificateImport onDone={() => setRefreshToken((n) => n + 1)} />
+      </div>
+    );
+  }
+
   if (view.name === 'form') {
     return (
       <div style={s.page}>
@@ -107,13 +126,18 @@ export default function CertificatesTool() {
             Реестр выданных сертификатов
           </p>
         </div>
-        <button
-          style={s.button}
-          onClick={() => { setKey(''); setUnlocked(false); }}
-          title="Забыть ключ на этом устройстве"
-        >
-          Выйти
-        </button>
+        <div style={s.row}>
+          <button style={s.button} onClick={() => setView({ name: 'import' })}>
+            Загрузить из Excel
+          </button>
+          <button
+            style={s.button}
+            onClick={() => { setKey(''); setUnlocked(false); }}
+            title="Забыть ключ на этом устройстве"
+          >
+            Выйти
+          </button>
+        </div>
       </div>
 
       <CertificateList
