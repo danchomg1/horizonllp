@@ -7,8 +7,8 @@ import { defineField, defineType } from 'sanity'
  * («г. Астана» / «Astana» / «Астана қаласы»), а страна подставляется перед
  * ними. Свободный ввод не годится: три языка руками не наберёшь одинаково.
  *
- * Онлайн — тоже запись этого справочника, но с отметкой: у неё страна перед
- * названием не печатается.
+ * Онлайн и «место не указано» здесь не заводятся: это не города, а режимы
+ * выдачи. В форме они стоят отдельными галочками над списком.
  */
 export default defineType({
   name: 'certCity',
@@ -39,20 +39,7 @@ export default defineType({
       type: 'reference',
       to: [{ type: 'certCountry' }],
       description: 'При выдаче город предлагается только для выбранной страны.',
-      hidden: ({ document }) => document?.online === true,
-      validation: (Rule) =>
-        Rule.custom((value, context) => {
-          if ((context.document as { online?: boolean })?.online) return true
-          return value ? true : 'Выберите страну или отметьте «Онлайн»'
-        }),
-    }),
-
-    defineField({
-      name: 'online',
-      title: 'Онлайн',
-      type: 'boolean',
-      initialValue: false,
-      description: 'Обучение без места проведения. На бланке печатается одно слово, без страны.',
+      validation: (Rule) => Rule.required(),
     }),
 
     defineField({
@@ -67,10 +54,10 @@ export default defineType({
     { name: 'manual', title: 'Как в списке выдачи', by: [{ field: 'order', direction: 'asc' }, { field: 'nameRu', direction: 'asc' }] },
   ],
   preview: {
-    select: { title: 'nameRu', country: 'country.nameRu', online: 'online', order: 'order' },
-    prepare: ({ title, country, online, order }) => ({
+    select: { title: 'nameRu', country: 'country.nameRu', order: 'order' },
+    prepare: ({ title, country, order }) => ({
       title,
-      subtitle: [online ? 'онлайн' : country, order != null ? `№ ${order}` : null].filter(Boolean).join(' · '),
+      subtitle: [country, order != null ? `№ ${order}` : null].filter(Boolean).join(' · '),
     }),
   },
 })

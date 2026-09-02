@@ -1,10 +1,18 @@
 import ExcelJS from 'exceljs';
 import { addYears, normalizeCode } from './certificates';
 import {
-  buildIndex, closestName, defaultCompletion, placeLabel, refKey,
+  buildIndex, closestName, defaultCompletion, placeLabel, refKey, ONLINE_PLACE,
   type CertRefs, type CityRef, type CompletionRef, type CountryRef,
   type CourseRef, type PersonRef,
 } from './certRefs';
+
+/**
+ * Онлайн и «место не указано» — не города, а режимы. В форме это галочки,
+ * а в таблице галочек нет, поэтому они стоят двумя последними строками
+ * того же выпадающего списка.
+ */
+const PLACE_ONLINE = ONLINE_PLACE.ru;
+const PLACE_NONE = 'Не указано';
 
 /**
  * Обмен реестра сертификатов через Excel.
@@ -107,7 +115,8 @@ const GUIDE = [
   ['7.', 'Если дата выдачи пустая, берётся конец обучения, потом начало, потом сегодняшний день.'],
   ['8.', 'Текст о прохождении тоже из списка. Оставите пустым — подставится отмеченный'],
   ['', 'в Studio как «по умолчанию».'],
-  ['9.', 'Место проведения можно не заполнять — тогда на бланке этого столбца не будет.'],
+  ['9.', 'Место проведения: город, «Онлайн» или «Не указано» — последние две строки списка.'],
+  ['', 'При «Не указано» столбца с местом на бланке не будет вовсе.'],
   [],
   ['Даты пишите в формате 31.12.2026, часы — целым числом.'],
 ];
@@ -183,7 +192,7 @@ export async function buildTemplate(refs: CertRefs): Promise<Uint8Array> {
   dropdown('Преподаватель', 'B', refs.instructors.length, 'Преподаватель');
   dropdown('Текст о прохождении', 'C', refs.completions.length, 'Текст о прохождении');
   dropdown('Страна', 'D', refs.countries.length, 'Страна');
-  dropdown('Место проведения', 'E', refs.cities.length, 'Место проведения');
+  dropdown('Место проведения', 'E', refs.cities.length + 2, 'Место проведения');
 
   /* Английский и казахский листы */
   const en = book.addWorksheet(SHEETS.en);
@@ -203,9 +212,11 @@ export async function buildTemplate(refs: CertRefs): Promise<Uint8Array> {
   sheetRefs.getColumn(4).width = 24;
   sheetRefs.getColumn(5).width = 26;
   sheetRefs.addRow(['Курсы', 'Преподаватели', 'Тексты о прохождении', 'Страны', 'Места']);
+  // Города плюс два режима: онлайн и «место не указано»
+  const places = [...refs.cities.map((c) => c.ru), PLACE_ONLINE, PLACE_NONE];
   const refRows = Math.max(
     refs.courses.length, refs.instructors.length, refs.completions.length,
-    refs.countries.length, refs.cities.length,
+    refs.countries.length, places.length,
   );
   for (let i = 0; i < refRows; i++) {
     sheetRefs.addRow([
@@ -213,7 +224,7 @@ export async function buildTemplate(refs: CertRefs): Promise<Uint8Array> {
       refs.instructors[i]?.ru ?? null,
       refs.completions[i]?.ru ?? null,
       refs.countries[i]?.ru ?? null,
-      refs.cities[i]?.ru ?? null,
+      places[i] ?? null,
     ]);
   }
 
@@ -524,16 +535,19 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
       country = countryIndex.get(refKey(countryName));
       if (!country) fail('Страна', `«${countryName}» нет в справочнике — выберите значение из списка`);
     }
-    if (cityName) {
+    const online = refKey(cityName) === refKey(PLACE_ONLINE);
+    const noPlace = !cityName || refKey(cityName) === refKey(PLACE_NONE);
+
+    if (cityName && !online && !noPlace) {
       city = cityIndex.get(refKey(cityName));
       if (!city) {
         const hint = closestName(cityName, refs.cities);
         fail('Место проведения', hint
           ? `«${cityName}» нет в справочнике, возможно имелось в виду «${hint}»`
           : `«${cityName}» нет в справочнике — выберите значение из списка`);
-      } else if (!city.online && country && city.countryId !== country.id) {
+      } else if (country && city.countryId !== country.id) {
         fail('Место проведения', `«${city.ru}» не относится к стране «${country.ru}»`);
-      } else if (!city.online && !country) {
+      } else if (!country) {
         fail('Страна', 'не заполнено — без страны место на бланк не собрать');
       }
     }
@@ -561,8 +575,10 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
     const hasKz = Boolean(kzRow && (kzRow.first || kzRow.last));
 
     // Место собирается из справочника, чтобы на трёх языках совпало
-    const place = (locale: 'ru' | 'en' | 'kz') =>
-      city ? placeLabel(city, city.online ? undefined : country, locale) : null;
+    const place = (locale: 'ru' | 'en' | 'kz') => {
+      if (online) return ONLINE_PLACE[locale];
+      return city ? placeLabel(city, country, locale) : null;
+    };
 
     // Непрочитанные даты сюда не доходят: строка с ними уже отсеяна выше
     const issuedAt = usable(issued) || usable(to) || usable(from) || today();

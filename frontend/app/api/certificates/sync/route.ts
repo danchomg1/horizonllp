@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     // в синхронизацию отдаём собранные метки, а не одни названия городов.
     const countries = byId(refs.countries);
     const cities = refs.cities.map((city) => {
-      const country = city.online ? undefined : countries.get(city.countryId ?? '');
+      const country = countries.get(city.countryId);
       return {
         id: city.id,
         ru: placeLabel(city, country, 'ru'),

@@ -53,9 +53,7 @@ export interface CityRef {
   ru: string;
   en: string;
   kz: string;
-  /** Пусто у «Онлайн»: перед ним страна не печатается. */
-  countryId: string | null;
-  online: boolean;
+  countryId: string;
 }
 
 export interface CertRefs {
@@ -79,9 +77,9 @@ const QUERY = `{
   "countries": *[_type == "certCountry"] | order(order asc, nameRu asc){
     "id": _id, "ru": nameRu, "en": nameEn, "kz": nameKz
   },
-  "cities": *[_type == "certCity"] | order(order asc, nameRu asc){
+  "cities": *[_type == "certCity" && defined(country)] | order(order asc, nameRu asc){
     "id": _id, "ru": nameRu, "en": nameEn, "kz": nameKz,
-    "countryId": country._ref, online
+    "countryId": country._ref
   }
 }`;
 
@@ -141,13 +139,11 @@ export async function getCertRefs(): Promise<CertRefs> {
     countries: (raw.countries ?? [])
       .filter((c) => c.id && c.ru)
       .map((c) => ({ id: c.id!, ru: c.ru!.trim(), en: text(c.en), kz: text(c.kz) })),
-    // Город без страны и без отметки «онлайн» заведён не до конца —
-    // в списках выдачи ему делать нечего.
+    // Город без страны заведён не до конца — в списках ему делать нечего
     cities: (raw.cities ?? [])
-      .filter((c) => c.id && c.ru && (c.countryId || c.online))
+      .filter((c) => c.id && c.ru && c.countryId)
       .map((c) => ({
-        id: c.id!, ru: c.ru!.trim(), en: text(c.en), kz: text(c.kz),
-        countryId: c.countryId ?? null, online: c.online === true,
+        id: c.id!, ru: c.ru!.trim(), en: text(c.en), kz: text(c.kz), countryId: c.countryId!,
       })),
   };
 
@@ -166,22 +162,25 @@ export function defaultCompletion(refs: CertRefs): CompletionRef | null {
 }
 
 /**
- * Место проведения одной строкой: «Казахстан, г. Астана».
- * У «Онлайн» страны нет, поэтому печатается одно слово.
+ * Онлайн — не город, а режим выдачи: справочника у него нет, три написания
+ * лежат здесь. «Место не указано» вообще ничего не печатает, поэтому своей
+ * записи не требует.
  */
+export const ONLINE_PLACE = { ru: 'Онлайн', en: 'Online', kz: 'Онлайн' } as const;
+
+/** Место проведения одной строкой: «Казахстан, г. Астана». */
 export function placeLabel(
   city: CityRef,
   country: CountryRef | undefined,
   locale: 'ru' | 'en' | 'kz',
 ): string {
   const name = city[locale] || city.ru;
-  if (city.online || !country) return name;
-  return `${country[locale] || country.ru}, ${name}`;
+  return country ? `${country[locale] || country.ru}, ${name}` : name;
 }
 
-/** Города выбранной страны плюс «Онлайн» — он доступен всегда. */
+/** Города выбранной страны в заданном для списка порядке. */
 export function citiesOf(refs: CertRefs, countryId: string): CityRef[] {
-  return refs.cities.filter((c) => c.online || c.countryId === countryId);
+  return refs.cities.filter((c) => c.countryId === countryId);
 }
 
 /* ------------------------------------------------------------------ *

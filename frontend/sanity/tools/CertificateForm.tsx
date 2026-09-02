@@ -27,8 +27,10 @@ interface CityRef {
   nameEn?: string;
   nameKz?: string;
   countryId?: string;
-  online?: boolean;
 }
+
+/** Онлайн — не город, а режим: справочника у него нет. */
+const ONLINE_PLACE = { ru: 'Онлайн', en: 'Online', kz: 'Онлайн' };
 interface CompletionRef {
   _id: string;
   textRu: string;
@@ -165,7 +167,7 @@ type FormState = Record<string, unknown>;
  */
 function pickCity(city: CityRef, country: CountryRef | undefined): FormState {
   const join = (cityName: string, countryName: string | undefined) =>
-    city.online || !countryName ? cityName : `${countryName}, ${cityName}`;
+    countryName ? `${countryName}, ${cityName}` : cityName;
   return {
     location_ru: join(city.nameRu, country?.nameRu),
     location_en: join(city.nameEn ?? city.nameRu, country?.nameEn ?? country?.nameRu),
@@ -174,9 +176,15 @@ function pickCity(city: CityRef, country: CountryRef | undefined): FormState {
   };
 }
 
-/** Сбросить место: столбец на бланке тогда не рисуется вовсе. */
+/** Место не указано: столбец на бланке тогда не рисуется вовсе. */
 const CLEAR_PLACE: FormState = {
   location_ru: '', location_en: '', location_kz: '', location_ref: '',
+};
+
+/** Обучение прошло онлайн: место есть, но справочной записи у него нет. */
+const ONLINE: FormState = {
+  location_ru: ONLINE_PLACE.ru, location_en: ONLINE_PLACE.en, location_kz: ONLINE_PLACE.kz,
+  location_ref: '',
 };
 
 /** Выбранный текст о прохождении раскладывается сразу по трём языкам. */
@@ -245,7 +253,7 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
         const [c, i, ct, co, cp] = await Promise.all([
           client.fetch<CourseRef[]>(`*[_type=="certCourse" && active != false]|order(titleRu asc){_id,titleRu,titleEn,titleKz,perpetual,validityYears,hours}`),
           client.fetch<InstructorRef[]>(`*[_type=="certInstructor" && active != false]|order(nameRu asc){_id,nameRu,nameEn,nameKz}`),
-          client.fetch<CityRef[]>(`*[_type=="certCity"]|order(order asc, nameRu asc){_id,nameRu,nameEn,nameKz,"countryId":country._ref,online}`),
+          client.fetch<CityRef[]>(`*[_type=="certCity" && defined(country)]|order(order asc, nameRu asc){_id,nameRu,nameEn,nameKz,"countryId":country._ref}`),
           client.fetch<CountryRef[]>(`*[_type=="certCountry"]|order(order asc, nameRu asc){_id,nameRu,nameEn,nameKz}`),
           client.fetch<CompletionRef[]>(`*[_type=="certCompletion" && active != false]|order(textRu asc){_id,textRu,textEn,textKz,isDefault}`),
         ]);
@@ -283,8 +291,11 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
   /** Выбранный курс — источник срока действия и продолжительности. */
   const course = courses.find((c) => c._id === str('course_ref'));
 
-  // В списке мест — города выбранной страны и всегда «Онлайн»
-  const placeOptions = cities.filter((c) => c.online || c.countryId === countryId);
+  const placeOptions = cities.filter((c) => c.countryId === countryId);
+
+  // Три взаимоисключающих состояния: город, онлайн или ничего
+  const isOnline = !str('location_ref') && str('location_ru') === ONLINE_PLACE.ru;
+  const noPlace = !str('location_ref') && !str('location_ru');
 
   /**
    * «Действует до» считается по курсу и дате выдачи и руками не правится:
@@ -529,7 +540,8 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <Field label="Страна">
             <select
-              style={{ ...s.input, appearance: 'auto' }}
+              style={{ ...s.input, appearance: 'auto', opacity: isOnline || noPlace ? 0.5 : 1 }}
+              disabled={isOnline || noPlace}
               value={countryId}
               onChange={(e) => {
                 setCountryId(e.target.value);
@@ -542,18 +554,44 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
             </select>
           </Field>
 
-          <Field label="Место проведения" hint="Не заполнено — на бланке столбца не будет">
+          <Field label="Место проведения">
             <select
-              style={{ ...s.input, appearance: 'auto' }}
+              style={{ ...s.input, appearance: 'auto', opacity: isOnline || noPlace ? 0.5 : 1 }}
               value={str('location_ref')}
+              disabled={isOnline || noPlace}
               onChange={(e) => {
                 const city = cities.find((c) => c._id === e.target.value);
-                set(city ? pickCity(city, countries.find((c) => c._id === city.countryId)) : CLEAR_PLACE);
+                if (city) set(pickCity(city, countries.find((c) => c._id === city.countryId)));
               }}
             >
-              <option value="">— не указывать —</option>
+              {/* Пустого значения нет: город, «Онлайн» или «Не указано» */}
+              {!str('location_ref') && <option value="">— выберите город —</option>}
               {placeOptions.map((c) => <option key={c._id} value={c._id}>{c.nameRu}</option>)}
             </select>
+
+            {/* Галочки взаимно исключают друг друга и список городов */}
+            <div style={{ ...s.row, marginTop: '8px', flexWrap: 'wrap' }}>
+              <label style={s.check}>
+                <input
+                  type="checkbox"
+                  checked={isOnline}
+                  onChange={(e) => set(e.target.checked ? ONLINE : CLEAR_PLACE)}
+                />
+                Онлайн
+              </label>
+              <label style={s.check}>
+                <input
+                  type="checkbox"
+                  checked={noPlace}
+                  onChange={(e) => {
+                    if (e.target.checked) { set(CLEAR_PLACE); return; }
+                    const city = placeOptions[0];
+                    if (city) set(pickCity(city, countries.find((c) => c._id === city.countryId)));
+                  }}
+                />
+                Не указано
+              </label>
+            </div>
           </Field>
         </div>
 
