@@ -44,6 +44,7 @@ export const structure: StructureResolver = (S) =>
             .items([
               S.documentTypeListItem('certCourse').title('Курсы'),
               S.documentTypeListItem('certInstructor').title('Преподаватели'),
+              S.documentTypeListItem('certCountry').title('Страны'),
               S.documentTypeListItem('certCity').title('Города'),
               S.documentTypeListItem('certCompletion').title('Тексты о прохождении'),
 

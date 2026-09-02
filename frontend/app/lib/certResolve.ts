@@ -1,5 +1,5 @@
 import type { CertificateRow } from './db';
-import { getCertRefs, byId, type CertRefs } from './certRefs';
+import { getCertRefs, byId, placeLabel, type CertRefs } from './certRefs';
 import { addYears } from './certificates';
 
 /**
@@ -27,6 +27,8 @@ export function refIndex(refs: CertRefs) {
     courses: byId(refs.courses),
     instructors: byId(refs.instructors),
     completions: byId(refs.completions),
+    cities: byId(refs.cities),
+    countries: byId(refs.countries),
   };
 }
 
@@ -36,6 +38,7 @@ export function applyRefs(row: CertificateRow, index: RefIndex): CertificateRow 
   const course = row.course_ref ? index.courses.get(row.course_ref) : undefined;
   const instructor = row.instructor_ref ? index.instructors.get(row.instructor_ref) : undefined;
   const completion = row.completed_ref ? index.completions.get(row.completed_ref) : undefined;
+  const city = row.location_ref ? index.cities.get(row.location_ref) : undefined;
 
   const out = { ...row };
 
@@ -44,7 +47,10 @@ export function applyRefs(row: CertificateRow, index: RefIndex): CertificateRow 
     out.course_en = forLang(row.has_en, course.en, course.ru, row.course_en);
     out.course_kz = forLang(row.has_kz, course.kz, course.ru, row.course_kz);
 
-    // Срок — свойство курса, поэтому пересчитывается от даты выдачи записи
+    // Часы — свойство курса, а не конкретной группы
+    if (course.hours) out.hours = course.hours;
+
+    // Срок — тоже свойство курса, пересчитывается от даты выдачи записи
     if (course.perpetual) {
       out.perpetual = true;
       out.valid_until = null;
@@ -64,6 +70,15 @@ export function applyRefs(row: CertificateRow, index: RefIndex): CertificateRow 
     out.completed_ru = completion.ru;
     out.completed_en = forLang(row.has_en, completion.en, completion.ru, row.completed_en);
     out.completed_kz = forLang(row.has_kz, completion.kz, completion.ru, row.completed_kz);
+  }
+
+  if (city) {
+    // Место собирается из страны и города — оба живут в справочнике,
+    // поэтому переименование города доезжает до выданных сертификатов.
+    const country = city.countryId ? index.countries.get(city.countryId) : undefined;
+    out.location_ru = placeLabel(city, country, 'ru');
+    out.location_en = row.has_en ? placeLabel(city, country, 'en') : row.location_en;
+    out.location_kz = row.has_kz ? placeLabel(city, country, 'kz') : row.location_kz;
   }
 
   return out;

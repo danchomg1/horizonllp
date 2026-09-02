@@ -1,5 +1,5 @@
 import { isAuthorized, unauthorized } from '../../../lib/adminAuth';
-import { getById, updateCertificate, deleteCertificate, codeExists } from '../../../lib/db';
+import { getById, updateCertificate, deleteCertificate } from '../../../lib/db';
 import { normalizeCode } from '../../../lib/certificates';
 
 export const runtime = 'nodejs';
@@ -38,16 +38,12 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   try {
-    // Смена номера разрешена, но он должен остаться уникальным
-    if (typeof body.code === 'string' && body.code.trim()) {
-      const code = normalizeCode(body.code);
-      const current = await getById(id);
-      if (!current) return Response.json({ error: 'Сертификат не найден' }, { status: 404 });
-      if (code !== current.code && (await codeExists(code))) {
-        return Response.json({ error: `Номер ${code} уже занят` }, { status: 409 });
-      }
-      body.code = code;
-    }
+    // Свой номер выдан системой и не меняется: он уже напечатан на бланке
+    // и мог уйти человеку на руки.
+    delete body.code;
+
+    const legacy = String(body.legacy_code ?? '').trim();
+    if ('legacy_code' in body) body.legacy_code = legacy ? normalizeCode(legacy) : null;
 
     const row = await updateCertificate(id, body);
     if (!row) return Response.json({ error: 'Сертификат не найден' }, { status: 404 });

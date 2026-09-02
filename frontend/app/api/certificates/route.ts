@@ -63,19 +63,17 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Номер либо задан вручную (перенос старой записи), либо выдаём новый
-    const manual = String(body.code ?? '').trim();
-    let code: string;
-    if (manual) {
-      code = normalizeCode(manual);
-      if (await codeExists(code)) {
-        return Response.json({ error: `Номер ${code} уже занят` }, { status: 409 });
-      }
-    } else {
-      code = await allocateCode();
-    }
+    // Свой номер система выдаёт всегда: он печатается на бланке и по нему
+    // сертификат находят в первую очередь. Прежний номер со старого бланка
+    // сохраняется рядом и в печать не идёт.
+    const code = await allocateCode();
+    const legacy = String(body.legacy_code ?? '').trim();
 
-    const row = await insertCertificate({ ...body, code });
+    const row = await insertCertificate({
+      ...body,
+      code,
+      legacy_code: legacy ? normalizeCode(legacy) : null,
+    });
     return Response.json(row, { status: 201 });
   } catch (error) {
     console.error('Не удалось создать сертификат:', error);

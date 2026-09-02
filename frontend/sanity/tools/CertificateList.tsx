@@ -9,6 +9,7 @@ import { s } from './styles';
 
 const COLUMNS: { key: SortKey; title: string }[] = [
   { key: 'code', title: 'Номер' },
+  { key: 'legacyCode', title: 'Прежний' },
   { key: 'lastName', title: 'Фамилия' },
   { key: 'firstName', title: 'Имя' },
   { key: 'company', title: 'Компания' },
@@ -321,6 +322,7 @@ export function CertificateList({ onEdit, onCreate, onOpenChanges, refreshToken 
                     <ChangeAlerts changes={alertsFor(row)} onAck={ackChange} busy={busy} />
                     {row.code}
                   </td>
+                  <td style={{ ...s.td, ...s.code, ...s.muted }}>{row.legacy_code ?? '—'}</td>
                   <td style={s.td}>{row.last_name_ru}</td>
                   <td style={s.td}>{row.first_name_ru}</td>
                   <td style={s.td}>{row.company_ru || '—'}</td>
@@ -344,7 +346,7 @@ export function CertificateList({ onEdit, onCreate, onOpenChanges, refreshToken 
 
             {!loading && !rows.length && (
               <tr>
-                <td style={{ ...s.td, ...s.muted, textAlign: 'center', padding: '32px' }} colSpan={10}>
+                <td style={{ ...s.td, ...s.muted, textAlign: 'center', padding: '32px' }} colSpan={11}>
                   {query ? 'Ничего не найдено' : 'Пока ни одного сертификата'}
                 </td>
               </tr>

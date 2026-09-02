@@ -22,6 +22,8 @@ export interface CourseRef {
   /** Срок действия закреплён за курсом, а не за конкретной выдачей. */
   perpetual: boolean;
   validityYears: number | null;
+  /** Продолжительность в часах — тоже свойство курса, а не выдачи. */
+  hours: number | null;
 }
 
 export interface PersonRef {
@@ -39,22 +41,34 @@ export interface CompletionRef {
   isDefault: boolean;
 }
 
-export interface CityRef {
+export interface CountryRef {
+  id: string;
   ru: string;
   en: string;
   kz: string;
+}
+
+export interface CityRef {
+  id: string;
+  ru: string;
+  en: string;
+  kz: string;
+  /** Пусто у «Онлайн»: перед ним страна не печатается. */
+  countryId: string | null;
+  online: boolean;
 }
 
 export interface CertRefs {
   courses: CourseRef[];
   instructors: PersonRef[];
   completions: CompletionRef[];
+  countries: CountryRef[];
   cities: CityRef[];
 }
 
 const QUERY = `{
   "courses": *[_type == "certCourse" && active != false] | order(titleRu asc){
-    "id": _id, "ru": titleRu, "en": titleEn, "kz": titleKz, perpetual, validityYears
+    "id": _id, "ru": titleRu, "en": titleEn, "kz": titleKz, perpetual, validityYears, hours
   },
   "instructors": *[_type == "certInstructor" && active != false] | order(nameRu asc){
     "id": _id, "ru": nameRu, "en": nameEn, "kz": nameKz
@@ -62,8 +76,12 @@ const QUERY = `{
   "completions": *[_type == "certCompletion" && active != false] | order(textRu asc){
     "id": _id, "ru": textRu, "en": textEn, "kz": textKz, isDefault
   },
-  "cities": *[_type == "certCity"] | order(nameRu asc){
-    "ru": nameRu, "en": nameEn, "kz": nameKz
+  "countries": *[_type == "certCountry"] | order(order asc, nameRu asc){
+    "id": _id, "ru": nameRu, "en": nameEn, "kz": nameKz
+  },
+  "cities": *[_type == "certCity"] | order(order asc, nameRu asc){
+    "id": _id, "ru": nameRu, "en": nameEn, "kz": nameKz,
+    "countryId": country._ref, online
   }
 }`;
 
@@ -71,6 +89,7 @@ interface RawRefs {
   courses?: Partial<CourseRef>[];
   instructors?: Partial<PersonRef>[];
   completions?: Partial<CompletionRef>[];
+  countries?: Partial<CountryRef>[];
   cities?: Partial<CityRef>[];
 }
 
@@ -83,7 +102,7 @@ interface RawRefs {
 const TTL_MS = 60_000;
 let cached: { at: number; value: CertRefs } | null = null;
 
-const EMPTY: CertRefs = { courses: [], instructors: [], completions: [], cities: [] };
+const EMPTY: CertRefs = { courses: [], instructors: [], completions: [], countries: [], cities: [] };
 
 export async function getCertRefs(): Promise<CertRefs> {
   if (cached && Date.now() - cached.at < TTL_MS) return cached.value;
@@ -109,6 +128,7 @@ export async function getCertRefs(): Promise<CertRefs> {
         kz: text(c.kz),
         perpetual: c.perpetual === true,
         validityYears: typeof c.validityYears === 'number' ? c.validityYears : null,
+        hours: typeof c.hours === 'number' ? c.hours : null,
       })),
     instructors: (raw.instructors ?? [])
       .filter((i) => i.id && i.ru)
@@ -118,9 +138,17 @@ export async function getCertRefs(): Promise<CertRefs> {
       .map((c) => ({
         id: c.id!, ru: c.ru!.trim(), en: text(c.en), kz: text(c.kz), isDefault: c.isDefault === true,
       })),
+    countries: (raw.countries ?? [])
+      .filter((c) => c.id && c.ru)
+      .map((c) => ({ id: c.id!, ru: c.ru!.trim(), en: text(c.en), kz: text(c.kz) })),
+    // Город без страны и без отметки «онлайн» заведён не до конца —
+    // в списках выдачи ему делать нечего.
     cities: (raw.cities ?? [])
-      .filter((c) => c.ru)
-      .map((c) => ({ ru: c.ru!.trim(), en: text(c.en), kz: text(c.kz) })),
+      .filter((c) => c.id && c.ru && (c.countryId || c.online))
+      .map((c) => ({
+        id: c.id!, ru: c.ru!.trim(), en: text(c.en), kz: text(c.kz),
+        countryId: c.countryId ?? null, online: c.online === true,
+      })),
   };
 
   cached = { at: Date.now(), value };
@@ -135,6 +163,25 @@ export function clearCertRefsCache(): void {
 /** Текст о прохождении по умолчанию: отмеченный галочкой, иначе первый. */
 export function defaultCompletion(refs: CertRefs): CompletionRef | null {
   return refs.completions.find((c) => c.isDefault) ?? refs.completions[0] ?? null;
+}
+
+/**
+ * Место проведения одной строкой: «Казахстан, г. Астана».
+ * У «Онлайн» страны нет, поэтому печатается одно слово.
+ */
+export function placeLabel(
+  city: CityRef,
+  country: CountryRef | undefined,
+  locale: 'ru' | 'en' | 'kz',
+): string {
+  const name = city[locale] || city.ru;
+  if (city.online || !country) return name;
+  return `${country[locale] || country.ru}, ${name}`;
+}
+
+/** Города выбранной страны плюс «Онлайн» — он доступен всегда. */
+export function citiesOf(refs: CertRefs, countryId: string): CityRef[] {
+  return refs.cities.filter((c) => c.online || c.countryId === countryId);
 }
 
 /* ------------------------------------------------------------------ *

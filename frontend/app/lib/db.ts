@@ -46,7 +46,10 @@ function normalizeRows<T extends Record<string, unknown>>(rows: T[]): T[] {
 
 export interface CertificateRow {
   id: number;
+  /** Номер, который выдала система: он печатается на бланке. */
   code: string;
+  /** Прежний номер из архива. На бланк не идёт, но по нему тоже ищут. */
+  legacy_code: string | null;
 
   first_name_ru: string;
   last_name_ru: string;
@@ -84,6 +87,7 @@ export interface CertificateRow {
   course_ref: string | null;
   instructor_ref: string | null;
   completed_ref: string | null;
+  location_ref: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -95,6 +99,7 @@ export interface CertificateRow {
  *  подставляется в SQL напрямую и не может прийти от пользователя. */
 export const SORTABLE = {
   code: 'code',
+  legacyCode: 'legacy_code',
   firstName: 'first_name_ru',
   lastName: 'last_name_ru',
   company: 'company_ru',
@@ -142,7 +147,8 @@ export async function listCertificates(params: ListParams = {}): Promise<ListRes
   const order = `ORDER BY ${column} ${dir} NULLS LAST, id DESC`;
 
   const where = like
-    ? `WHERE code ILIKE $1
+    // Номер ищем по обоим сразу: на руки человеку выдали бумагу со старым
+    ? `WHERE (code ILIKE $1 OR legacy_code ILIKE $1)
         OR first_name_ru ILIKE $1 OR last_name_ru ILIKE $1
         OR company_ru ILIKE $1 OR course_ru ILIKE $1
         OR instructor_ru ILIKE $1`
@@ -175,8 +181,16 @@ export async function listCertificates(params: ListParams = {}): Promise<ListRes
   };
 }
 
+/**
+ * Публичная проверка по номеру. Ищем и по прежнему номеру: на руках у людей
+ * бумага со старым, а нового они не видели. Свой номер приоритетнее — при
+ * маловероятном совпадении находится тот сертификат, чей это основной номер.
+ */
 export async function getByCode(code: string): Promise<CertificateRow | null> {
-  const rows = await sql`SELECT * FROM certificates WHERE code = ${code} LIMIT 1`;
+  const rows = await sql`SELECT * FROM certificates
+                          WHERE code = ${code} OR legacy_code = ${code}
+                          ORDER BY (code = ${code}) DESC
+                          LIMIT 1`;
   return rows[0] ? (normalizeRow(rows[0]) as CertificateRow) : null;
 }
 
@@ -197,7 +211,7 @@ export async function deleteCertificate(id: number): Promise<boolean> {
 
 /** Колонки, которые разрешено писать из формы. Всё остальное игнорируется. */
 const WRITABLE = [
-  'code',
+  'code', 'legacy_code',
   'first_name_ru', 'last_name_ru', 'company_ru', 'course_ru',
   'instructor_ru', 'location_ru', 'completed_ru',
   'has_en', 'first_name_en', 'last_name_en', 'company_en', 'course_en',
@@ -206,7 +220,7 @@ const WRITABLE = [
   'instructor_kz', 'location_kz', 'completed_kz',
   'training_from', 'training_to', 'hours', 'issued_at',
   'perpetual', 'valid_until',
-  'course_ref', 'instructor_ref', 'completed_ref', 'notes',
+  'course_ref', 'instructor_ref', 'completed_ref', 'location_ref', 'notes',
 ] as const;
 
 export type WritableColumn = (typeof WRITABLE)[number];
@@ -299,16 +313,21 @@ export async function insertMany(inputs: CertificateInput[], batchSize = 200): P
  * реестра недостаточно: из даты «действует до» не восстановить срок курса.
  * Поэтому рядом лежит слепок справочника — certificate_ref_state.
  */
-export type RefKind = 'course' | 'instructor' | 'completion';
+export type RefKind = 'course' | 'instructor' | 'completion' | 'city';
 
 interface RefRow { id: string; ru: string; en: string; kz: string }
-interface CourseRefRow extends RefRow { perpetual: boolean; validityYears: number | null }
+interface CourseRefRow extends RefRow {
+  perpetual: boolean;
+  validityYears: number | null;
+  hours: number | null;
+}
 
 export interface SyncResult {
   /** Сколько записей реестра поправилось, по видам справочника. */
   courses: number;
   instructors: number;
   completions: number;
+  cities: number;
   /** Сколько правок справочника попало в журнал. */
   changes: number;
 }
@@ -317,6 +336,7 @@ export interface SyncResult {
 const SYNCED = {
   instructor: { ref: 'instructor_ref', cols: ['instructor_ru', 'instructor_en', 'instructor_kz'] },
   completion: { ref: 'completed_ref', cols: ['completed_ru', 'completed_en', 'completed_kz'] },
+  city: { ref: 'location_ref', cols: ['location_ru', 'location_en', 'location_kz'] },
 } as const;
 
 /**
@@ -396,13 +416,13 @@ async function syncCourses(items: CourseRefRow[]): Promise<Touched> {
 
   const values: unknown[] = [];
   const list = valuesList(
-    items.map((i) => [i.id, i.ru, i.en, i.kz, i.perpetual, i.validityYears]),
-    ['text', 'text', 'text', 'text', 'boolean', 'int'],
+    items.map((i) => [i.id, i.ru, i.en, i.kz, i.perpetual, i.validityYears, i.hours]),
+    ['text', 'text', 'text', 'text', 'boolean', 'int', 'int'],
     values,
   );
 
   const rows = await sql.query(
-    `WITH ref(id, ru, en, kz, perp, years) AS (VALUES ${list}),
+    `WITH ref(id, ru, en, kz, perp, years, hours) AS (VALUES ${list}),
      target AS (
        SELECT c.id,
               r.id AS ref,
@@ -419,19 +439,22 @@ async function syncCourses(items: CourseRefRow[]): Promise<Touched> {
                 -- Без даты выдачи считать не от чего
                 WHEN c.issued_at IS NULL THEN c.valid_until
                 ELSE (c.issued_at + (r.years * interval '1 year'))::date
-              END AS until
+              END AS until,
+              -- Часы у курса могут быть ещё не заданы: тогда оставляем как есть
+              COALESCE(r.hours, c.hours) AS hrs
        FROM certificates c JOIN ref r ON c.course_ref = r.id
      )
      UPDATE certificates c
         SET course_ru = t.ru, course_en = t.en, course_kz = t.kz,
-            perpetual = t.perp, valid_until = t.until
+            perpetual = t.perp, valid_until = t.until, hours = t.hrs
        FROM target t
       WHERE c.id = t.id
         AND (c.course_ru IS DISTINCT FROM t.ru
           OR c.course_en IS DISTINCT FROM t.en
           OR c.course_kz IS DISTINCT FROM t.kz
           OR c.perpetual IS DISTINCT FROM t.perp
-          OR c.valid_until IS DISTINCT FROM t.until)
+          OR c.valid_until IS DISTINCT FROM t.until
+          OR c.hours IS DISTINCT FROM t.hrs)
       RETURNING c.id, t.ref`,
     values,
   );
@@ -450,6 +473,7 @@ interface RefState {
   name_kz: string | null;
   perpetual: boolean | null;
   validity_years: number | null;
+  hours: number | null;
 }
 
 /** Человеческая запись срока — она же попадает в журнал. */
@@ -458,7 +482,11 @@ function termLabel(perpetual: boolean | null, years: number | null): string {
   return years ? `${years} г.` : 'срок не задан';
 }
 
-export type ChangeField = 'nameRu' | 'nameEn' | 'nameKz' | 'validity';
+function hoursLabel(hours: number | null): string {
+  return hours ? `${hours} ч.` : 'часы не заданы';
+}
+
+export type ChangeField = 'nameRu' | 'nameEn' | 'nameKz' | 'validity' | 'hours';
 
 interface PendingChange {
   kind: RefKind;
@@ -495,13 +523,16 @@ function diffRef(
         termLabel(before.perpetual, before.validity_years),
         termLabel(now.perpetual, now.validityYears));
     }
+    if (before.hours !== null && before.hours !== now.hours) {
+      add('hours', hoursLabel(before.hours), hoursLabel(now.hours));
+    }
   }
 
   return out;
 }
 
 async function loadRefState(): Promise<Map<string, RefState>> {
-  const rows = await sql`SELECT ref_id, kind, name_ru, name_en, name_kz, perpetual, validity_years
+  const rows = await sql`SELECT ref_id, kind, name_ru, name_en, name_kz, perpetual, validity_years, hours
                          FROM certificate_ref_state`;
   return new Map((rows as unknown as RefState[]).map((r) => [r.ref_id, r]));
 }
@@ -515,19 +546,21 @@ async function saveRefState(kind: RefKind, items: (RefRow | CourseRefRow)[]): Pr
       i.id, kind, i.ru, i.en, i.kz,
       'perpetual' in i ? i.perpetual : null,
       'validityYears' in i ? i.validityYears : null,
+      'hours' in i ? i.hours : null,
     ]),
-    ['text', 'text', 'text', 'text', 'text', 'boolean', 'int'],
+    ['text', 'text', 'text', 'text', 'text', 'boolean', 'int', 'int'],
     values,
   );
 
   await sql.query(
     `INSERT INTO certificate_ref_state
-       (ref_id, kind, name_ru, name_en, name_kz, perpetual, validity_years)
+       (ref_id, kind, name_ru, name_en, name_kz, perpetual, validity_years, hours)
      VALUES ${list}
      ON CONFLICT (ref_id) DO UPDATE SET
        kind = EXCLUDED.kind, name_ru = EXCLUDED.name_ru,
        name_en = EXCLUDED.name_en, name_kz = EXCLUDED.name_kz,
        perpetual = EXCLUDED.perpetual, validity_years = EXCLUDED.validity_years,
+       hours = EXCLUDED.hours,
        updated_at = now()`,
     values,
   );
@@ -565,19 +598,22 @@ export async function syncFromRefs(refs: {
   courses: CourseRefRow[];
   instructors: RefRow[];
   completions: RefRow[];
+  cities: RefRow[];
 }): Promise<SyncResult> {
   const before = await loadRefState();
 
-  const [courses, instructors, completions] = await Promise.all([
+  const [courses, instructors, completions, cities] = await Promise.all([
     syncCourses(refs.courses),
     syncNames('instructor', refs.instructors),
     syncNames('completion', refs.completions),
+    syncNames('city', refs.cities),
   ]);
 
   const groups = [
     ['course', refs.courses, courses],
     ['instructor', refs.instructors, instructors],
     ['completion', refs.completions, completions],
+    ['city', refs.cities, cities],
   ] as const;
 
   let changes = 0;
@@ -596,6 +632,7 @@ export async function syncFromRefs(refs: {
     courses: count(courses),
     instructors: count(instructors),
     completions: count(completions),
+    cities: count(cities),
     changes,
   };
 }
@@ -654,11 +691,23 @@ export async function acknowledgeChange(id: number): Promise<boolean> {
                          WHERE id = ${id} AND acknowledged_at IS NULL RETURNING id`;
   return rows.length > 0;
 }
-/** Какие из перечисленных номеров уже заняты. Один запрос на весь список. */
+/** Какие из выданных системой номеров уже заняты. Один запрос на весь список. */
 export async function takenCodes(codes: string[]): Promise<Set<string>> {
   if (!codes.length) return new Set();
   const rows = await sql.query('SELECT code FROM certificates WHERE code = ANY($1::text[])', [codes]);
   return new Set((rows as { code: string }[]).map((r) => r.code));
+}
+
+/**
+ * Какие прежние номера уже есть в реестре. Отдельно от takenCodes: тот
+ * следит за уникальностью выданных системой номеров, а этот ловит повторную
+ * загрузку одной и той же строки архива.
+ */
+export async function takenLegacyCodes(codes: string[]): Promise<Set<string>> {
+  if (!codes.length) return new Set();
+  const rows = await sql.query(
+    'SELECT legacy_code FROM certificates WHERE legacy_code = ANY($1::text[])', [codes]);
+  return new Set((rows as { legacy_code: string }[]).map((r) => r.legacy_code));
 }
 
 export async function updateCertificate(

@@ -1,6 +1,6 @@
 import { isAuthorized, unauthorized } from '../../../lib/adminAuth';
 import { syncFromRefs } from '../../../lib/db';
-import { getCertRefs, clearCertRefsCache } from '../../../lib/certRefs';
+import { getCertRefs, clearCertRefsCache, byId, placeLabel } from '../../../lib/certRefs';
 
 export const runtime = 'nodejs';
 // Три тысячи строк обновляются тремя запросами, но база может быть холодной
@@ -27,8 +27,21 @@ export async function POST(req: Request) {
     clearCertRefsCache();
     const refs = await getCertRefs();
 
-    const changed = await syncFromRefs(refs);
-    const total = changed.courses + changed.instructors + changed.completions;
+    // В реестре место лежит целиком — «Казахстан, г. Астана», — поэтому
+    // в синхронизацию отдаём собранные метки, а не одни названия городов.
+    const countries = byId(refs.countries);
+    const cities = refs.cities.map((city) => {
+      const country = city.online ? undefined : countries.get(city.countryId ?? '');
+      return {
+        id: city.id,
+        ru: placeLabel(city, country, 'ru'),
+        en: placeLabel(city, country, 'en'),
+        kz: placeLabel(city, country, 'kz'),
+      };
+    });
+
+    const changed = await syncFromRefs({ ...refs, cities });
+    const total = changed.courses + changed.instructors + changed.completions + changed.cities;
 
     return Response.json({ ok: true, total, ...changed });
   } catch (error) {

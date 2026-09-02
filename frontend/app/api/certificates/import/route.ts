@@ -1,5 +1,5 @@
 import { isAuthorized, unauthorized } from '../../../lib/adminAuth';
-import { insertMany, takenCodes } from '../../../lib/db';
+import { insertMany, takenCodes, takenLegacyCodes } from '../../../lib/db';
 import { generateCode } from '../../../lib/certificates';
 import { getCertRefs } from '../../../lib/certRefs';
 import { parseWorkbook, SHEETS, type ImportError } from '../../../lib/certExcel';
@@ -91,17 +91,17 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Файл не читается как книга Excel' }, { status: 400 });
     }
 
-    // Занятость номеров проверяем здесь: разбору для этого пришлось бы
-    // ходить в базу построчно.
+    // Занятость прежних номеров проверяем здесь: разбору для этого пришлось
+    // бы ходить в базу построчно.
     const errors = [...parsed.errors];
     const codes = [...parsed.codeRows.keys()];
     if (codes.length) {
-      const taken = await takenCodes(codes);
+      const taken = await takenLegacyCodes(codes);
       for (const code of taken) {
         errors.push({
           sheet: SHEETS.ru,
           row: parsed.codeRows.get(code) ?? 0,
-          column: 'Номер сертификата',
+          column: 'Прежний номер',
           message: `${code} уже есть в реестре`,
         });
       }
@@ -124,12 +124,9 @@ export async function POST(req: Request) {
       return Response.json({ ok: true, checked: parsed.rows.length, imported: 0, errors: [] });
     }
 
-    /* Номера: вписанные берём как есть, остальным выдаём свои */
-    const need = parsed.rows.filter((row) => !row.code).length;
-    const fresh = await allocateCodes(need, new Set(codes));
-    let next = 0;
-
-    const payload = parsed.rows.map((row) => ({ ...row, code: row.code ?? fresh[next++] }));
+    /* Свой номер система выдаёт каждой записи, независимо от прежнего */
+    const fresh = await allocateCodes(parsed.rows.length, new Set(codes));
+    const payload = parsed.rows.map((row, i) => ({ ...row, code: fresh[i] }));
 
     const imported = await insertMany(payload);
     return Response.json({ ok: true, imported, errors: [] });

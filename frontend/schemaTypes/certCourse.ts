@@ -5,8 +5,9 @@ import { defineField, defineType } from 'sanity'
  * Намеренно отдельный от типа `course`: там страницы сайта, здесь —
  * названия для печати в документе, включая курсы, которых на сайте нет.
  *
- * Срок действия закреплён за курсом: при выдаче «действует до» считается
- * от даты выдачи и руками не правится, поэтому здесь он обязателен.
+ * Срок действия и продолжительность закреплены за курсом: при выдаче они
+ * не редактируются, поэтому здесь оба обязательны. «Действует до» считается
+ * от даты выдачи, часы печатаются на бланке как есть.
  */
 export default defineType({
   name: 'certCourse',
@@ -30,6 +31,15 @@ export default defineType({
       title: 'Название (каз)',
       type: 'string',
       description: 'Печатается на казахском бланке.',
+    }),
+
+    defineField({
+      name: 'hours',
+      title: 'Продолжительность, часов',
+      type: 'number',
+      initialValue: 8,
+      description: 'Печатается на бланке. При выдаче не редактируется — это свойство курса, а не конкретной группы.',
+      validation: (Rule) => Rule.required().integer().min(1).max(2000),
     }),
 
     defineField({
@@ -67,9 +77,15 @@ export default defineType({
     { name: 'ru', title: 'По названию', by: [{ field: 'titleRu', direction: 'asc' }] },
   ],
   preview: {
-    select: { title: 'titleRu', subtitle: 'titleEn', active: 'active', perpetual: 'perpetual', years: 'validityYears' },
-    prepare: ({ title, subtitle, active, perpetual, years }) => {
-      const term = perpetual ? 'бессрочный' : years ? `${years} г.` : 'срок не задан'
+    select: {
+      title: 'titleRu', subtitle: 'titleEn', active: 'active',
+      perpetual: 'perpetual', years: 'validityYears', hours: 'hours',
+    },
+    prepare: ({ title, subtitle, active, perpetual, years, hours }) => {
+      const term = [
+        perpetual ? 'бессрочный' : years ? `${years} г.` : 'срок не задан',
+        hours ? `${hours} ч.` : 'часы не заданы',
+      ].join(' · ')
       return {
         title: active === false ? `${title} (неактивен)` : title,
         subtitle: [term, subtitle].filter(Boolean).join(' · '),

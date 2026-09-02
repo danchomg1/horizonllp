@@ -7,9 +7,14 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE TABLE IF NOT EXISTS certificates (
   id              bigserial PRIMARY KEY,
 
-  -- Уникальный номер. Регистр и пробелы приводятся к канону в коде,
-  -- поэтому здесь ожидается уже нормализованное значение.
+  -- Номер, который выдаёт система. Он печатается на бланке и существует
+  -- у каждой записи. Регистр и пробелы приводятся к канону в коде.
   code            text NOT NULL UNIQUE,
+
+  -- Прежний номер из архива или со старого бланка. Необязателен, на бланк
+  -- не попадает, но по нему тоже находится сертификат: людям на руки выдали
+  -- бумагу именно с ним.
+  legacy_code     text,
 
   ---------------------------------------------------------------- русская
   -- Русская версия обязательна: она источник для остальных языков.
@@ -62,6 +67,7 @@ CREATE TABLE IF NOT EXISTS certificates (
   course_ref      text,
   instructor_ref  text,
   completed_ref   text,
+  location_ref    text,
 
   notes           text,
   created_at      timestamptz NOT NULL DEFAULT now(),
@@ -98,13 +104,20 @@ CREATE TRIGGER certificates_touch_updated_at
   BEFORE UPDATE ON certificates
   FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
 
--- Добавление completed_ref к уже существующей таблице.
+-- Добавление колонок к уже существующей таблице.
 ALTER TABLE certificates ADD COLUMN IF NOT EXISTS completed_ref text;
+ALTER TABLE certificates ADD COLUMN IF NOT EXISTS legacy_code   text;
+ALTER TABLE certificates ADD COLUMN IF NOT EXISTS location_ref  text;
+
+-- Поиск идёт по обоим номерам сразу.
+CREATE INDEX IF NOT EXISTS certificates_legacy_code_trgm
+  ON certificates USING gin (legacy_code gin_trgm_ops);
 
 -- Раскатка правок справочника идёт по этим ссылкам.
 CREATE INDEX IF NOT EXISTS certificates_course_ref     ON certificates (course_ref);
 CREATE INDEX IF NOT EXISTS certificates_instructor_ref ON certificates (instructor_ref);
 CREATE INDEX IF NOT EXISTS certificates_completed_ref  ON certificates (completed_ref);
+CREATE INDEX IF NOT EXISTS certificates_location_ref   ON certificates (location_ref);
 
 /* ------------------------------------------------------------------ *
  * Журнал правок справочника                                           *
@@ -121,6 +134,7 @@ CREATE TABLE IF NOT EXISTS certificate_ref_state (
   name_kz         text,
   perpetual       boolean,
   validity_years  integer,
+  hours           integer,
   updated_at      timestamptz NOT NULL DEFAULT now()
 );
 
@@ -153,3 +167,6 @@ CREATE TABLE IF NOT EXISTS certificate_change_rows (
 
 CREATE INDEX IF NOT EXISTS certificate_change_rows_cert
   ON certificate_change_rows (certificate_id);
+
+-- Слепок хранит и продолжительность: её правку тоже надо замечать.
+ALTER TABLE certificate_ref_state ADD COLUMN IF NOT EXISTS hours integer;

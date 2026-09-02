@@ -81,13 +81,14 @@ function availableLocales(row: CertificateRow, requested: CertLocale[]): CertLoc
 const SAMPLE: CertificateRow = {
   id: 0,
   code: 'ABC23',
+  legacy_code: null,
 
   first_name_ru: 'Асхат',
   last_name_ru: 'Ералиев',
   company_ru: null,
   course_ru: 'Управление технологической безопасностью на опасных производственных объектах',
   instructor_ru: 'Абулханова Гульнара',
-  location_ru: 'Казахстан, г. Атырау',
+  location_ru: 'Казахстан, г. Астана',
   completed_ru: 'успешно прошёл(а) курс обучения',
 
   has_en: true,
@@ -96,7 +97,7 @@ const SAMPLE: CertificateRow = {
   company_en: null,
   course_en: 'Process Safety Management at Hazardous Production Facilities',
   instructor_en: 'Abulkhanova Gulnara',
-  location_en: 'Kazakhstan, Atyrau',
+  location_en: 'Kazakhstan, Astana',
   completed_en: 'has successfully completed the training course',
 
   has_kz: true,
@@ -105,7 +106,7 @@ const SAMPLE: CertificateRow = {
   company_kz: null,
   course_kz: 'Қауіпті өндірістік объектілердегі технологиялық қауіпсіздікті басқару',
   instructor_kz: 'Әбілқанова Гүлнара',
-  location_kz: 'Қазақстан, Атырау қаласы',
+  location_kz: 'Қазақстан, Астана қаласы',
   completed_kz: 'оқу курсын сәтті аяқтады',
 
   // Период, а не один день: это самое широкое значение в нижнем ряду,
@@ -120,6 +121,7 @@ const SAMPLE: CertificateRow = {
   course_ref: null,
   instructor_ref: null,
   completed_ref: null,
+  location_ref: null,
   notes: null,
   created_at: '',
   updated_at: '',

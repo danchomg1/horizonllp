@@ -119,6 +119,7 @@ export interface SyncResult {
   courses: number;
   instructors: number;
   completions: number;
+  cities: number;
   /** Сколько правок справочника попало в журнал. */
   changes: number;
 }
@@ -232,6 +233,7 @@ export async function importRegistry(file: File, dryRun: boolean): Promise<Impor
 export interface Certificate {
   id: number;
   code: string;
+  legacy_code: string | null;
   first_name_ru: string;
   last_name_ru: string;
   company_ru: string | null;
@@ -264,6 +266,7 @@ export interface Certificate {
   course_ref: string | null;
   instructor_ref: string | null;
   completed_ref: string | null;
+  location_ref: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -279,7 +282,7 @@ export interface ListResult {
 }
 
 export type SortKey =
-  | 'code' | 'firstName' | 'lastName' | 'company'
+  | 'code' | 'legacyCode' | 'firstName' | 'lastName' | 'company'
   | 'course' | 'issuedAt' | 'validUntil' | 'createdAt';
 
 export function listCertificates(params: {

@@ -152,10 +152,14 @@ const ICON_GAP = 10;
 
 export const INFO_ROW: InfoColumn[] = (
   [
+    // Продолжительность посередине: она есть у каждого сертификата, потому
+    // что задана у курса. Даты и место заполнены не всегда, поэтому стоят
+    // по краям — пустой крайний столбец не оставляет дыру в середине ряда.
+    //
     // limit — правая граница столбца: у первых двух это следующая полоска
     // минус воздух, у последнего — правый край содержимого бланка.
-    { field: 'hours', icon: 'duration', iconX: 135.5, limit: 298.7 },
-    { field: 'trainingDate', icon: 'calendar', iconX: 330.8, limit: 519.7 },
+    { field: 'trainingDate', icon: 'calendar', iconX: 135.5, limit: 298.7 },
+    { field: 'hours', icon: 'duration', iconX: 330.8, limit: 519.7 },
     { field: 'location', icon: 'pin', iconX: 551.8, limit: 748 },
   ] as const
 ).map(({ field, icon, iconX, limit }) => {
