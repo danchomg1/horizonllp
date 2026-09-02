@@ -1,4 +1,5 @@
 import { getByCode } from '../../../lib/db';
+import { resolveRow } from '../../../lib/certResolve';
 import { normalizeCode, isValidCode, formatCertDate, type CertLocale } from '../../../lib/certificates';
 
 export const runtime = 'nodejs';
@@ -23,8 +24,13 @@ export async function GET(req: Request) {
   const code = normalizeCode(raw);
 
   try {
-    const row = await getByCode(code);
-    if (!row) return Response.json({ found: false, reason: 'not_found' }, { status: 404 });
+    const stored = await getByCode(code);
+    if (!stored) return Response.json({ found: false, reason: 'not_found' }, { status: 404 });
+
+    // Справочник поверх записи: если название курса или срок поправили в
+    // Studio, проверка обязана показывать поправленное, а не то, что было
+    // скопировано в реестр при выдаче.
+    const row = await resolveRow(stored);
 
     // Языковая версия с откатом на русскую, если её не заполняли
     const pickLang = (ru: string | null, en: string | null, kz: string | null) =>

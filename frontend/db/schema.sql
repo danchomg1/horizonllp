@@ -55,11 +55,13 @@ CREATE TABLE IF NOT EXISTS certificates (
     CHECK (NOT (perpetual AND valid_until IS NOT NULL)),
 
   ---------------------------------------------------------------- служебное
-  -- Названия курса и преподавателя хранятся строкой, а не только ссылкой:
-  -- сертификат это документ, и он должен навсегда сохранить то написание,
-  -- с которым был напечатан, даже если справочник потом поправят.
+  -- Ссылки на справочники Studio. Названия при этом продолжают лежать
+  -- строкой рядом: по ним идёт поиск, они же остаются у записей, чей
+  -- элемент справочника удалили. Правка справочника разъезжается по
+  -- реестру сама — см. syncFromRefs в app/lib/db.ts.
   course_ref      text,
   instructor_ref  text,
+  completed_ref   text,
 
   notes           text,
   created_at      timestamptz NOT NULL DEFAULT now(),
@@ -95,3 +97,11 @@ DROP TRIGGER IF EXISTS certificates_touch_updated_at ON certificates;
 CREATE TRIGGER certificates_touch_updated_at
   BEFORE UPDATE ON certificates
   FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
+
+-- Добавление completed_ref к уже существующей таблице.
+ALTER TABLE certificates ADD COLUMN IF NOT EXISTS completed_ref text;
+
+-- Раскатка правок справочника идёт по этим ссылкам.
+CREATE INDEX IF NOT EXISTS certificates_course_ref     ON certificates (course_ref);
+CREATE INDEX IF NOT EXISTS certificates_instructor_ref ON certificates (instructor_ref);
+CREATE INDEX IF NOT EXISTS certificates_completed_ref  ON certificates (completed_ref);

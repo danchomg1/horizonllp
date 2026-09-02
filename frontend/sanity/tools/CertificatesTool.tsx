@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { checkKey, getKey, setKey, type Certificate } from './api';
+import { checkKey, getKey, setKey, syncRegistry, type Certificate } from './api';
 import { CertificateList } from './CertificateList';
 import { CertificateForm } from './CertificateForm';
 import { CertificateImport } from './CertificateImport';
@@ -77,6 +77,25 @@ export default function CertificatesTool() {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  /**
+   * Правки справочника разъезжаются по реестру при каждом открытии.
+   * Список при этом не ждёт: он грузится сразу, а обновляется только если
+   * синхронизация действительно что-то поправила.
+   */
+  useEffect(() => {
+    if (!unlocked) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const result = await syncRegistry();
+        if (!cancelled && result.total > 0) setRefreshToken((n) => n + 1);
+      } catch {
+        // Справочник недоступен — реестр всё равно должен открыться
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [unlocked]);
 
   if (unlocked === null) {
     return <div style={{ ...s.page, ...s.muted }}>Проверяем доступ…</div>;

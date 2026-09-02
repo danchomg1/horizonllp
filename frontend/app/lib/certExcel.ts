@@ -1,6 +1,9 @@
 import ExcelJS from 'exceljs';
 import { addYears, normalizeCode } from './certificates';
-import { buildIndex, closestName, refKey, type CertRefs, type CourseRef, type PersonRef } from './certRefs';
+import {
+  buildIndex, closestName, defaultCompletion, refKey,
+  type CertRefs, type CompletionRef, type CourseRef, type PersonRef,
+} from './certRefs';
 
 /**
  * Обмен реестра сертификатов через Excel.
@@ -14,8 +17,9 @@ import { buildIndex, closestName, refKey, type CertRefs, type CourseRef, type Pe
  * Листы связаны колонкой «№». Она заполнена заранее, поэтому строка 5 на
  * английском листе — это тот же человек, что и строка 5 на русском.
  *
- * Курс и преподаватель выбираются из выпадающего списка: сверка идёт по
- * справочнику, и произвольное написание загрузить нельзя.
+ * Курс, преподаватель и текст о прохождении выбираются из выпадающего
+ * списка: сверка идёт по справочнику, и произвольное написание загрузить
+ * нельзя — иначе неоткуда взять остальные два языка.
  */
 
 export const SHEETS = {
@@ -53,6 +57,7 @@ const RU_COLUMNS: Column[] = [
   { header: 'Часов', width: 8 },
   { header: 'Место проведения', width: 26 },
   { header: 'Дата выдачи', width: 14, date: true },
+  { header: 'Текст о прохождении', width: 40 },
 ];
 
 function langColumns(suffix: string): Column[] {
@@ -79,6 +84,8 @@ const GUIDE = [
   ['', 'он и попадёт в реестр.'],
   ['6.', '«Действует до» в таблице нет: срок берётся у курса и считается от даты выдачи.'],
   ['7.', 'Если дата выдачи пустая, берётся конец обучения, потом начало, потом сегодняшний день.'],
+  ['8.', 'Текст о прохождении тоже из списка. Оставите пустым — подставится отмеченный'],
+  ['', 'в Studio как «по умолчанию».'],
   [],
   ['Даты пишите в формате 31.12.2026, часы — целым числом.'],
 ];
@@ -138,7 +145,7 @@ export async function buildTemplate(refs: CertRefs): Promise<Uint8Array> {
     dataValidations: { add(range: string, value: ExcelJS.DataValidation): void };
   }).dataValidations;
 
-  const dropdown = (column: 'F' | 'G', source: 'A' | 'B', count: number, what: string) => {
+  const dropdown = (column: 'F' | 'G' | 'L', source: 'A' | 'B' | 'C', count: number, what: string) => {
     validations.add(`${column}2:${column}${TEMPLATE_ROWS + 1}`, {
       type: 'list',
       allowBlank: true,
@@ -151,6 +158,7 @@ export async function buildTemplate(refs: CertRefs): Promise<Uint8Array> {
   };
   dropdown('F', 'A', refs.courses.length, 'Курс');
   dropdown('G', 'B', refs.instructors.length, 'Преподаватель');
+  dropdown('L', 'C', refs.completions.length, 'Текст о прохождении');
 
   /* Английский и казахский листы */
   const en = book.addWorksheet(SHEETS.en);
@@ -166,10 +174,15 @@ export async function buildTemplate(refs: CertRefs): Promise<Uint8Array> {
   const sheetRefs = book.addWorksheet(SHEETS.refs, { state: 'hidden' });
   sheetRefs.getColumn(1).width = 60;
   sheetRefs.getColumn(2).width = 30;
-  sheetRefs.addRow(['Курсы', 'Преподаватели']);
-  const refRows = Math.max(refs.courses.length, refs.instructors.length);
+  sheetRefs.getColumn(3).width = 50;
+  sheetRefs.addRow(['Курсы', 'Преподаватели', 'Тексты о прохождении']);
+  const refRows = Math.max(refs.courses.length, refs.instructors.length, refs.completions.length);
   for (let i = 0; i < refRows; i++) {
-    sheetRefs.addRow([refs.courses[i]?.ru ?? null, refs.instructors[i]?.ru ?? null]);
+    sheetRefs.addRow([
+      refs.courses[i]?.ru ?? null,
+      refs.instructors[i]?.ru ?? null,
+      refs.completions[i]?.ru ?? null,
+    ]);
   }
 
   const buffer = await book.xlsx.writeBuffer();
@@ -196,6 +209,7 @@ export interface ImportRow {
   course_ru: string;
   instructor_ru: string | null;
   location_ru: string | null;
+  completed_ru: string;
 
   has_en: boolean;
   first_name_en: string | null;
@@ -204,6 +218,7 @@ export interface ImportRow {
   course_en: string | null;
   instructor_en: string | null;
   location_en: string | null;
+  completed_en: string | null;
 
   has_kz: boolean;
   first_name_kz: string | null;
@@ -212,6 +227,7 @@ export interface ImportRow {
   course_kz: string | null;
   instructor_kz: string | null;
   location_kz: string | null;
+  completed_kz: string | null;
 
   training_from: string | null;
   training_to: string | null;
@@ -222,6 +238,7 @@ export interface ImportRow {
 
   course_ref: string;
   instructor_ref: string | null;
+  completed_ref: string;
 }
 
 export interface ParseResult {
@@ -350,6 +367,8 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
   const courseIndex = buildIndex(refs.courses);
   const instructorIndex = buildIndex(refs.instructors);
   const cityIndex = buildIndex(refs.cities);
+  const completionIndex = buildIndex(refs.completions);
+  const fallbackCompletion = defaultCompletion(refs);
 
   const seenNo = new Set<number>();
   const seenCode = new Set<string>();
@@ -359,7 +378,7 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
     if (index === 1) return;
 
     const cell = (c: number) => text(row.getCell(c).value);
-    const values = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(cell);
+    const values = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(cell);
     if (isBlank(values)) return;
 
     const before = errors.length;
@@ -414,6 +433,23 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
       }
     }
 
+    /* Текст о прохождении — тоже только из справочника */
+    // values[0] — колонка 2, поэтому тринадцатая колонка это индекс 11
+    const completionName = values[11];
+    let completion: CompletionRef | undefined | null;
+    if (completionName) {
+      completion = completionIndex.get(refKey(completionName));
+      if (!completion) {
+        const hint = closestName(completionName, refs.completions);
+        fail('Текст о прохождении', hint
+          ? `«${completionName}» нет в справочнике, возможно имелось в виду «${hint}»`
+          : `«${completionName}» нет в справочнике — выберите значение из выпадающего списка`);
+      }
+    } else {
+      completion = fallbackCompletion;
+      if (!completion) fail('Текст о прохождении', 'в Studio не заведено ни одного текста о прохождении');
+    }
+
     /* Даты */
     const from = readDate(row.getCell(8).value);
     const to = readDate(row.getCell(9).value);
@@ -448,8 +484,8 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
     }
 
     // Строка с любым замечанием не загружается целиком: дальше разбор
-    // опирается на то, что курс найден и обязательные поля на месте.
-    if (errors.length > before || !course) return;
+    // опирается на то, что курс с текстом найдены и поля на месте.
+    if (errors.length > before || !course || !completion) return;
 
     /* Другие языки: строка есть и в ней заполнено имя — значит версия нужна */
     const enRow = en.get(no);
@@ -475,6 +511,7 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
       course_ru: course.ru,
       instructor_ru: instructor?.ru ?? null,
       location_ru: locationRu,
+      completed_ru: completion.ru,
 
       has_en: hasEn,
       first_name_en: hasEn ? enRow!.first || null : null,
@@ -483,6 +520,7 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
       course_en: hasEn ? course.en || course.ru : null,
       instructor_en: hasEn ? instructor?.en || instructor?.ru || null : null,
       location_en: hasEn ? enRow!.location || city?.en || null : null,
+      completed_en: hasEn ? completion.en || completion.ru : null,
 
       has_kz: hasKz,
       first_name_kz: hasKz ? kzRow!.first || null : null,
@@ -491,6 +529,7 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
       course_kz: hasKz ? course.kz || course.ru : null,
       instructor_kz: hasKz ? instructor?.kz || instructor?.ru || null : null,
       location_kz: hasKz ? kzRow!.location || city?.kz || null : null,
+      completed_kz: hasKz ? completion.kz || completion.ru : null,
 
       training_from: (from as string | null) ?? null,
       training_to: (to as string | null) ?? null,
@@ -501,6 +540,7 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
 
       course_ref: course.id,
       instructor_ref: instructor?.id ?? null,
+      completed_ref: completion.id,
     });
   });
 
@@ -516,12 +556,3 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
   return { rows, errors, codeRows };
 }
 
-/** Тексты о прохождении добавляются уже при записи — они одинаковы для всех. */
-export function withCompleted(row: ImportRow, completed: { ru: string; en: string; kz: string }) {
-  return {
-    ...row,
-    completed_ru: completed.ru,
-    completed_en: row.has_en ? completed.en : null,
-    completed_kz: row.has_kz ? completed.kz : null,
-  };
-}

@@ -1,7 +1,8 @@
 import { defineField, defineType } from 'sanity'
 
 /**
- * Общие настройки сертификатов: подписант и тексты о прохождении.
+ * Общие настройки сертификатов: сейчас это только подписант.
+ * Тексты о прохождении живут отдельным справочником certCompletion.
  * Документ единственный в своём роде.
  */
 export default defineType({
@@ -29,25 +30,6 @@ export default defineType({
       initialValue: 'Малик Бақытбек',
     }),
 
-    defineField({
-      name: 'completedRu',
-      title: 'Текст о прохождении (рус)',
-      type: 'string',
-      initialValue: 'успешно прошёл(а) курс обучения',
-      description: 'Подставляется в форму выдачи, там его можно заменить для конкретного человека.',
-    }),
-    defineField({
-      name: 'completedEn',
-      title: 'Текст о прохождении (англ)',
-      type: 'string',
-      initialValue: 'has successfully completed the training course',
-    }),
-    defineField({
-      name: 'completedKz',
-      title: 'Текст о прохождении (каз)',
-      type: 'string',
-      initialValue: 'оқу курсын сәтті аяқтады',
-    }),
 
   ],
   preview: {

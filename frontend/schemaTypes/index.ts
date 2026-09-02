@@ -21,9 +21,10 @@ import aboutItem from './aboutItem'
 import certCourse from './certCourse'
 import certInstructor from './certInstructor'
 import certCity from './certCity'
+import certCompletion from './certCompletion'
 import certSettings from './certSettings'
 
 
 export const schemaTypes = [aboutItem, contactCity, course, tabs, header,news, richText, tabItem, event, page, home, footer, courseCategory, consultingItem,
     explosionItem, emergencyItem, engineeringItem, ppeItem,
-    certCourse, certInstructor, certCity, certSettings] // <--- Добавили в список
+    certCourse, certInstructor, certCity, certCompletion, certSettings] // <--- Добавили в список

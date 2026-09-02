@@ -81,6 +81,7 @@ export interface CertificateRow {
 
   course_ref: string | null;
   instructor_ref: string | null;
+  completed_ref: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -196,7 +197,7 @@ const WRITABLE = [
   'instructor_kz', 'location_kz', 'completed_kz',
   'training_from', 'training_to', 'hours', 'issued_at',
   'perpetual', 'valid_until',
-  'course_ref', 'instructor_ref', 'notes',
+  'course_ref', 'instructor_ref', 'completed_ref', 'notes',
 ] as const;
 
 export type WritableColumn = (typeof WRITABLE)[number];
@@ -265,6 +266,148 @@ export async function insertMany(inputs: CertificateInput[], batchSize = 200): P
   }
 
   return written;
+}
+
+/* ------------------------------------------------------------------ *
+ * Раскатка правок справочника                                         *
+ * ------------------------------------------------------------------ */
+
+/**
+ * Подтягивает копии названий к справочнику Studio.
+ *
+ * Записи хранят название курса, имя преподавателя и текст о прохождении
+ * строкой — по ним идёт поиск, и они остаются у записей, чей элемент
+ * справочника удалили. Но правку в Studio реестр обязан подхватывать, иначе
+ * опечатка навсегда остаётся в трёх тысячах строк.
+ *
+ * Всё делается одним запросом на справочник: пачка значений подставляется
+ * через VALUES, а WHERE трогает только те строки, где что-то расходится, —
+ * иначе триггер обновил бы «изменён» у всего реестра на каждый вызов.
+ */
+interface RefRow { id: string; ru: string; en: string; kz: string }
+interface CourseRefRow extends RefRow { perpetual: boolean; validityYears: number | null }
+
+export interface SyncResult {
+  courses: number;
+  instructors: number;
+  completions: number;
+}
+
+/** Имена колонок берутся из этого перечня, а не из запроса — в SQL они идут строкой. */
+const SYNCED = {
+  instructor: { ref: 'instructor_ref', cols: ['instructor_ru', 'instructor_en', 'instructor_kz'] },
+  completed: { ref: 'completed_ref', cols: ['completed_ru', 'completed_en', 'completed_kz'] },
+} as const;
+
+/** VALUES-список вида ($1::text, $2::text, …) с явными типами в первой строке. */
+function valuesList(rows: unknown[][], types: string[], values: unknown[]): string {
+  return rows
+    .map((row, index) => {
+      const cells = row.map((cell, i) => {
+        values.push(cell);
+        // Тип нужен только первой строке, дальше Postgres выводит сам
+        return index === 0 ? `$${values.length}::${types[i]}` : `$${values.length}`;
+      });
+      return `(${cells.join(', ')})`;
+    })
+    .join(', ');
+}
+
+async function syncNames(kind: keyof typeof SYNCED, items: RefRow[]): Promise<number> {
+  if (!items.length) return 0;
+
+  const { ref, cols } = SYNCED[kind];
+  const [ruCol, enCol, kzCol] = cols;
+  const values: unknown[] = [];
+  const list = valuesList(
+    items.map((i) => [i.id, i.ru, i.en, i.kz]),
+    ['text', 'text', 'text', 'text'],
+    values,
+  );
+
+  const rows = await sql.query(
+    `WITH ref(id, ru, en, kz) AS (VALUES ${list}),
+     target AS (
+       SELECT c.id,
+              r.ru AS ru,
+              CASE WHEN c.has_en THEN COALESCE(NULLIF(r.en, ''), r.ru) ELSE c.${enCol} END AS en,
+              CASE WHEN c.has_kz THEN COALESCE(NULLIF(r.kz, ''), r.ru) ELSE c.${kzCol} END AS kz
+       FROM certificates c JOIN ref r ON c.${ref} = r.id
+     )
+     UPDATE certificates c
+        SET ${ruCol} = t.ru, ${enCol} = t.en, ${kzCol} = t.kz
+       FROM target t
+      WHERE c.id = t.id
+        AND (c.${ruCol} IS DISTINCT FROM t.ru
+          OR c.${enCol} IS DISTINCT FROM t.en
+          OR c.${kzCol} IS DISTINCT FROM t.kz)
+      RETURNING c.id`,
+    values,
+  );
+  return (rows as unknown[]).length;
+}
+
+/**
+ * Курсы отдельно: вместе с названием у них едет срок действия, а он
+ * пересчитывается от даты выдачи конкретной записи.
+ */
+async function syncCourses(items: CourseRefRow[]): Promise<number> {
+  if (!items.length) return 0;
+
+  const values: unknown[] = [];
+  const list = valuesList(
+    items.map((i) => [i.id, i.ru, i.en, i.kz, i.perpetual, i.validityYears]),
+    ['text', 'text', 'text', 'text', 'boolean', 'int'],
+    values,
+  );
+
+  const rows = await sql.query(
+    `WITH ref(id, ru, en, kz, perp, years) AS (VALUES ${list}),
+     target AS (
+       SELECT c.id,
+              r.ru AS ru,
+              CASE WHEN c.has_en THEN COALESCE(NULLIF(r.en, ''), r.ru) ELSE c.course_en END AS en,
+              CASE WHEN c.has_kz THEN COALESCE(NULLIF(r.kz, ''), r.ru) ELSE c.course_kz END AS kz,
+              -- Курс, у которого не задано ни число лет, ни «бессрочный»,
+              -- ещё не настроен: срок у записи в этом случае не трогаем,
+              -- иначе выданное «бессрочно» молча превратилось бы в пустоту.
+              CASE WHEN NOT r.perp AND r.years IS NULL THEN c.perpetual ELSE r.perp END AS perp,
+              CASE
+                WHEN NOT r.perp AND r.years IS NULL THEN c.valid_until
+                WHEN r.perp THEN NULL
+                -- Без даты выдачи считать не от чего
+                WHEN c.issued_at IS NULL THEN c.valid_until
+                ELSE (c.issued_at + (r.years * interval '1 year'))::date
+              END AS until
+       FROM certificates c JOIN ref r ON c.course_ref = r.id
+     )
+     UPDATE certificates c
+        SET course_ru = t.ru, course_en = t.en, course_kz = t.kz,
+            perpetual = t.perp, valid_until = t.until
+       FROM target t
+      WHERE c.id = t.id
+        AND (c.course_ru IS DISTINCT FROM t.ru
+          OR c.course_en IS DISTINCT FROM t.en
+          OR c.course_kz IS DISTINCT FROM t.kz
+          OR c.perpetual IS DISTINCT FROM t.perp
+          OR c.valid_until IS DISTINCT FROM t.until)
+      RETURNING c.id`,
+    values,
+  );
+  return (rows as unknown[]).length;
+}
+
+export async function syncFromRefs(refs: {
+  courses: CourseRefRow[];
+  instructors: RefRow[];
+  completions: RefRow[];
+}): Promise<SyncResult> {
+  const [courses, instructors, completions] = await Promise.all([
+    syncCourses(refs.courses),
+    syncNames('instructor', refs.instructors),
+    syncNames('completed', refs.completions),
+  ]);
+  return { courses, instructors, completions };
 }
 
 /** Какие из перечисленных номеров уже заняты. Один запрос на весь список. */

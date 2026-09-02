@@ -1,12 +1,17 @@
 import { client } from './sanity';
 
 /**
- * Справочники сертификатов из Studio — курсы, преподаватели и города.
+ * Справочники сертификатов из Studio — курсы, преподаватели, тексты о
+ * прохождении и города.
  *
- * Курс и преподаватель хранятся в трёх написаниях, поэтому свободный ввод
- * здесь невозможен в принципе: из строки «Process Safety Management» неоткуда
- * взять казахское название. И в форме выдачи, и при загрузке таблицы значение
- * обязано найтись в справочнике, иначе запись не проходит.
+ * Справочник здесь — источник правды. Название курса, имя преподавателя,
+ * текст о прохождении и срок действия берутся из него в момент печати и
+ * проверки, а в самой записи реестра лежат копией: по ней идёт поиск и она
+ * же остаётся, если элемент справочника когда-нибудь удалят. Копии
+ * подтягиваются к справочнику сами — см. syncFromRefs в app/lib/db.ts.
+ *
+ * Свободный ввод в этих полях невозможен в принципе: из строки
+ * «Process Safety Management» неоткуда взять казахское название.
  */
 
 export interface CourseRef {
@@ -26,6 +31,14 @@ export interface PersonRef {
   kz: string;
 }
 
+export interface CompletionRef {
+  id: string;
+  ru: string;
+  en: string;
+  kz: string;
+  isDefault: boolean;
+}
+
 export interface CityRef {
   ru: string;
   en: string;
@@ -35,6 +48,7 @@ export interface CityRef {
 export interface CertRefs {
   courses: CourseRef[];
   instructors: PersonRef[];
+  completions: CompletionRef[];
   cities: CityRef[];
 }
 
@@ -45,6 +59,9 @@ const QUERY = `{
   "instructors": *[_type == "certInstructor" && active != false] | order(nameRu asc){
     "id": _id, "ru": nameRu, "en": nameEn, "kz": nameKz
   },
+  "completions": *[_type == "certCompletion" && active != false] | order(textRu asc){
+    "id": _id, "ru": textRu, "en": textEn, "kz": textKz, isDefault
+  },
   "cities": *[_type == "certCity"] | order(nameRu asc){
     "ru": nameRu, "en": nameEn, "kz": nameKz
   }
@@ -53,35 +70,81 @@ const QUERY = `{
 interface RawRefs {
   courses?: Partial<CourseRef>[];
   instructors?: Partial<PersonRef>[];
+  completions?: Partial<CompletionRef>[];
   cities?: Partial<CityRef>[];
 }
 
-export async function getCertRefs(): Promise<CertRefs> {
-  const raw = (await client.fetch<RawRefs | null>(QUERY)) ?? {};
+/* ------------------------------------------------------------------ *
+ * Загрузка и кэш                                                      *
+ * ------------------------------------------------------------------ */
 
-  return {
+// Справочники читаются на каждый выпуск PDF и на каждую публичную проверку,
+// а меняются редко. Минуты жизни хватает, чтобы правка доехала сама.
+const TTL_MS = 60_000;
+let cached: { at: number; value: CertRefs } | null = null;
+
+const EMPTY: CertRefs = { courses: [], instructors: [], completions: [], cities: [] };
+
+export async function getCertRefs(): Promise<CertRefs> {
+  if (cached && Date.now() - cached.at < TTL_MS) return cached.value;
+
+  let raw: RawRefs;
+  try {
+    raw = (await client.fetch<RawRefs | null>(QUERY)) ?? {};
+  } catch (error) {
+    // Studio недоступна — печатаем по копиям, которые лежат в записях
+    console.error('Не удалось прочитать справочники сертификатов:', error);
+    return cached?.value ?? EMPTY;
+  }
+
+  const text = (v: string | undefined) => v?.trim() || '';
+
+  const value: CertRefs = {
     courses: (raw.courses ?? [])
-      .filter((c): c is Partial<CourseRef> & { id: string; ru: string } => Boolean(c.id && c.ru))
+      .filter((c) => c.id && c.ru)
       .map((c) => ({
         id: c.id!,
         ru: c.ru!.trim(),
-        en: c.en?.trim() || '',
-        kz: c.kz?.trim() || '',
+        en: text(c.en),
+        kz: text(c.kz),
         perpetual: c.perpetual === true,
         validityYears: typeof c.validityYears === 'number' ? c.validityYears : null,
       })),
     instructors: (raw.instructors ?? [])
-      .filter((i): i is Partial<PersonRef> & { id: string; ru: string } => Boolean(i.id && i.ru))
-      .map((i) => ({ id: i.id!, ru: i.ru!.trim(), en: i.en?.trim() || '', kz: i.kz?.trim() || '' })),
+      .filter((i) => i.id && i.ru)
+      .map((i) => ({ id: i.id!, ru: i.ru!.trim(), en: text(i.en), kz: text(i.kz) })),
+    completions: (raw.completions ?? [])
+      .filter((c) => c.id && c.ru)
+      .map((c) => ({
+        id: c.id!, ru: c.ru!.trim(), en: text(c.en), kz: text(c.kz), isDefault: c.isDefault === true,
+      })),
     cities: (raw.cities ?? [])
-      .filter((c): c is Partial<CityRef> & { ru: string } => Boolean(c.ru))
-      .map((c) => ({ ru: c.ru!.trim(), en: c.en?.trim() || '', kz: c.kz?.trim() || '' })),
+      .filter((c) => c.ru)
+      .map((c) => ({ ru: c.ru!.trim(), en: text(c.en), kz: text(c.kz) })),
   };
+
+  cached = { at: Date.now(), value };
+  return value;
+}
+
+/** Сбрасывает кэш — нужен, когда правку из Studio хотят увидеть сразу. */
+export function clearCertRefsCache(): void {
+  cached = null;
+}
+
+/** Текст о прохождении по умолчанию: отмеченный галочкой, иначе первый. */
+export function defaultCompletion(refs: CertRefs): CompletionRef | null {
+  return refs.completions.find((c) => c.isDefault) ?? refs.completions[0] ?? null;
 }
 
 /* ------------------------------------------------------------------ *
- * Сверка написаний                                                    *
+ * Поиск по справочнику                                                *
  * ------------------------------------------------------------------ */
+
+/** Разложить справочник по _id — так его читают печать и проверка. */
+export function byId<T extends { id: string }>(items: T[]): Map<string, T> {
+  return new Map(items.map((item) => [item.id, item]));
+}
 
 /**
  * Ключ для сравнения. В таблицах гуляет регистр, ё/е, кавычки, тире и лишние

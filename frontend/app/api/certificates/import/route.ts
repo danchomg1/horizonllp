@@ -2,8 +2,7 @@ import { isAuthorized, unauthorized } from '../../../lib/adminAuth';
 import { insertMany, takenCodes } from '../../../lib/db';
 import { generateCode } from '../../../lib/certificates';
 import { getCertRefs } from '../../../lib/certRefs';
-import { parseWorkbook, withCompleted, SHEETS, type ImportError } from '../../../lib/certExcel';
-import { getCertSettings } from '../../../lib/certSettings';
+import { parseWorkbook, SHEETS, type ImportError } from '../../../lib/certExcel';
 
 export const runtime = 'nodejs';
 // Три тысячи строк разбираются и пишутся дольше стандартного лимита
@@ -77,6 +76,12 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
+    if (!refs.completions.length) {
+      return Response.json(
+        { error: 'В Studio не заведено ни одного текста о прохождении' },
+        { status: 400 },
+      );
+    }
 
     let parsed;
     try {
@@ -124,10 +129,7 @@ export async function POST(req: Request) {
     const fresh = await allocateCodes(need, new Set(codes));
     let next = 0;
 
-    const settings = await getCertSettings();
-    const payload = parsed.rows.map((row) =>
-      withCompleted({ ...row, code: row.code ?? fresh[next++] }, settings.completed),
-    );
+    const payload = parsed.rows.map((row) => ({ ...row, code: row.code ?? fresh[next++] }));
 
     const imported = await insertMany(payload);
     return Response.json({ ok: true, imported, errors: [] });

@@ -19,8 +19,12 @@ interface CourseRef {
 }
 interface InstructorRef { _id: string; nameRu: string; nameEn?: string; nameKz?: string }
 interface CityRef { nameRu: string; nameEn?: string; nameKz?: string }
-interface Settings {
-  completedRu?: string; completedEn?: string; completedKz?: string;
+interface CompletionRef {
+  _id: string;
+  textRu: string;
+  textEn?: string;
+  textKz?: string;
+  isDefault?: boolean;
 }
 
 /* ------------------------------------------------------------------ *
@@ -144,8 +148,19 @@ function todayLocal(): string {
 
 type FormState = Record<string, unknown>;
 
+/** Выбранный текст о прохождении раскладывается сразу по трём языкам. */
+function pickCompletion(item: CompletionRef): FormState {
+  return {
+    completed_ru: item.textRu,
+    completed_en: item.textEn ?? item.textRu,
+    completed_kz: item.textKz ?? item.textRu,
+    completed_ref: item._id,
+  };
+}
+
 const EMPTY: FormState = {
   code: '',
+  completed_ref: '',
   first_name_ru: '', last_name_ru: '', company_ru: '', course_ru: '',
   instructor_ru: '', location_ru: '', completed_ru: '',
   has_en: false, first_name_en: '', last_name_en: '', company_en: '', course_en: '',
@@ -180,7 +195,7 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
   const [courses, setCourses] = useState<CourseRef[]>([]);
   const [instructors, setInstructors] = useState<InstructorRef[]>([]);
   const [cities, setCities] = useState<CityRef[]>([]);
-  const [settings, setSettings] = useState<Settings>({});
+  const [completions, setCompletions] = useState<CompletionRef[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -192,26 +207,21 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
     let cancelled = false;
     (async () => {
       try {
-        const [c, i, ct, st] = await Promise.all([
+        const [c, i, ct, cp] = await Promise.all([
           client.fetch<CourseRef[]>(`*[_type=="certCourse" && active != false]|order(titleRu asc){_id,titleRu,titleEn,titleKz,perpetual,validityYears}`),
           client.fetch<InstructorRef[]>(`*[_type=="certInstructor" && active != false]|order(nameRu asc){_id,nameRu,nameEn,nameKz}`),
           client.fetch<CityRef[]>(`*[_type=="certCity"]{nameRu,nameEn,nameKz}`),
-          client.fetch<Settings>(`*[_type=="certSettings"][0]{completedRu,completedEn,completedKz}`),
+          client.fetch<CompletionRef[]>(`*[_type=="certCompletion" && active != false]|order(textRu asc){_id,textRu,textEn,textKz,isDefault}`),
         ]);
         if (cancelled) return;
         setCourses(c ?? []);
         setInstructors(i ?? []);
         setCities(ct ?? []);
-        setSettings(st ?? {});
+        setCompletions(cp ?? []);
 
-        // Тексты о прохождении по умолчанию — только для новой записи
-        if (!row) {
-          set({
-            completed_ru: st?.completedRu ?? 'успешно прошёл(а) курс обучения',
-            completed_en: st?.completedEn ?? 'has successfully completed the training course',
-            completed_kz: st?.completedKz ?? 'оқу курсын сәтті аяқтады',
-          });
-        }
+        // Текст о прохождении по умолчанию — только для новой записи
+        const preset = (cp ?? []).find((t) => t.isDefault) ?? (cp ?? [])[0];
+        if (!row && preset) set(pickCompletion(preset));
       } catch {
         if (!cancelled) setError('Не удалось загрузить справочники из Studio');
       }
@@ -271,11 +281,6 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
           patch[`${field}_kz`] = city?.nameKz || ru;
         }
       }
-      if (!str(`completed_${lang}`)) {
-        patch[`completed_${lang}`] = lang === 'en'
-          ? (settings.completedEn ?? 'has successfully completed the training course')
-          : (settings.completedKz ?? 'оқу курсын сәтті аяқтады');
-      }
     }
     set(patch);
   };
@@ -294,6 +299,12 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
     }
     if (str('instructor_ru').trim() && !str('instructor_ref')) {
       setError('Выберите преподавателя из списка или очистите поле.');
+      return;
+    }
+    if (!str('completed_ref')) {
+      setError(completions.length
+        ? 'Выберите текст о прохождении из списка.'
+        : 'В разделе «Сертификаты → Тексты о прохождении» не заведено ни одного текста.');
       return;
     }
     if (!course.perpetual && !course.validityYears) {
@@ -354,8 +365,8 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
               <input style={s.input} value={str(`location_${lang}`)} onChange={(e) => set({ [`location_${lang}`]: e.target.value })} />
             </Field>
 
-            <Field label="Текст о прохождении">
-              <input style={s.input} value={str(`completed_${lang}`)} onChange={(e) => set({ [`completed_${lang}`]: e.target.value })} />
+            <Field label="Текст о прохождении" hint="Подставляется из справочника">
+              <input style={{ ...s.input, opacity: 0.6 }} value={str(`completed_${lang}`)} readOnly />
             </Field>
           </>
         )}
@@ -469,8 +480,22 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
           <input style={s.input} value={str('location_ru')} onChange={(e) => fillFromRu('location', e.target.value)} placeholder="Казахстан, Атырау" />
         </Field>
 
-        <Field label="Текст о прохождении" hint="Печатается только в сертификате">
-          <input style={s.input} value={str('completed_ru')} onChange={(e) => set({ completed_ru: e.target.value })} />
+        <Field label="Текст о прохождении *" hint="Строка под именем на бланке. Только из справочника: нужны все три языка">
+          <Suggest<CompletionRef>
+            value={str('completed_ru')}
+            options={completions}
+            match={(t) => [t.textRu, t.textEn ?? '', t.textKz ?? '']}
+            label={(t) => t.textRu}
+            hint={(t) => (t.isDefault ? 'по умолчанию' : '')}
+            onChange={(v) => set({ completed_ru: v, completed_ref: '', completed_en: '', completed_kz: '' })}
+            onPick={(t) => set(pickCompletion(t))}
+            placeholder="Начните вводить текст"
+          />
+          {str('completed_ru').trim() && !str('completed_ref') && (
+            <div style={{ ...s.muted, marginTop: '6px', color: '#e05252' }}>
+              Выберите текст из списка. Нужного нет — заведите его в разделе «Сертификаты → Тексты о прохождении».
+            </div>
+          )}
         </Field>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>

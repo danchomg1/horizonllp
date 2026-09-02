@@ -6,6 +6,7 @@ import {
 } from '../../../lib/certificates';
 import { renderCertificate, type CertificateData } from '../../../../certificates/render';
 import { getCertSettings } from '../../../lib/certSettings';
+import { applyRefs, loadRefIndex } from '../../../lib/certResolve';
 
 export const runtime = 'nodejs';
 // Пакет из десятков сертификатов не укладывается в стандартный лимит
@@ -118,6 +119,7 @@ const SAMPLE: CertificateRow = {
 
   course_ref: null,
   instructor_ref: null,
+  completed_ref: null,
   notes: null,
   created_at: '',
   updated_at: '',
@@ -175,9 +177,15 @@ export async function POST(req: Request) {
     const files: { name: string; bytes: Uint8Array }[] = [];
     const skipped: string[] = [];
 
+    // Справочник — источник правды для курса, преподавателя, текста о
+    // прохождении и срока: правку в Studio печать подхватывает сразу,
+    // не дожидаясь, пока копии в реестре подтянутся.
+    const refs = await loadRefIndex();
+
     for (const id of ids) {
-      const row = await getById(id);
-      if (!row) continue;
+      const stored = await getById(id);
+      if (!stored) continue;
+      const row = applyRefs(stored, refs);
 
       const locales = availableLocales(row, requested);
       if (!locales.length) {

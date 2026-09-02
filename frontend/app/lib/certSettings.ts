@@ -2,7 +2,8 @@ import { client } from './sanity';
 import type { CertLocale } from './certificates';
 
 /**
- * Настройки сертификатов из Studio: подписант и тексты о прохождении.
+ * Настройки сертификатов из Studio: подписант.
+ * Тексты о прохождении лежат в справочнике — см. certRefs.ts.
  * Документ единственный, id у него фиксированный.
  */
 
@@ -10,19 +11,12 @@ interface RawSettings {
   directorRu?: string;
   directorEn?: string;
   directorKz?: string;
-  completedRu?: string;
-  completedEn?: string;
-  completedKz?: string;
 }
 
-const QUERY = `*[_id == "certSettings"][0]{
-  directorRu, directorEn, directorKz,
-  completedRu, completedEn, completedKz
-}`;
+const QUERY = `*[_id == "certSettings"][0]{ directorRu, directorEn, directorKz }`;
 
 export interface CertSettings {
   director: Record<CertLocale, string>;
-  completed: Record<CertLocale, string>;
 }
 
 const FALLBACK: CertSettings = {
@@ -30,11 +24,6 @@ const FALLBACK: CertSettings = {
     ru: 'Малик Бакытбек',
     en: 'Malik Bakytbek',
     kz: 'Малик Бақытбек',
-  },
-  completed: {
-    ru: 'успешно прошёл(а) курс обучения',
-    en: 'has successfully completed the training course',
-    kz: 'оқу курсын сәтті аяқтады',
   },
 };
 
@@ -59,11 +48,6 @@ export async function getCertSettings(): Promise<CertSettings> {
       ru: raw.directorRu?.trim() || FALLBACK.director.ru,
       en: raw.directorEn?.trim() || FALLBACK.director.en,
       kz: raw.directorKz?.trim() || FALLBACK.director.kz,
-    },
-    completed: {
-      ru: raw.completedRu?.trim() || FALLBACK.completed.ru,
-      en: raw.completedEn?.trim() || FALLBACK.completed.en,
-      kz: raw.completedKz?.trim() || FALLBACK.completed.kz,
     },
   };
 
