@@ -69,9 +69,10 @@ function toCertificateData(row: CertificateRow, locale: CertLocale, director: st
   };
 }
 
-/** Языки, на которых у записи есть данные. */
+/** Языки, на которых сертификат выпускается: у каждого своя галочка. */
 function availableLocales(row: CertificateRow, requested: CertLocale[]): CertLocale[] {
-  return requested.filter((l) => l === 'ru' || (l === 'en' && row.has_en) || (l === 'kz' && row.has_kz));
+  return requested.filter((l) =>
+    (l === 'ru' && row.has_ru) || (l === 'en' && row.has_en) || (l === 'kz' && row.has_kz));
 }
 
 /**
@@ -82,6 +83,7 @@ const SAMPLE: CertificateRow = {
   id: 0,
   code: 'ABC23',
   legacy_code: null,
+  has_ru: true,
 
   first_name_ru: 'Асхат',
   last_name_ru: 'Ералиев',

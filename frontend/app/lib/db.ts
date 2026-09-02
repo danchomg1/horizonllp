@@ -51,6 +51,8 @@ export interface CertificateRow {
   /** Прежний номер из архива. На бланк не идёт, но по нему тоже ищут. */
   legacy_code: string | null;
 
+  /** Печатать ли русский бланк. Сами русские поля заполняются всегда. */
+  has_ru: boolean;
   first_name_ru: string;
   last_name_ru: string;
   company_ru: string | null;
@@ -212,7 +214,7 @@ export async function deleteCertificate(id: number): Promise<boolean> {
 /** Колонки, которые разрешено писать из формы. Всё остальное игнорируется. */
 const WRITABLE = [
   'code', 'legacy_code',
-  'first_name_ru', 'last_name_ru', 'company_ru', 'course_ru',
+  'has_ru', 'first_name_ru', 'last_name_ru', 'company_ru', 'course_ru',
   'instructor_ru', 'location_ru', 'completed_ru',
   'has_en', 'first_name_en', 'last_name_en', 'company_en', 'course_en',
   'instructor_en', 'location_en', 'completed_en',

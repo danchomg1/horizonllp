@@ -1,8 +1,21 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useClient } from 'sanity';
-import { createCertificate, updateCertificate, type Certificate } from './api';
+import { issueBatch, updateCertificate, type Certificate } from './api';
 import { addYears } from '../../app/lib/certificates';
 import { s } from './styles';
+
+/**
+ * Выдача сертификатов.
+ *
+ * Курс редко читают одному человеку: обычно приходит группа, у которой общее
+ * всё, кроме имени, компании и номера. Поэтому форма работает с группой —
+ * участники добавляются кнопкой, а курс, даты, место и текст заполняются один
+ * раз на всех. Правка существующей записи — та же форма с одним участником.
+ *
+ * Языки равноценны: три галочки наверху решают, какие бланки выпускать.
+ * Русские поля при этом заполняются всегда — из них берётся транслитерация,
+ * и по ним же идёт поиск в реестре.
+ */
 
 /* ------------------------------------------------------------------ *
  * Справочники из Sanity                                               *
@@ -13,24 +26,13 @@ interface CourseRef {
   titleRu: string;
   titleEn?: string;
   titleKz?: string;
-  /** Срок действия закреплён за курсом — см. schemaTypes/certCourse.ts. */
   perpetual?: boolean;
   validityYears?: number;
-  /** Продолжительность тоже свойство курса. */
   hours?: number;
 }
 interface InstructorRef { _id: string; nameRu: string; nameEn?: string; nameKz?: string }
 interface CountryRef { _id: string; nameRu: string; nameEn?: string; nameKz?: string }
-interface CityRef {
-  _id: string;
-  nameRu: string;
-  nameEn?: string;
-  nameKz?: string;
-  countryId?: string;
-}
-
-/** Онлайн — не город, а режим: справочника у него нет. */
-const ONLINE_PLACE = { ru: 'Онлайн', en: 'Online', kz: 'Онлайн' };
+interface CityRef { _id: string; nameRu: string; nameEn?: string; nameKz?: string; countryId?: string }
 interface CompletionRef {
   _id: string;
   textRu: string;
@@ -38,6 +40,16 @@ interface CompletionRef {
   textKz?: string;
   isDefault?: boolean;
 }
+
+/** Онлайн — не город, а режим: справочной записи у него нет. */
+const ONLINE_PLACE = { ru: 'Онлайн', en: 'Online', kz: 'Онлайн' };
+
+type Lang = 'ru' | 'kz' | 'en';
+const LANGS: { key: Lang; title: string; short: string }[] = [
+  { key: 'ru', title: 'Русский', short: 'ру' },
+  { key: 'kz', title: 'Қазақша', short: 'кз' },
+  { key: 'en', title: 'English', short: 'анг' },
+];
 
 /* ------------------------------------------------------------------ *
  * Транслитерация (та же таблица, что и на сервере)                    *
@@ -71,46 +83,41 @@ function transliterate(input: string): string {
 }
 
 /* ------------------------------------------------------------------ *
- * Подсказка при вводе                                                 *
+ * Мелочи интерфейса                                                   *
  * ------------------------------------------------------------------ */
 
 interface SuggestProps<T> {
   value: string;
   options: T[];
-  /** Все написания варианта — по ним идёт поиск, на любом языке. */
   match: (item: T) => string[];
   label: (item: T) => string;
   hint?: (item: T) => string;
   onPick: (item: T) => void;
   onChange: (value: string) => void;
   placeholder?: string;
-  disabled?: boolean;
 }
 
-function Suggest<T>({ value, options, match, label, hint, onPick, onChange, placeholder, disabled }: SuggestProps<T>) {
+function Suggest<T>({ value, options, match, label, hint, onPick, onChange, placeholder }: SuggestProps<T>) {
   const [open, setOpen] = useState(false);
 
   const found = useMemo(() => {
     const q = value.trim().toLowerCase();
     if (!q) return options.slice(0, 8);
-    return options
-      .filter((item) => match(item).some((v) => v?.toLowerCase().includes(q)))
-      .slice(0, 8);
+    return options.filter((item) => match(item).some((v) => v?.toLowerCase().includes(q))).slice(0, 8);
   }, [value, options, match]);
 
   return (
     <div style={{ position: 'relative' }}>
       <input
-        style={{ ...s.input, opacity: disabled ? 0.6 : 1 }}
+        style={s.input}
         value={value}
         placeholder={placeholder}
-        disabled={disabled}
         onChange={(e) => { onChange(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
         // Клик по подсказке успевает отработать до закрытия
         onBlur={() => setTimeout(() => setOpen(false), 150)}
       />
-      {open && !disabled && found.length > 0 && (
+      {open && found.length > 0 && (
         <div style={{
           position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20,
           marginTop: '4px', maxHeight: '240px', overflowY: 'auto',
@@ -139,10 +146,6 @@ function Suggest<T>({ value, options, match, label, hint, onPick, onChange, plac
   );
 }
 
-/* ------------------------------------------------------------------ *
- * Поля формы                                                          *
- * ------------------------------------------------------------------ */
-
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
     <div style={{ marginBottom: '14px' }}>
@@ -153,21 +156,87 @@ function Field({ label, children, hint }: { label: string; children: React.React
   );
 }
 
+/** Показометр: значение приходит из справочника и руками не правится. */
+function ReadOnly({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ ...s.input, display: 'flex', alignItems: 'center', opacity: 0.7 }}>
+      {children}
+    </div>
+  );
+}
+
+/** Подпись языка слева от ряда полей. */
+function LangTag({ lang }: { lang: Lang }) {
+  return (
+    <span style={{ ...s.muted, width: '28px', flexShrink: 0, paddingTop: '10px', fontSize: '12px' }}>
+      {LANGS.find((l) => l.key === lang)!.short}
+    </span>
+  );
+}
+
+/** Ряд «подпись языка — значение из справочника». */
+function LangLine({ lang, children }: { lang: Lang; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', gap: '10px', marginBottom: '8px' }}>
+      <LangTag lang={lang} />
+      <div style={{ flex: 1 }}>{children}</div>
+    </div>
+  );
+}
+
 function todayLocal(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-type FormState = Record<string, unknown>;
+/* ------------------------------------------------------------------ *
+ * Состояние                                                           *
+ * ------------------------------------------------------------------ */
 
-/**
- * Место проведения — страна и город из справочника, а не свободный текст:
- * из набранного руками «Атырау» неоткуда взять «Атырау қаласы».
- * У «Онлайн» страна не печатается.
- */
-function pickCity(city: CityRef, country: CountryRef | undefined): FormState {
-  const join = (cityName: string, countryName: string | undefined) =>
-    countryName ? `${countryName}, ${cityName}` : cityName;
+/** Личное у участника: остальное в группе общее. */
+interface Person {
+  key: number;
+  firstRu: string; lastRu: string;
+  firstKz: string; lastKz: string;
+  firstEn: string; lastEn: string;
+  company: string;
+  /** Дополнительный номер — необязателен, включается галочкой. */
+  extraOn: boolean;
+  extra: string;
+  /** Номер, выданный системой: есть только у сохранённой записи. */
+  code?: string;
+}
+
+let nextKey = 1;
+const blankPerson = (): Person => ({
+  key: nextKey++,
+  firstRu: '', lastRu: '', firstKz: '', lastKz: '', firstEn: '', lastEn: '',
+  company: '', extraOn: false, extra: '',
+});
+
+type Shared = Record<string, unknown>;
+
+const EMPTY_SHARED: Shared = {
+  course_ru: '', course_en: '', course_kz: '', course_ref: '',
+  instructor_ru: '', instructor_en: '', instructor_kz: '', instructor_ref: '',
+  completed_ru: '', completed_en: '', completed_kz: '', completed_ref: '',
+  location_ru: '', location_en: '', location_kz: '', location_ref: '',
+  training_from: '', training_to: '',
+  issued_at: todayLocal(), perpetual: false, valid_until: '',
+};
+
+/** Место не указано: столбец на бланке тогда не рисуется вовсе. */
+const CLEAR_PLACE: Shared = { location_ru: '', location_en: '', location_kz: '', location_ref: '' };
+
+/** Обучение прошло онлайн: место есть, но справочной записи у него нет. */
+const ONLINE: Shared = {
+  location_ru: ONLINE_PLACE.ru, location_en: ONLINE_PLACE.en, location_kz: ONLINE_PLACE.kz,
+  location_ref: '',
+};
+
+function pickCity(city: CityRef, country: CountryRef | undefined): Shared {
+  const join = (name: string, countryName: string | undefined) =>
+    countryName ? `${countryName}, ${name}` : name;
   return {
     location_ru: join(city.nameRu, country?.nameRu),
     location_en: join(city.nameEn ?? city.nameRu, country?.nameEn ?? country?.nameRu),
@@ -176,19 +245,7 @@ function pickCity(city: CityRef, country: CountryRef | undefined): FormState {
   };
 }
 
-/** Место не указано: столбец на бланке тогда не рисуется вовсе. */
-const CLEAR_PLACE: FormState = {
-  location_ru: '', location_en: '', location_kz: '', location_ref: '',
-};
-
-/** Обучение прошло онлайн: место есть, но справочной записи у него нет. */
-const ONLINE: FormState = {
-  location_ru: ONLINE_PLACE.ru, location_en: ONLINE_PLACE.en, location_kz: ONLINE_PLACE.kz,
-  location_ref: '',
-};
-
-/** Выбранный текст о прохождении раскладывается сразу по трём языкам. */
-function pickCompletion(item: CompletionRef): FormState {
+function pickCompletion(item: CompletionRef): Shared {
   return {
     completed_ru: item.textRu,
     completed_en: item.textEn ?? item.textRu,
@@ -196,22 +253,6 @@ function pickCompletion(item: CompletionRef): FormState {
     completed_ref: item._id,
   };
 }
-
-const EMPTY: FormState = {
-  code: '',
-  legacy_code: '',
-  completed_ref: '',
-  location_ref: '',
-  first_name_ru: '', last_name_ru: '', company_ru: '', course_ru: '',
-  instructor_ru: '', location_ru: '', completed_ru: '',
-  has_en: false, first_name_en: '', last_name_en: '', company_en: '', course_en: '',
-  instructor_en: '', location_en: '', completed_en: '',
-  has_kz: false, first_name_kz: '', last_name_kz: '', company_kz: '', course_kz: '',
-  instructor_kz: '', location_kz: '', completed_kz: '',
-  training_from: '', training_to: '', hours: '', issued_at: todayLocal(),
-  perpetual: false, valid_until: '',
-  course_ref: '', instructor_ref: '', notes: '',
-};
 
 interface Props {
   row: Certificate | null;
@@ -222,12 +263,26 @@ interface Props {
 export function CertificateForm({ row, onCancel, onSaved }: Props) {
   const client = useClient({ apiVersion: '2024-01-01' });
 
-  const [form, setForm] = useState<FormState>(() => {
-    if (!row) return { ...EMPTY };
-    const copy: FormState = { ...EMPTY };
-    for (const key of Object.keys(EMPTY)) copy[key] = (row as never)[key] ?? '';
-    copy.has_en = row.has_en;
-    copy.has_kz = row.has_kz;
+  const [langs, setLangs] = useState<Record<Lang, boolean>>(() =>
+    row ? { ru: row.has_ru, kz: row.has_kz, en: row.has_en } : { ru: true, kz: true, en: true });
+
+  const [people, setPeople] = useState<Person[]>(() => {
+    if (!row) return [blankPerson()];
+    return [{
+      key: nextKey++,
+      firstRu: row.first_name_ru, lastRu: row.last_name_ru,
+      firstKz: row.first_name_kz ?? '', lastKz: row.last_name_kz ?? '',
+      firstEn: row.first_name_en ?? '', lastEn: row.last_name_en ?? '',
+      company: row.company_ru ?? '',
+      extraOn: Boolean(row.legacy_code), extra: row.legacy_code ?? '',
+      code: row.code,
+    }];
+  });
+
+  const [shared, setShared] = useState<Shared>(() => {
+    if (!row) return { ...EMPTY_SHARED };
+    const copy: Shared = { ...EMPTY_SHARED };
+    for (const key of Object.keys(EMPTY_SHARED)) copy[key] = (row as never)[key] ?? '';
     copy.perpetual = row.perpetual;
     return copy;
   });
@@ -235,17 +290,20 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
   const [issueToday, setIssueToday] = useState(!row);
   const [courses, setCourses] = useState<CourseRef[]>([]);
   const [instructors, setInstructors] = useState<InstructorRef[]>([]);
-  const [countries, setCountries] = useState<CountryRef[]>([]);
   const [cities, setCities] = useState<CityRef[]>([]);
-  const [countryId, setCountryId] = useState('');
+  const [countries, setCountries] = useState<CountryRef[]>([]);
   const [completions, setCompletions] = useState<CompletionRef[]>([]);
+  const [countryId, setCountryId] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const set = (patch: FormState) => setForm((prev) => ({ ...prev, ...patch }));
-  const str = (key: string) => String(form[key] ?? '');
+  const set = (patch: Shared) => setShared((prev) => ({ ...prev, ...patch }));
+  const str = (key: string) => String(shared[key] ?? '');
 
-  // Справочники
+  const patchPerson = (key: number, patch: Partial<Person>) =>
+    setPeople((prev) => prev.map((p) => (p.key === key ? { ...p, ...patch } : p)));
+
+  /* --- справочники --- */
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -264,15 +322,13 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
         setCountries(co ?? []);
         setCompletions(cp ?? []);
 
-        // По умолчанию Казахстан, Астана — так выдают чаще всего
+        // По умолчанию первая страна и её первый город — так выдают чаще всего
         const country = (co ?? [])[0];
-        if (country) setCountryId(row ? '' : country._id);
-        if (!row) {
-          const first = (ct ?? []).find((x) => x.countryId === country?._id);
+        if (country) setCountryId(country._id);
+        if (!row && country) {
+          const first = (ct ?? []).find((x) => x.countryId === country._id);
           if (first) set(pickCity(first, country));
         }
-
-        // Текст о прохождении по умолчанию — только для новой записи
         const preset = (cp ?? []).find((t) => t.isDefault) ?? (cp ?? [])[0];
         if (!row && preset) set(pickCompletion(preset));
       } catch {
@@ -283,77 +339,63 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client]);
 
-  // Дата выдачи «сегодня»
   useEffect(() => {
     if (issueToday) set({ issued_at: todayLocal() });
   }, [issueToday]);
 
-  /** Выбранный курс — источник срока действия и продолжительности. */
   const course = courses.find((c) => c._id === str('course_ref'));
 
-  const placeOptions = cities.filter((c) => c.countryId === countryId);
-
-  // Три взаимоисключающих состояния: город, онлайн или ничего
-  const isOnline = !str('location_ref') && str('location_ru') === ONLINE_PLACE.ru;
-  const noPlace = !str('location_ref') && !str('location_ru');
-
-  /**
-   * «Действует до» считается по курсу и дате выдачи и руками не правится:
-   * срок — свойство курса, а не отдельной выдачи.
-   */
-  const validityOf = (picked: CourseRef | undefined, issuedAt: string): FormState => {
+  /** «Действует до» задаётся курсом и руками не правится. */
+  const validityOf = (picked: CourseRef | undefined, issuedAt: string): Shared => {
     if (!picked || !issuedAt) return { perpetual: false, valid_until: '' };
     if (picked.perpetual) return { perpetual: true, valid_until: '' };
     const years = picked.validityYears ?? 0;
     return { perpetual: false, valid_until: years ? addYears(issuedAt, years) ?? '' : '' };
   };
 
-  // Пересчёт при смене даты выдачи: курс тот же, а срок сдвигается
   useEffect(() => {
     if (!course) return;
     set(validityOf(course, str('issued_at')));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [course, form.issued_at]);
+  }, [course, shared.issued_at]);
 
-  /** Английские и казахские написания подставляются из русских, но только
-   *  если их ещё не трогали руками — иначе правки затирались бы. */
-  const fillFromRu = (field: 'first_name' | 'last_name', value: string) => {
-    const patch: FormState = { [`${field}_ru`]: value };
-    if (form.has_en && !str(`${field}_en`)) patch[`${field}_en`] = transliterate(value);
-    if (form.has_kz && !str(`${field}_kz`)) patch[`${field}_kz`] = value;
-    set(patch);
+  const placeOptions = cities.filter((c) => c.countryId === countryId);
+  const isOnline = !str('location_ref') && str('location_ru') === ONLINE_PLACE.ru;
+  const noPlace = !str('location_ref') && !str('location_ru');
+
+  /**
+   * Русское написание — источник: казахское копируется как есть, английское
+   * транслитерируется. Уже поправленное руками не затираем.
+   */
+  const fillFromRu = (key: number, field: 'first' | 'last', value: string) => {
+    const person = people.find((p) => p.key === key);
+    if (!person) return;
+
+    const ru = field === 'first' ? person.firstRu : person.lastRu;
+    const kz = field === 'first' ? person.firstKz : person.lastKz;
+    const en = field === 'first' ? person.firstEn : person.lastEn;
+
+    const patch: Record<string, string> = { [field === 'first' ? 'firstRu' : 'lastRu']: value };
+    if (!kz || kz === ru) patch[field === 'first' ? 'firstKz' : 'lastKz'] = value;
+    if (!en || en === transliterate(ru)) patch[field === 'first' ? 'firstEn' : 'lastEn'] = transliterate(value);
+
+    patchPerson(key, patch as Partial<Person>);
   };
 
-  const enableLang = (lang: 'en' | 'kz', on: boolean) => {
-    const patch: FormState = { [`has_${lang}`]: on };
-    if (on) {
-      // Имя переводим транслитерацией, место — из справочника, компания
-      // на других языках не заводится вовсе: берётся русское написание.
-      for (const field of ['first_name', 'last_name'] as const) {
-        if (str(`${field}_${lang}`)) continue;
-        const ru = str(`${field}_ru`);
-        if (!ru) continue;
-        patch[`${field}_${lang}`] = lang === 'en' ? transliterate(ru) : ru;
-      }
-      const chosen = cities.find((c) => c._id === str('location_ref'));
-      if (chosen) {
-        const place = pickCity(chosen, countries.find((c) => c._id === chosen.countryId));
-        patch[`location_${lang}`] = place[`location_${lang}`];
-      }
-    }
-    set(patch);
-  };
-
+  /* --- сохранение --- */
   const save = async () => {
     setError('');
-    for (const [field, title] of [['first_name_ru', 'Имя'], ['last_name_ru', 'Фамилия'], ['course_ru', 'Курс']]) {
-      if (!str(field).trim()) { setError(`Не заполнено обязательное поле: ${title}`); return; }
-    }
 
-    // Курс и преподаватель хранятся в трёх написаниях, поэтому произвольный
-    // текст не годится: из него неоткуда взять казахское название и срок.
+    if (!langs.ru && !langs.kz && !langs.en) {
+      setError('Выберите хотя бы один язык сертификата.');
+      return;
+    }
     if (!course) {
-      setError('Выберите курс из списка. Если нужного курса нет, заведите его в разделе «Сертификаты → Курсы».');
+      setError('Выберите курс из списка. Нужного нет — заведите его в разделе «Сертификаты → Курсы».');
+      return;
+    }
+    if (!course.perpetual && !course.validityYears) {
+      setError(`У курса «${course.titleRu}» не задан срок действия — укажите его в разделе «Сертификаты → Курсы».`);
       return;
     }
     if (str('instructor_ru').trim() && !str('instructor_ref')) {
@@ -366,22 +408,38 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
         : 'В разделе «Сертификаты → Тексты о прохождении» не заведено ни одного текста.');
       return;
     }
-    if (!course.perpetual && !course.validityYears) {
-      setError(`У курса «${course.titleRu}» не задан срок действия — укажите его в разделе «Сертификаты → Курсы».`);
-      return;
+    for (const [index, person] of people.entries()) {
+      if (!person.firstRu.trim() || !person.lastRu.trim()) {
+        setError(`Участник ${index + 1}: заполните имя и фамилию по-русски.`);
+        return;
+      }
     }
 
     setSaving(true);
     try {
-      const payload: FormState = { ...form };
-      // Часы приходят из курса и в форме не редактируются
-      payload.hours = course?.hours ?? null;
-      if (payload.perpetual) payload.valid_until = null;
-      // Свой номер всегда выдаёт сервер; в форме правится только прежний
-      delete payload.code;
+      const common: Shared = {
+        ...shared,
+        hours: course.hours ?? null,
+        has_ru: langs.ru,
+        has_kz: langs.kz,
+        has_en: langs.en,
+      };
+      if (common.perpetual) common.valid_until = null;
 
-      if (row) await updateCertificate(row.id, payload);
-      else await createCertificate(payload);
+      const toRow = (person: Person) => ({
+        first_name_ru: person.firstRu.trim(),
+        last_name_ru: person.lastRu.trim(),
+        company_ru: person.company.trim() || null,
+        first_name_kz: langs.kz ? person.firstKz.trim() || person.firstRu.trim() : null,
+        last_name_kz: langs.kz ? person.lastKz.trim() || person.lastRu.trim() : null,
+        first_name_en: langs.en ? person.firstEn.trim() || transliterate(person.firstRu.trim()) : null,
+        last_name_en: langs.en ? person.lastEn.trim() || transliterate(person.lastRu.trim()) : null,
+        legacy_code: person.extraOn && person.extra.trim() ? person.extra.trim() : null,
+      });
+
+      if (row) await updateCertificate(row.id, { ...common, ...toRow(people[0]) });
+      else await issueBatch(common, people.map(toRow));
+
       onSaved();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось сохранить');
@@ -390,42 +448,69 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
     }
   };
 
-  const langBlock = (lang: 'en' | 'kz', title: string) => {
-    const on = Boolean(form[`has_${lang}`]);
+  /* ---------------------------------------------------------------- *
+   * Разметка                                                          *
+   * ---------------------------------------------------------------- */
+
+  // Компания и номер стоят один раз на человека — в первом видимом ряду
+  const grid = {
+    display: 'grid',
+    gridTemplateColumns: '28px 1fr 1fr 1.2fr 150px',
+    gap: '10px',
+    alignItems: 'start',
+  } as const;
+
+  const visible = LANGS.filter((l) => langs[l.key]);
+  // Русский ряд нужен всегда: он источник остальных написаний
+  const rows: Lang[] = visible.some((l) => l.key === 'ru')
+    ? visible.map((l) => l.key)
+    : ['ru', ...visible.map((l) => l.key)];
+
+  const personRow = (person: Person, lang: Lang, first: boolean) => {
+    const value = {
+      ru: [person.firstRu, person.lastRu],
+      kz: [person.firstKz, person.lastKz],
+      en: [person.firstEn, person.lastEn],
+    }[lang];
+
+    const change = (which: 'first' | 'last', next: string) => {
+      if (lang === 'ru') { fillFromRu(person.key, which, next); return; }
+      const field = `${which}${lang === 'kz' ? 'Kz' : 'En'}`;
+      patchPerson(person.key, { [field]: next } as Partial<Person>);
+    };
+
     return (
-      <div style={{ ...s.card, marginBottom: '16px', opacity: on ? 1 : 0.75 }}>
-        <label style={{ ...s.row, cursor: 'pointer', marginBottom: on ? '14px' : 0 }}>
-          <input type="checkbox" checked={on} onChange={(e) => enableLang(lang, e.target.checked)} />
-          <strong>{title}</strong>
-          {on && <span style={s.muted}>— компания берётся из русского написания</span>}
-        </label>
+      <div key={lang} style={{ ...grid, marginBottom: '8px' }}>
+        <LangTag lang={lang} />
+        <input
+          style={s.input}
+          value={value[0]}
+          placeholder={lang === 'ru' ? 'Имя' : undefined}
+          onChange={(e) => change('first', e.target.value)}
+        />
+        <input
+          style={s.input}
+          value={value[1]}
+          placeholder={lang === 'ru' ? 'Фамилия' : undefined}
+          onChange={(e) => change('last', e.target.value)}
+        />
 
-        {on && (
+        {first ? (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <Field label="Имя">
-                <input style={s.input} value={str(`first_name_${lang}`)} onChange={(e) => set({ [`first_name_${lang}`]: e.target.value })} />
-              </Field>
-              <Field label="Фамилия">
-                <input style={s.input} value={str(`last_name_${lang}`)} onChange={(e) => set({ [`last_name_${lang}`]: e.target.value })} />
-              </Field>
+            <input
+              style={s.input}
+              value={person.company}
+              placeholder="Компания"
+              onChange={(e) => patchPerson(person.key, { company: e.target.value })}
+            />
+            <div style={{ ...s.input, ...s.code, display: 'flex', alignItems: 'center', opacity: 0.7 }}>
+              {person.code ?? 'выдаст система'}
             </div>
-
-            <Field label="Курс" hint="Подставляется из справочника вместе с русским названием">
-              <input style={{ ...s.input, opacity: 0.6 }} value={str(`course_${lang}`)} readOnly />
-            </Field>
-
-            <Field label="Преподаватель" hint="Подставляется из справочника">
-              <input style={{ ...s.input, opacity: 0.6 }} value={str(`instructor_${lang}`)} readOnly />
-            </Field>
-
-            <Field label="Место проведения" hint="Подставляется из справочника стран и городов">
-              <input style={{ ...s.input, opacity: 0.6 }} value={str(`location_${lang}`)} readOnly />
-            </Field>
-
-            <Field label="Текст о прохождении" hint="Подставляется из справочника">
-              <input style={{ ...s.input, opacity: 0.6 }} value={str(`completed_${lang}`)} readOnly />
-            </Field>
+          </>
+        ) : (
+          <>
+            <span />
+            <span />
           </>
         )}
       </div>
@@ -433,91 +518,168 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
   };
 
   return (
-    <div style={{ maxWidth: '900px' }}>
+    <div style={{ maxWidth: '1040px' }}>
       <div style={{ ...s.spread, marginBottom: '20px' }}>
         <div>
-          <h1 style={s.h1}>{row ? `Сертификат ${row.code}` : 'Выдать сертификат'}</h1>
-          {row && <p style={{ ...s.muted, margin: '4px 0 0' }}>Изменён: {row.updated_at?.slice(0, 10)}</p>}
+          <h1 style={s.h1}>{row ? `Сертификат ${row.code}` : 'Выдать сертификаты'}</h1>
+          <p style={{ ...s.muted, margin: '4px 0 0' }}>
+            {row
+              ? `Изменён: ${row.updated_at?.slice(0, 10)}`
+              : 'Курс, даты и место заполняются один раз на всю группу'}
+          </p>
         </div>
         <div style={s.row}>
           <button style={s.button} onClick={onCancel}>Отмена</button>
           <button style={s.primary} onClick={save} disabled={saving}>
-            {saving ? 'Сохраняем…' : 'Сохранить'}
+            {saving ? 'Сохраняем…' : row ? 'Сохранить' : `Выдать (${people.length})`}
           </button>
         </div>
       </div>
 
       {error && <div style={{ ...s.error, marginBottom: '16px' }}>{error}</div>}
 
-      {/* ---------------- русская версия ---------------- */}
+      {/* ---------------- языки ---------------- */}
+      <div style={{ ...s.row, ...s.bar, marginBottom: '16px' }}>
+        <span style={s.muted}>Языки сертификата:</span>
+        {LANGS.map((lang) => (
+          <label key={lang.key} style={s.check}>
+            <input
+              type="checkbox"
+              checked={langs[lang.key]}
+              onChange={(e) => setLangs((prev) => ({ ...prev, [lang.key]: e.target.checked }))}
+            />
+            {lang.title}
+          </label>
+        ))}
+        {!langs.ru && (
+          <span style={{ ...s.muted, marginLeft: 'auto', fontSize: '12px' }}>
+            русский ряд остаётся: из него берутся остальные написания
+          </span>
+        )}
+      </div>
+
+      {/* ---------------- участники ---------------- */}
       <div style={{ ...s.card, marginBottom: '16px' }}>
-        <div style={{ ...s.row, marginBottom: '14px' }}>
-          <input type="checkbox" checked readOnly disabled />
-          <strong>Русская версия</strong>
-          <span style={s.muted}>— обязательна, источник для остальных языков</span>
+        <div style={{ ...grid, marginBottom: '10px' }}>
+          <span />
+          <span style={s.label}>Имя</span>
+          <span style={s.label}>Фамилия</span>
+          <span style={s.label}>Компания</span>
+          <span style={s.label}>Номер сертификата</span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          <Field label="Имя *">
-            <input style={s.input} value={str('first_name_ru')} onChange={(e) => fillFromRu('first_name', e.target.value)} />
-          </Field>
-          <Field label="Фамилия *">
-            <input style={s.input} value={str('last_name_ru')} onChange={(e) => fillFromRu('last_name', e.target.value)} />
-          </Field>
-        </div>
+        {people.map((person, index) => (
+          <div
+            key={person.key}
+            style={{
+              paddingBottom: '12px',
+              marginBottom: '12px',
+              borderBottom: index < people.length - 1 ? '1px solid rgba(128,128,128,0.2)' : 'none',
+            }}
+          >
+            {rows.map((lang, i) => personRow(person, lang, i === 0))}
 
-        <Field label="Компания" hint="Одно написание на все языки — как ввели, так и напечатается">
-          <input style={s.input} value={str('company_ru')} onChange={(e) => set({ company_ru: e.target.value })} />
-        </Field>
+            <div style={{ ...s.row, marginTop: '6px', flexWrap: 'wrap' }}>
+              <label style={s.check}>
+                <input
+                  type="checkbox"
+                  checked={person.extraOn}
+                  onChange={(e) => patchPerson(person.key, {
+                    extraOn: e.target.checked,
+                    extra: e.target.checked ? person.extra : '',
+                  })}
+                />
+                Дополнительный номер
+              </label>
+              {person.extraOn && (
+                <input
+                  style={{ ...s.input, ...s.code, width: '220px' }}
+                  value={person.extra}
+                  placeholder="например EXFGP1681"
+                  onChange={(e) => patchPerson(person.key, { extra: e.target.value })}
+                />
+              )}
+              <span style={{ ...s.muted, fontSize: '11px' }}>
+                на бланк не идёт, но по нему тоже находится сертификат
+              </span>
 
+              {!row && people.length > 1 && (
+                <button
+                  style={{ ...s.danger, marginLeft: 'auto' }}
+                  onClick={() => setPeople((prev) => prev.filter((p) => p.key !== person.key))}
+                >
+                  Убрать
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+
+        {!row && (
+          <button style={s.button} onClick={() => setPeople((prev) => [...prev, blankPerson()])}>
+            + Добавить человека
+          </button>
+        )}
+      </div>
+
+      {/* ---------------- курс и обучение ---------------- */}
+      <div style={{ ...s.card, marginBottom: '16px' }}>
         <Field
           label="Курс *"
           hint={course
-            ? `Срок действия: ${course.perpetual ? 'бессрочный' : course.validityYears ? `${course.validityYears} г.` : 'не задан в справочнике'}`
-            : 'Только из справочника: вместе с названием подтягиваются перевод и срок действия'}
+            ? `Срок действия: ${course.perpetual ? 'бессрочный' : course.validityYears ? `${course.validityYears} г.` : 'не задан'} · продолжительность: ${course.hours ?? '—'} ч.`
+            : 'Только из справочника: вместе с названием подтягиваются перевод, срок и часы'}
         >
-          <Suggest<CourseRef>
-            value={str('course_ru')}
-            options={courses}
-            match={(c) => [c.titleRu, c.titleEn ?? '', c.titleKz ?? '']}
-            label={(c) => c.titleRu}
-            hint={(c) => (c.perpetual ? 'бессрочный' : c.validityYears ? `${c.validityYears} г.` : '')}
-            onChange={(v) => set({ course_ru: v, course_ref: '', course_en: '', course_kz: '' })}
-            onPick={(c) => set({
-              course_ru: c.titleRu,
-              course_en: c.titleEn ?? '',
-              course_kz: c.titleKz ?? '',
-              course_ref: c._id,
-              ...validityOf(c, str('issued_at')),
-            })}
-            placeholder="Начните вводить название"
-          />
+          <LangLine lang="ru">
+            <Suggest<CourseRef>
+              value={str('course_ru')}
+              options={courses}
+              match={(c) => [c.titleRu, c.titleEn ?? '', c.titleKz ?? '']}
+              label={(c) => c.titleRu}
+              hint={(c) => (c.perpetual ? 'бессрочный' : c.validityYears ? `${c.validityYears} г.` : '')}
+              onChange={(v) => set({ course_ru: v, course_ref: '', course_en: '', course_kz: '' })}
+              onPick={(c) => set({
+                course_ru: c.titleRu,
+                course_en: c.titleEn ?? '',
+                course_kz: c.titleKz ?? '',
+                course_ref: c._id,
+                ...validityOf(c, str('issued_at')),
+              })}
+              placeholder="Начните вводить название"
+            />
+          </LangLine>
+          {langs.kz && <LangLine lang="kz"><ReadOnly>{str('course_kz') || '—'}</ReadOnly></LangLine>}
+          {langs.en && <LangLine lang="en"><ReadOnly>{str('course_en') || '—'}</ReadOnly></LangLine>}
           {str('course_ru').trim() && !course && (
-            <div style={{ ...s.muted, marginTop: '6px', color: '#e05252' }}>
+            <div style={{ ...s.muted, color: '#e05252' }}>
               Выберите курс из списка. Нужного нет — заведите его в разделе «Сертификаты → Курсы».
             </div>
           )}
         </Field>
 
         <Field label="Преподаватель" hint="Можно вводить на любом языке — подставится нужное написание">
-          <Suggest<InstructorRef>
-            value={str('instructor_ru')}
-            options={instructors}
-            match={(i) => [i.nameRu, i.nameEn ?? '', i.nameKz ?? '']}
-            label={(i) => i.nameRu}
-            hint={(i) => i.nameEn ?? ''}
-            onChange={(v) => set({ instructor_ru: v, instructor_ref: '', instructor_en: '', instructor_kz: '' })}
-            onPick={(i) => set({
-              instructor_ru: i.nameRu,
-              instructor_en: i.nameEn ?? '',
-              instructor_kz: i.nameKz ?? '',
-              instructor_ref: i._id,
-            })}
-            placeholder="Начните вводить фамилию"
-          />
+          <LangLine lang="ru">
+            <Suggest<InstructorRef>
+              value={str('instructor_ru')}
+              options={instructors}
+              match={(i) => [i.nameRu, i.nameEn ?? '', i.nameKz ?? '']}
+              label={(i) => i.nameRu}
+              hint={(i) => i.nameEn ?? ''}
+              onChange={(v) => set({ instructor_ru: v, instructor_ref: '', instructor_en: '', instructor_kz: '' })}
+              onPick={(i) => set({
+                instructor_ru: i.nameRu,
+                instructor_en: i.nameEn ?? '',
+                instructor_kz: i.nameKz ?? '',
+                instructor_ref: i._id,
+              })}
+              placeholder="Начните вводить фамилию"
+            />
+          </LangLine>
+          {langs.kz && <LangLine lang="kz"><ReadOnly>{str('instructor_kz') || '—'}</ReadOnly></LangLine>}
+          {langs.en && <LangLine lang="en"><ReadOnly>{str('instructor_en') || '—'}</ReadOnly></LangLine>}
           {str('instructor_ru').trim() && !str('instructor_ref') && (
-            <div style={{ ...s.muted, marginTop: '6px', color: '#e05252' }}>
-              Выберите преподавателя из списка — иначе неоткуда взять казахское и английское написание.
+            <div style={{ ...s.muted, color: '#e05252' }}>
+              Выберите преподавателя из списка — иначе неоткуда взять остальные написания.
             </div>
           )}
         </Field>
@@ -529,11 +691,8 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
           <Field label="Обучение по">
             <input style={s.input} type="date" value={str('training_to')} onChange={(e) => set({ training_to: e.target.value })} />
           </Field>
-          {/* Часы заданы у курса и здесь не правятся */}
-          <Field label="Продолжительность" hint="Задана у курса в разделе «Сертификаты → Курсы»">
-            <div style={{ ...s.input, display: 'flex', alignItems: 'center', opacity: 0.75 }}>
-              {course?.hours ? `${course.hours} ч.` : 'выберите курс'}
-            </div>
+          <Field label="Продолжительность" hint="Задана у курса">
+            <ReadOnly>{course?.hours ? `${course.hours} ч.` : 'выберите курс'}</ReadOnly>
           </Field>
         </div>
 
@@ -545,8 +704,7 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
               value={countryId}
               onChange={(e) => {
                 setCountryId(e.target.value);
-                // Город из прежней страны здесь больше не подходит; у только
-                // что заведённой страны городов может не быть вовсе.
+                // Город из прежней страны здесь больше не подходит
                 const city = cities.find((c) => c.countryId === e.target.value);
                 set(city ? pickCity(city, countries.find((c) => c._id === e.target.value)) : CLEAR_PLACE);
               }}
@@ -565,7 +723,6 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
                 if (city) set(pickCity(city, countries.find((c) => c._id === city.countryId)));
               }}
             >
-              {/* Пустого значения нет: город, «Онлайн» или «Не указано» */}
               {!str('location_ref') && (
                 <option value="">
                   {placeOptions.length ? '— выберите город —' : '— у страны нет городов —'}
@@ -574,20 +731,10 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
               {placeOptions.map((c) => <option key={c._id} value={c._id}>{c.nameRu}</option>)}
             </select>
 
-            {!placeOptions.length && !isOnline && !noPlace && (
-              <div style={{ ...s.muted, marginTop: '6px', color: '#d2a028' }}>
-                У этой страны пока нет городов — заведите их в разделе «Сертификаты → Города».
-              </div>
-            )}
-
             {/* Галочки взаимно исключают друг друга и список городов */}
             <div style={{ ...s.row, marginTop: '8px', flexWrap: 'wrap' }}>
               <label style={s.check}>
-                <input
-                  type="checkbox"
-                  checked={isOnline}
-                  onChange={(e) => set(e.target.checked ? ONLINE : CLEAR_PLACE)}
-                />
+                <input type="checkbox" checked={isOnline} onChange={(e) => set(e.target.checked ? ONLINE : CLEAR_PLACE)} />
                 Онлайн
               </label>
               <label style={s.check}>
@@ -605,20 +752,27 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
             </div>
           </Field>
         </div>
+      </div>
 
-        <Field label="Текст о прохождении *" hint="Строка под именем на бланке. Только из справочника: нужны все три языка">
-          <Suggest<CompletionRef>
-            value={str('completed_ru')}
-            options={completions}
-            match={(t) => [t.textRu, t.textEn ?? '', t.textKz ?? '']}
-            label={(t) => t.textRu}
-            hint={(t) => (t.isDefault ? 'по умолчанию' : '')}
-            onChange={(v) => set({ completed_ru: v, completed_ref: '', completed_en: '', completed_kz: '' })}
-            onPick={(t) => set(pickCompletion(t))}
-            placeholder="Начните вводить текст"
-          />
+      {/* ---------------- выдача ---------------- */}
+      <div style={{ ...s.card, marginBottom: '16px' }}>
+        <Field label="Текст о прохождении *" hint="Строка под именем на бланке">
+          <LangLine lang="ru">
+            <Suggest<CompletionRef>
+              value={str('completed_ru')}
+              options={completions}
+              match={(t) => [t.textRu, t.textEn ?? '', t.textKz ?? '']}
+              label={(t) => t.textRu}
+              hint={(t) => (t.isDefault ? 'по умолчанию' : '')}
+              onChange={(v) => set({ completed_ru: v, completed_ref: '', completed_en: '', completed_kz: '' })}
+              onPick={(t) => set(pickCompletion(t))}
+              placeholder="Начните вводить текст"
+            />
+          </LangLine>
+          {langs.kz && <LangLine lang="kz"><ReadOnly>{str('completed_kz') || '—'}</ReadOnly></LangLine>}
+          {langs.en && <LangLine lang="en"><ReadOnly>{str('completed_en') || '—'}</ReadOnly></LangLine>}
           {str('completed_ru').trim() && !str('completed_ref') && (
-            <div style={{ ...s.muted, marginTop: '6px', color: '#e05252' }}>
+            <div style={{ ...s.muted, color: '#e05252' }}>
               Выберите текст из списка. Нужного нет — заведите его в разделе «Сертификаты → Тексты о прохождении».
             </div>
           )}
@@ -626,15 +780,13 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <Field label="Дата выдачи">
-            <div style={s.row}>
-              <input
-                style={{ ...s.input, opacity: issueToday ? 0.6 : 1 }}
-                type="date"
-                value={str('issued_at')}
-                disabled={issueToday}
-                onChange={(e) => set({ issued_at: e.target.value })}
-              />
-            </div>
+            <input
+              style={{ ...s.input, opacity: issueToday ? 0.6 : 1 }}
+              type="date"
+              value={str('issued_at')}
+              disabled={issueToday}
+              onChange={(e) => set({ issued_at: e.target.value })}
+            />
             <label style={{ ...s.row, marginTop: '6px', cursor: 'pointer' }}>
               <input type="checkbox" checked={issueToday} onChange={(e) => setIssueToday(e.target.checked)} />
               <span style={s.muted}>сегодня</span>
@@ -642,42 +794,22 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
           </Field>
 
           {/* Считается по курсу и дате выдачи — руками не правится */}
-          <Field label="Действует до" hint="Срок задан у курса в разделе «Сертификаты → Курсы»">
-            <div style={{ ...s.input, display: 'flex', alignItems: 'center', opacity: 0.75 }}>
-              {form.perpetual
+          <Field label="Действует до" hint="Срок задан у курса">
+            <ReadOnly>
+              {shared.perpetual
                 ? 'бессрочный'
                 : str('valid_until')
                   ? str('valid_until').split('-').reverse().join('.')
                   : course ? 'нужна дата выдачи' : 'выберите курс'}
-            </div>
-          </Field>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          <Field label="Номер сертификата" hint="Выдаёт система, печатается на бланке">
-            <div style={{ ...s.input, ...s.code, display: 'flex', alignItems: 'center', opacity: 0.75 }}>
-              {row ? row.code : 'будет выдан при сохранении'}
-            </div>
-          </Field>
-
-          <Field label="Прежний номер" hint="Необязателен. На бланк не идёт, но по нему тоже находится сертификат">
-            <input
-              style={{ ...s.input, ...s.code }}
-              value={str('legacy_code')}
-              onChange={(e) => set({ legacy_code: e.target.value })}
-              placeholder="например EXFGP1681"
-            />
+            </ReadOnly>
           </Field>
         </div>
       </div>
 
-      {langBlock('en', 'Английская версия')}
-      {langBlock('kz', 'Казахская версия')}
-
       <div style={{ ...s.row, justifyContent: 'flex-end', marginBottom: '40px' }}>
         <button style={s.button} onClick={onCancel}>Отмена</button>
         <button style={s.primary} onClick={save} disabled={saving}>
-          {saving ? 'Сохраняем…' : 'Сохранить'}
+          {saving ? 'Сохраняем…' : row ? 'Сохранить' : `Выдать (${people.length})`}
         </button>
       </div>
     </div>

@@ -17,7 +17,9 @@ CREATE TABLE IF NOT EXISTS certificates (
   legacy_code     text,
 
   ---------------------------------------------------------------- русская
-  -- Русская версия обязательна: она источник для остальных языков.
+  -- Русские поля заполняются всегда: они источник для остальных языков.
+  -- Печатать ли русский бланк — отдельная галочка, как у прочих языков.
+  has_ru          boolean NOT NULL DEFAULT true,
   first_name_ru   text NOT NULL,
   last_name_ru    text NOT NULL,
   company_ru      text,
@@ -108,6 +110,7 @@ CREATE TRIGGER certificates_touch_updated_at
 ALTER TABLE certificates ADD COLUMN IF NOT EXISTS completed_ref text;
 ALTER TABLE certificates ADD COLUMN IF NOT EXISTS legacy_code   text;
 ALTER TABLE certificates ADD COLUMN IF NOT EXISTS location_ref  text;
+ALTER TABLE certificates ADD COLUMN IF NOT EXISTS has_ru        boolean NOT NULL DEFAULT true;
 
 -- Поиск идёт по обоим номерам сразу.
 CREATE INDEX IF NOT EXISTS certificates_legacy_code_trgm

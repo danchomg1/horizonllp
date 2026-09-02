@@ -244,6 +244,7 @@ export interface Certificate {
   id: number;
   code: string;
   legacy_code: string | null;
+  has_ru: boolean;
   first_name_ru: string;
   last_name_ru: string;
   company_ru: string | null;
@@ -309,6 +310,20 @@ export function listCertificates(params: {
   if (params.page) search.set('page', String(params.page));
   if (params.perPage) search.set('perPage', String(params.perPage));
   return request<ListResult>(`?${search.toString()}`);
+}
+
+/**
+ * Выдача группе: общие поля курса и обучения плюс список людей.
+ * Возвращает выданные номера в том же порядке, что и людей.
+ */
+export function issueBatch(
+  shared: Record<string, unknown>,
+  people: Record<string, unknown>[],
+): Promise<{ ok: true; issued: number; codes: string[] }> {
+  return request<{ ok: true; issued: number; codes: string[] }>('/batch', {
+    method: 'POST',
+    body: JSON.stringify({ shared, people }),
+  });
 }
 
 export function createCertificate(data: Record<string, unknown>): Promise<Certificate> {
