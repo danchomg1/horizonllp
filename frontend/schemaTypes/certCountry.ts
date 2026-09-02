@@ -6,6 +6,10 @@ import { defineField, defineType } from 'sanity'
  * Место на бланке собирается из страны и города, а не вводится текстом:
  * так на всех трёх языках получается одинаковое написание, и его можно
  * поправить в одном месте.
+ *
+ * Новую страну можно завести и отсюда, и прямо из карточки города. Она сразу
+ * появляется в выборе при выдаче сертификата — отдельно ничего включать
+ * не нужно.
  */
 export default defineType({
   name: 'certCountry',
@@ -18,15 +22,19 @@ export default defineType({
       type: 'string',
       validation: (Rule) => Rule.required(),
     }),
+    // Переводы обязательны: без них на английском и казахском бланке
+    // встанет русское написание страны.
     defineField({
       name: 'nameEn',
       title: 'Название (англ)',
       type: 'string',
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'nameKz',
       title: 'Название (каз)',
       type: 'string',
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'order',

@@ -545,7 +545,8 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
               value={countryId}
               onChange={(e) => {
                 setCountryId(e.target.value);
-                // Город из прежней страны здесь больше не подходит
+                // Город из прежней страны здесь больше не подходит; у только
+                // что заведённой страны городов может не быть вовсе.
                 const city = cities.find((c) => c.countryId === e.target.value);
                 set(city ? pickCity(city, countries.find((c) => c._id === e.target.value)) : CLEAR_PLACE);
               }}
@@ -565,9 +566,19 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
               }}
             >
               {/* Пустого значения нет: город, «Онлайн» или «Не указано» */}
-              {!str('location_ref') && <option value="">— выберите город —</option>}
+              {!str('location_ref') && (
+                <option value="">
+                  {placeOptions.length ? '— выберите город —' : '— у страны нет городов —'}
+                </option>
+              )}
               {placeOptions.map((c) => <option key={c._id} value={c._id}>{c.nameRu}</option>)}
             </select>
+
+            {!placeOptions.length && !isOnline && !noPlace && (
+              <div style={{ ...s.muted, marginTop: '6px', color: '#d2a028' }}>
+                У этой страны пока нет городов — заведите их в разделе «Сертификаты → Города».
+              </div>
+            )}
 
             {/* Галочки взаимно исключают друг друга и список городов */}
             <div style={{ ...s.row, marginTop: '8px', flexWrap: 'wrap' }}>

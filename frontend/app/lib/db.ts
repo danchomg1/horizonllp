@@ -691,6 +691,24 @@ export async function acknowledgeChange(id: number): Promise<boolean> {
                          WHERE id = ${id} AND acknowledged_at IS NULL RETURNING id`;
   return rows.length > 0;
 }
+
+/**
+ * Отмечает сразу несколько правок. Пустой список означает «все неотмеченные»:
+ * после крупной правки справочника разбирать их по одной незачем.
+ */
+export async function acknowledgeChanges(ids: number[]): Promise<number> {
+  const rows = ids.length
+    ? await sql.query(
+        `UPDATE certificate_changes SET acknowledged_at = now()
+          WHERE acknowledged_at IS NULL AND id = ANY($1::bigint[]) RETURNING id`,
+        [ids],
+      )
+    : await sql.query(
+        `UPDATE certificate_changes SET acknowledged_at = now()
+          WHERE acknowledged_at IS NULL RETURNING id`,
+      );
+  return (rows as unknown[]).length;
+}
 /** Какие из выданных системой номеров уже заняты. Один запрос на весь список. */
 export async function takenCodes(codes: string[]): Promise<Set<string>> {
   if (!codes.length) return new Set();

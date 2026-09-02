@@ -124,11 +124,11 @@ export interface SyncResult {
   changes: number;
 }
 
-export type ChangeField = 'nameRu' | 'nameEn' | 'nameKz' | 'validity';
+export type ChangeField = 'nameRu' | 'nameEn' | 'nameKz' | 'validity' | 'hours';
 
 export interface ChangeEntry {
   id: number;
-  kind: 'course' | 'instructor' | 'completion';
+  kind: 'course' | 'instructor' | 'completion' | 'city';
   ref_id: string;
   field: ChangeField;
   /** Название элемента справочника на момент правки. */
@@ -164,6 +164,16 @@ export function getChange(id: number): Promise<{ change: ChangeEntry; rows: Chan
 /** Отметка «просмотрено»: предупреждение гаснет у всех записей этой правки. */
 export function acknowledgeChange(id: number): Promise<{ ok: true; changed: boolean }> {
   return request<{ ok: true; changed: boolean }>(`/changes/${id}`, { method: 'POST' });
+}
+
+/** То же для пачки: список правок или все неотмеченные сразу. */
+export function acknowledgeChanges(
+  target: { ids: number[] } | { all: true },
+): Promise<{ ok: true; changed: number }> {
+  return request<{ ok: true; changed: number }>('/changes', {
+    method: 'POST',
+    body: JSON.stringify(target),
+  });
 }
 
 /**

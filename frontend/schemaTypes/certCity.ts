@@ -26,11 +26,15 @@ export default defineType({
       name: 'nameEn',
       title: 'Название (англ)',
       type: 'string',
+      description: 'Как на бланке: «Astana».',
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'nameKz',
       title: 'Название (каз)',
       type: 'string',
+      description: 'Как на бланке: «Астана қаласы».',
+      validation: (Rule) => Rule.required(),
     }),
 
     defineField({
@@ -38,7 +42,12 @@ export default defineType({
       title: 'Страна',
       type: 'reference',
       to: [{ type: 'certCountry' }],
-      description: 'При выдаче город предлагается только для выбранной страны.',
+      description:
+        'Выберите из списка или заведите новую кнопкой «Create new» — '
+        + 'она сразу появится в выборе при выдаче сертификата.',
+      // Создание новой страны прямо из поля включено намеренно: города
+      // добавляют пачками, и уходить в другой раздел ради страны неудобно.
+      options: { disableNew: false },
       validation: (Rule) => Rule.required(),
     }),
 

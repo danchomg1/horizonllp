@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  listChanges, getChange, acknowledgeChange,
+  listChanges, getChange, acknowledgeChange, acknowledgeChanges,
   type ChangeEntry, type ChangedRow,
 } from './api';
 import { s } from './styles';
@@ -18,11 +18,13 @@ const KIND: Record<ChangeEntry['kind'], string> = {
   course: 'Курс',
   instructor: 'Преподаватель',
   completion: 'Текст о прохождении',
+  city: 'Место проведения',
 };
 
 /** «русское название», «английское написание имени», «срок действия». */
 export function fieldLabel(change: ChangeEntry): string {
   if (change.field === 'validity') return 'срок действия';
+  if (change.field === 'hours') return 'продолжительность';
 
   const what = change.kind === 'instructor' ? 'написание имени'
     : change.kind === 'completion' ? 'текст' : 'название';
@@ -48,28 +50,47 @@ interface CardProps {
   onAck?: (id: number) => void;
   onOpen?: (id: number) => void;
   busy?: boolean;
+  /** Галочка выбора: показывается только у неотмеченных правок в журнале. */
+  selected?: boolean;
+  onSelect?: (id: number, on: boolean) => void;
 }
 
-export function ChangeCard({ change, onAck, onOpen, busy }: CardProps) {
-  return (
-    <div style={{ ...s.card, background: 'rgba(210,160,40,0.07)', borderColor: 'rgba(210,160,40,0.4)' }}>
-      <div style={{ ...s.spread, alignItems: 'flex-start', gap: '12px' }}>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 600, marginBottom: '2px' }}>
-            {KIND[change.kind]}: {change.title}
-          </div>
-          <div style={{ ...s.muted, marginBottom: '10px' }}>
-            изменено {fieldLabel(change)} · {whenLabel(change.created_at)}
-          </div>
+export function ChangeCard({ change, onAck, onOpen, busy, selected, onSelect }: CardProps) {
+  // Отмеченная правка уходит в серое: смотреть на неё больше не нужно
+  const done = Boolean(change.acknowledged_at);
+  const tone = done
+    ? { background: 'rgba(128,128,128,0.05)', borderColor: 'rgba(128,128,128,0.25)' }
+    : { background: 'rgba(210,160,40,0.07)', borderColor: 'rgba(210,160,40,0.4)' };
 
-          <div style={{ fontSize: '13px', lineHeight: 1.6 }}>
-            <div><span style={s.muted}>было:&nbsp;&nbsp;</span>{change.old_value || '—'}</div>
-            <div><span style={s.muted}>стало:</span> <strong>{change.new_value || '—'}</strong></div>
+  return (
+    <div style={{ ...s.card, ...tone, opacity: done ? 0.7 : 1 }}>
+      <div style={{ ...s.spread, alignItems: 'flex-start', gap: '12px' }}>
+        <div style={{ minWidth: 0, display: 'flex', gap: '10px' }}>
+          {onSelect && !done && (
+            <input
+              type="checkbox"
+              checked={Boolean(selected)}
+              onChange={(e) => onSelect(change.id, e.target.checked)}
+              style={{ marginTop: '3px' }}
+            />
+          )}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontWeight: 600, marginBottom: '2px' }}>
+              {KIND[change.kind]}: {change.title}
+            </div>
+            <div style={{ ...s.muted, marginBottom: '10px' }}>
+              изменено {fieldLabel(change)} · {whenLabel(change.created_at)}
+            </div>
+
+            <div style={{ fontSize: '13px', lineHeight: 1.6 }}>
+              <div><span style={s.muted}>было:&nbsp;&nbsp;</span>{change.old_value || '—'}</div>
+              <div><span style={s.muted}>стало:</span> <strong>{change.new_value || '—'}</strong></div>
+            </div>
           </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
-          {onAck && !change.acknowledged_at && (
+          {onAck && !done && (
             <button
               style={s.button}
               onClick={() => onAck(change.id)}
@@ -79,8 +100,8 @@ export function ChangeCard({ change, onAck, onOpen, busy }: CardProps) {
               ✓ Отметить
             </button>
           )}
-          {change.acknowledged_at && (
-            <span style={s.badge('ok')}>отмечено {whenLabel(change.acknowledged_at)}</span>
+          {done && (
+            <span style={s.badge('off')}>отмечено {whenLabel(change.acknowledged_at!)}</span>
           )}
           {onOpen && (
             <button style={s.button} onClick={() => onOpen(change.id)}>
@@ -198,6 +219,7 @@ export function CertificateChanges({ focus, onChanged }: JournalProps) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [selected, setSelected] = useState<Set<number>>(new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -205,6 +227,11 @@ export function CertificateChanges({ focus, onChanged }: JournalProps) {
     try {
       const result = await listChanges(false);
       setChanges(result.changes);
+      // Отмеченные правки выбирать больше не из чего
+      setSelected((prev) => {
+        const open = new Set(result.changes.filter((c) => !c.acknowledged_at).map((c) => c.id));
+        return new Set([...prev].filter((id) => open.has(id)));
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось прочитать журнал');
     } finally {
@@ -229,10 +256,11 @@ export function CertificateChanges({ focus, onChanged }: JournalProps) {
     return () => { cancelled = true; };
   }, [openId]);
 
-  const ack = async (id: number) => {
+  const run = async (action: () => Promise<unknown>) => {
     setBusy(true);
+    setError('');
     try {
-      await acknowledgeChange(id);
+      await action();
       await load();
       onChanged();
     } catch (e) {
@@ -240,6 +268,19 @@ export function CertificateChanges({ focus, onChanged }: JournalProps) {
     } finally {
       setBusy(false);
     }
+  };
+
+  const ack = (id: number) => run(() => acknowledgeChange(id));
+  const ackSelected = () => run(() => acknowledgeChanges({ ids: [...selected] }));
+  const ackAll = () => run(() => acknowledgeChanges({ all: true }));
+
+  const toggle = (id: number, on: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
   };
 
   if (loading) return <div style={s.muted}>Читаем журнал…</div>;
@@ -257,10 +298,34 @@ export function CertificateChanges({ focus, onChanged }: JournalProps) {
   }
 
   const open = changes.find((c) => c.id === openId) ?? null;
+  const pending = changes.filter((c) => !c.acknowledged_at);
+  const allChosen = pending.length > 0 && pending.every((c) => selected.has(c.id));
 
   return (
     <div style={{ maxWidth: '980px' }}>
       {error && <div style={{ ...s.error, marginBottom: '16px' }}>{error}</div>}
+
+      {pending.length > 0 && (
+        <div style={{ ...s.spread, ...s.bar, marginBottom: '16px' }}>
+          <label style={s.check}>
+            <input
+              type="checkbox"
+              checked={allChosen}
+              onChange={() => setSelected(allChosen ? new Set() : new Set(pending.map((c) => c.id)))}
+            />
+            Выбрать неотмеченные ({pending.length})
+          </label>
+
+          <div style={{ ...s.row, flexWrap: 'wrap' }}>
+            <button style={s.button} onClick={ackSelected} disabled={busy || !selected.size}>
+              Отметить выбранные{selected.size ? ` (${selected.size})` : ''}
+            </button>
+            <button style={s.primary} onClick={ackAll} disabled={busy}>
+              Отметить все
+            </button>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '40px' }}>
         {changes.map((change) => (
@@ -270,6 +335,8 @@ export function CertificateChanges({ focus, onChanged }: JournalProps) {
               onAck={ack}
               onOpen={(id) => setOpenId(id === openId ? null : id)}
               busy={busy}
+              selected={selected.has(change.id)}
+              onSelect={toggle}
             />
             {open?.id === change.id && <AffectedRows rows={rows} />}
           </div>
