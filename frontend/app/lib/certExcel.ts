@@ -60,6 +60,23 @@ const RU_COLUMNS: Column[] = [
   { header: 'Текст о прохождении', width: 40 },
 ];
 
+/**
+ * Номер колонки на русском листе по её заголовку, как в Excel — с единицы.
+ *
+ * Номера и буквы колонок нигде не пишутся руками: на тринадцати колонках
+ * промахнуться на одну слишком легко, и выпадающий список для текста о
+ * прохождении однажды уже сел на «Дату выдачи».
+ */
+const RU_COL: Record<string, number> = Object.fromEntries(
+  RU_COLUMNS.map((column, index) => [column.header, index + 1]),
+);
+
+function columnLetter(header: string): string {
+  const index = RU_COL[header];
+  if (!index) throw new Error(`Нет колонки «${header}» в шаблоне`);
+  return String.fromCharCode(64 + index); // колонок тринадцать, до Z хватает
+}
+
 function langColumns(suffix: string): Column[] {
   return [
     { header: '№', width: 6 },
@@ -145,7 +162,8 @@ export async function buildTemplate(refs: CertRefs): Promise<Uint8Array> {
     dataValidations: { add(range: string, value: ExcelJS.DataValidation): void };
   }).dataValidations;
 
-  const dropdown = (column: 'F' | 'G' | 'L', source: 'A' | 'B' | 'C', count: number, what: string) => {
+  const dropdown = (header: string, source: 'A' | 'B' | 'C', count: number, what: string) => {
+    const column = columnLetter(header);
     validations.add(`${column}2:${column}${TEMPLATE_ROWS + 1}`, {
       type: 'list',
       allowBlank: true,
@@ -156,9 +174,9 @@ export async function buildTemplate(refs: CertRefs): Promise<Uint8Array> {
       error: `Выберите значение из выпадающего списка. Новый ${what.toLowerCase()} сначала заводится в Studio.`,
     });
   };
-  dropdown('F', 'A', refs.courses.length, 'Курс');
-  dropdown('G', 'B', refs.instructors.length, 'Преподаватель');
-  dropdown('L', 'C', refs.completions.length, 'Текст о прохождении');
+  dropdown('Курс *', 'A', refs.courses.length, 'Курс');
+  dropdown('Преподаватель', 'B', refs.instructors.length, 'Преподаватель');
+  dropdown('Текст о прохождении', 'C', refs.completions.length, 'Текст о прохождении');
 
   /* Английский и казахский листы */
   const en = book.addWorksheet(SHEETS.en);
@@ -388,16 +406,17 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
   sheetRu.eachRow((row, index) => {
     if (index === 1) return;
 
-    const cell = (c: number) => text(row.getCell(c).value);
-    const values = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map(cell);
-    if (isBlank(values)) return;
+    // Колонки берём по заголовку, а не по номеру: см. RU_COL
+    const cell = (header: string) => text(row.getCell(RU_COL[header]).value);
+    const filled = RU_COLUMNS.slice(1).map((c) => cell(c.header));
+    if (isBlank(filled)) return;
 
     const before = errors.length;
     const fail = (column: string, message: string) =>
       errors.push({ sheet: SHEETS.ru, row: index, column, message });
 
     /* Номер строки, по которому подтягиваются другие языки */
-    const no = Number(cell(1));
+    const no = Number(cell('№'));
     if (!Number.isInteger(no) || no < 1) {
       fail('№', 'не заполнено или не число');
       return;
@@ -409,13 +428,13 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
     seenNo.add(no);
 
     /* Обязательные поля */
-    const firstName = values[1];
-    const lastName = values[2];
+    const firstName = cell('Имя *');
+    const lastName = cell('Фамилия *');
     if (!firstName) fail('Имя', 'не заполнено');
     if (!lastName) fail('Фамилия', 'не заполнено');
 
     /* Курс — только из справочника */
-    const courseName = values[4];
+    const courseName = cell('Курс *');
     let course: CourseRef | undefined;
     if (!courseName) {
       fail('Курс', 'не заполнено');
@@ -432,7 +451,7 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
     }
 
     /* Преподаватель — необязателен, но если указан, тоже из справочника */
-    const instructorName = values[5];
+    const instructorName = cell('Преподаватель');
     let instructor: PersonRef | undefined;
     if (instructorName) {
       instructor = instructorIndex.get(refKey(instructorName));
@@ -445,8 +464,7 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
     }
 
     /* Текст о прохождении — тоже только из справочника */
-    // values[0] — колонка 2, поэтому тринадцатая колонка это индекс 11
-    const completionName = values[11];
+    const completionName = cell('Текст о прохождении');
     let completion: CompletionRef | undefined | null;
     if (completionName) {
       completion = completionIndex.get(refKey(completionName));
@@ -462,9 +480,10 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
     }
 
     /* Даты */
-    const from = readDate(row.getCell(8).value);
-    const to = readDate(row.getCell(9).value);
-    const issued = readDate(row.getCell(12).value);
+    const dateCell = (header: string) => readDate(row.getCell(RU_COL[header]).value);
+    const from = dateCell('Обучение с');
+    const to = dateCell('Обучение по');
+    const issued = dateCell('Дата выдачи');
     const dateProblem = (column: string, result: typeof from) => {
       if (result === 'bad') fail(column, 'дату не удалось прочитать, нужен вид 31.12.2026');
       if (result === 'american') {
@@ -481,7 +500,7 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
     }
 
     /* Часы */
-    const hoursRaw = values[8];
+    const hoursRaw = cell('Часов');
     let hours: number | null = null;
     if (hoursRaw) {
       const parsed = Number(hoursRaw.replace(',', '.'));
@@ -494,7 +513,7 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
 
     /* Номер сертификата: пустой — выдадим свой */
     let code: string | null = null;
-    const codeRaw = values[0];
+    const codeRaw = cell('Номер сертификата');
     if (codeRaw) {
       code = normalizeCode(codeRaw);
       if (seenCode.has(code)) fail('Номер сертификата', `${code} встречается в таблице второй раз`);
@@ -514,7 +533,7 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
     const hasEn = Boolean(enRow && (enRow.first || enRow.last));
     const hasKz = Boolean(kzRow && (kzRow.first || kzRow.last));
 
-    const locationRu = values[9] || null;
+    const locationRu = cell('Место проведения') || null;
     const city = locationRu ? cityIndex.get(refKey(locationRu)) : undefined;
 
     // Непрочитанные даты сюда не доходят: строка с ними уже отсеяна выше
@@ -524,7 +543,7 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
       code,
       first_name_ru: firstName,
       last_name_ru: lastName,
-      company_ru: values[3] || null,
+      company_ru: cell('Компания') || null,
       course_ru: course.ru,
       instructor_ru: instructor?.ru ?? null,
       location_ru: locationRu,
