@@ -146,6 +146,75 @@ function Suggest<T>({ value, options, match, label, hint, onPick, onChange, plac
   );
 }
 
+interface DropdownProps {
+  value: string;
+  options: { id: string; title: string }[];
+  onPick: (id: string) => void;
+  placeholder: string;
+  disabled?: boolean;
+}
+
+/**
+ * Выпадающий список вместо нативного select.
+ *
+ * Нативный в Studio выглядит чужеродно: список рисует система, и на тёмной
+ * теме он выходит серым текстом по белому. Здесь тот же вид, что у подсказок
+ * при вводе курса, и цвета наследуются от Studio.
+ */
+function Dropdown({ value, options, onPick, placeholder, disabled }: DropdownProps) {
+  const [open, setOpen] = useState(false);
+  const chosen = options.find((o) => o.id === value);
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((v) => !v)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        style={{
+          ...s.input,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: '8px', textAlign: 'left', cursor: disabled ? 'default' : 'pointer',
+          opacity: disabled ? 0.5 : 1,
+        }}
+      >
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          opacity: chosen ? 1 : 0.6 }}>
+          {chosen?.title ?? placeholder}
+        </span>
+        <span style={{ ...s.muted, flexShrink: 0 }}>▾</span>
+      </button>
+
+      {open && !disabled && options.length > 0 && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20,
+          marginTop: '4px', maxHeight: '260px', overflowY: 'auto',
+          border: '1px solid rgba(128,128,128,0.35)', borderRadius: '6px',
+          background: 'var(--card-bg-color, #1a1a1a)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+        }}>
+          {options.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); onPick(option.id); setOpen(false); }}
+              style={{
+                display: 'block', width: '100%', textAlign: 'left',
+                padding: '8px 12px', border: 'none', cursor: 'pointer',
+                background: option.id === value ? 'rgba(128,128,128,0.15)' : 'transparent',
+                color: 'inherit', fontSize: '13px', fontFamily: 'inherit',
+              }}
+            >
+              {option.title}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
     <div style={{ marginBottom: '14px' }}>
@@ -698,38 +767,31 @@ export function CertificateForm({ row, onCancel, onSaved }: Props) {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <Field label="Страна">
-            <select
-              style={{ ...s.input, appearance: 'auto', opacity: isOnline || noPlace ? 0.5 : 1 }}
-              disabled={isOnline || noPlace}
+            <Dropdown
               value={countryId}
-              onChange={(e) => {
-                setCountryId(e.target.value);
+              options={countries.map((c) => ({ id: c._id, title: c.nameRu }))}
+              placeholder="— выберите страну —"
+              disabled={isOnline || noPlace}
+              onPick={(id) => {
+                setCountryId(id);
                 // Город из прежней страны здесь больше не подходит
-                const city = cities.find((c) => c.countryId === e.target.value);
-                set(city ? pickCity(city, countries.find((c) => c._id === e.target.value)) : CLEAR_PLACE);
+                const city = cities.find((c) => c.countryId === id);
+                set(city ? pickCity(city, countries.find((c) => c._id === id)) : CLEAR_PLACE);
               }}
-            >
-              {countries.map((c) => <option key={c._id} value={c._id}>{c.nameRu}</option>)}
-            </select>
+            />
           </Field>
 
           <Field label="Место проведения">
-            <select
-              style={{ ...s.input, appearance: 'auto', opacity: isOnline || noPlace ? 0.5 : 1 }}
+            <Dropdown
               value={str('location_ref')}
+              options={placeOptions.map((c) => ({ id: c._id, title: c.nameRu }))}
+              placeholder={placeOptions.length ? '— выберите город —' : '— у страны нет городов —'}
               disabled={isOnline || noPlace}
-              onChange={(e) => {
-                const city = cities.find((c) => c._id === e.target.value);
+              onPick={(id) => {
+                const city = cities.find((c) => c._id === id);
                 if (city) set(pickCity(city, countries.find((c) => c._id === city.countryId)));
               }}
-            >
-              {!str('location_ref') && (
-                <option value="">
-                  {placeOptions.length ? '— выберите город —' : '— у страны нет городов —'}
-                </option>
-              )}
-              {placeOptions.map((c) => <option key={c._id} value={c._id}>{c.nameRu}</option>)}
-            </select>
+            />
 
             {/* Галочки взаимно исключают друг друга и список городов */}
             <div style={{ ...s.row, marginTop: '8px', flexWrap: 'wrap' }}>

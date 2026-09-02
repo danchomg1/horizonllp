@@ -211,6 +211,14 @@ export async function deleteCertificate(id: number): Promise<boolean> {
   return rows.length > 0;
 }
 
+/** Удаление пачкой: из реестра часто убирают всю ошибочно выданную группу. */
+export async function deleteCertificates(ids: number[]): Promise<number> {
+  if (!ids.length) return 0;
+  const rows = await sql.query(
+    'DELETE FROM certificates WHERE id = ANY($1::bigint[]) RETURNING id', [ids]);
+  return (rows as unknown[]).length;
+}
+
 /** Колонки, которые разрешено писать из формы. Всё остальное игнорируется. */
 const WRITABLE = [
   'code', 'legacy_code',

@@ -1,5 +1,8 @@
 import { isAuthorized, unauthorized } from '../../lib/adminAuth';
-import { listCertificates, insertCertificate, codeExists, SORTABLE, type SortKey } from '../../lib/db';
+import {
+  listCertificates, insertCertificate, codeExists, deleteCertificates,
+  SORTABLE, type SortKey,
+} from '../../lib/db';
 import { generateCode, normalizeCode } from '../../lib/certificates';
 
 export const runtime = 'nodejs';
@@ -78,5 +81,31 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error('Не удалось создать сертификат:', error);
     return Response.json({ error: 'Ошибка записи в базу' }, { status: 500 });
+  }
+}
+
+/**
+ * Удаление пачкой: `{ ids: [...] }`. Отдельный метод, а не DELETE по одному
+ * адресу на запись, — из реестра убирают сразу всю ошибочную группу.
+ */
+export async function DELETE(req: Request) {
+  if (!isAuthorized(req)) return unauthorized();
+
+  let body: { ids?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: 'Тело запроса не является JSON' }, { status: 400 });
+  }
+
+  const ids = Array.isArray(body.ids) ? body.ids.map(Number).filter(Number.isInteger) : [];
+  if (!ids.length) return Response.json({ error: 'Не выбрано ни одной записи' }, { status: 400 });
+
+  try {
+    const removed = await deleteCertificates(ids);
+    return Response.json({ ok: true, removed });
+  } catch (error) {
+    console.error('Не удалось удалить записи:', error);
+    return Response.json({ error: 'Ошибка удаления' }, { status: 500 });
   }
 }

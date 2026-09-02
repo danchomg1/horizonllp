@@ -189,6 +189,11 @@ export function syncRegistry(): Promise<SyncResult> {
  * Загрузка реестра из Excel                                           *
  * ------------------------------------------------------------------ */
 
+/** Весь реестр одним листом — для отчётности, обратно не заливается. */
+export function downloadRegistry(): Promise<number> {
+  return download('/export', {}, 'horizon-registry.xlsx');
+}
+
 /** Пустой шаблон со списками курсов и преподавателей на момент скачивания. */
 export function downloadTemplate(): Promise<number> {
   return download('/template', {}, 'horizon-certificates-template.xlsx');
@@ -332,6 +337,11 @@ export function createCertificate(data: Record<string, unknown>): Promise<Certif
 
 export function updateCertificate(id: number, data: Record<string, unknown>): Promise<Certificate> {
   return request<Certificate>(`/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+}
+
+/** Удаление отмеченных записей одним запросом. */
+export function removeCertificates(ids: number[]): Promise<{ ok: true; removed: number }> {
+  return request<{ ok: true; removed: number }>('', { method: 'DELETE', body: JSON.stringify({ ids }) });
 }
 
 export function removeCertificate(id: number): Promise<{ ok: true }> {

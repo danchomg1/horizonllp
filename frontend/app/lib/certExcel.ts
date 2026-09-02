@@ -639,3 +639,82 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
   return { rows, errors, codeRows };
 }
 
+
+/* ------------------------------------------------------------------ *
+ * Выгрузка реестра                                                    *
+ * ------------------------------------------------------------------ */
+
+/** Одна строка выгрузки: всё, что есть у записи, без служебных ссылок. */
+export interface ExportRow {
+  code: string;
+  legacy_code: string | null;
+  last_name_ru: string;
+  first_name_ru: string;
+  company_ru: string | null;
+  course_ru: string;
+  instructor_ru: string | null;
+  location_ru: string | null;
+  completed_ru: string | null;
+  hours: number | null;
+  training_from: string | null;
+  training_to: string | null;
+  issued_at: string | null;
+  perpetual: boolean;
+  valid_until: string | null;
+  has_ru: boolean;
+  has_en: boolean;
+  has_kz: boolean;
+  last_name_en: string | null;
+  first_name_en: string | null;
+  last_name_kz: string | null;
+  first_name_kz: string | null;
+}
+
+const EXPORT_COLUMNS: { header: string; width: number; value: (r: ExportRow) => unknown }[] = [
+  { header: 'Номер', width: 12, value: (r) => r.code },
+  { header: 'Доп. номер', width: 16, value: (r) => r.legacy_code },
+  { header: 'Фамилия', width: 20, value: (r) => r.last_name_ru },
+  { header: 'Имя', width: 18, value: (r) => r.first_name_ru },
+  { header: 'Компания', width: 26, value: (r) => r.company_ru },
+  { header: 'Курс', width: 52, value: (r) => r.course_ru },
+  { header: 'Преподаватель', width: 24, value: (r) => r.instructor_ru },
+  { header: 'Часов', width: 8, value: (r) => r.hours },
+  { header: 'Обучение с', width: 13, value: (r) => r.training_from },
+  { header: 'Обучение по', width: 13, value: (r) => r.training_to },
+  { header: 'Место проведения', width: 26, value: (r) => r.location_ru },
+  { header: 'Дата выдачи', width: 13, value: (r) => r.issued_at },
+  { header: 'Действует до', width: 14, value: (r) => (r.perpetual ? 'бессрочный' : r.valid_until) },
+  { header: 'Текст о прохождении', width: 38, value: (r) => r.completed_ru },
+  { header: 'Языки', width: 14, value: (r) => [r.has_ru && 'ру', r.has_kz && 'кз', r.has_en && 'анг'].filter(Boolean).join(', ') },
+  { header: 'Фамилия (англ)', width: 20, value: (r) => r.last_name_en },
+  { header: 'Имя (англ)', width: 18, value: (r) => r.first_name_en },
+  { header: 'Фамилия (каз)', width: 20, value: (r) => r.last_name_kz },
+  { header: 'Имя (каз)', width: 18, value: (r) => r.first_name_kz },
+];
+
+/**
+ * Весь реестр одним листом.
+ *
+ * Это выгрузка для отчётности, а не шаблон загрузки: здесь оба номера,
+ * языки и уже посчитанный срок действия. Даты идут строками — так их видно
+ * одинаково в любой локали Excel, и обратно этот файл не заливается.
+ */
+export async function buildExport(rows: ExportRow[]): Promise<Uint8Array> {
+  const book = new ExcelJS.Workbook();
+  book.creator = 'Horizon';
+  book.created = new Date();
+
+  const sheet = book.addWorksheet('Реестр');
+  sheet.addRow(EXPORT_COLUMNS.map((c) => c.header));
+  const head = sheet.getRow(1);
+  head.font = { bold: true };
+  head.height = 22;
+  EXPORT_COLUMNS.forEach((c, i) => { sheet.getColumn(i + 1).width = c.width; });
+  sheet.views = [{ state: 'frozen', ySplit: 1 }];
+  sheet.autoFilter = { from: 'A1', to: { row: 1, column: EXPORT_COLUMNS.length } };
+
+  for (const row of rows) sheet.addRow(EXPORT_COLUMNS.map((c) => c.value(row) ?? ''));
+
+  const buffer = await book.xlsx.writeBuffer();
+  return new Uint8Array(buffer as ArrayBuffer);
+}

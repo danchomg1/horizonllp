@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  listCertificates, removeCertificate, downloadCertificates, downloadSample,
+  listCertificates, removeCertificate, removeCertificates,
+  downloadCertificates, downloadSample, downloadRegistry,
   listChanges, acknowledgeChange,
   type Certificate, type SortKey, type CertLocale, type ChangeEntry,
 } from './api';
@@ -174,6 +175,41 @@ export function CertificateList({ onEdit, onCreate, onOpenChanges, refreshToken 
     }
   };
 
+  const handleExport = async () => {
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      const rows = await downloadRegistry();
+      setNotice(rows ? `Выгружено записей: ${rows}` : 'Реестр выгружается');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось выгрузить реестр');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    const ids = [...selected];
+    if (!confirm(`Удалить отмеченные сертификаты (${ids.length})?
+
+Действие необратимо.`)) return;
+
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      const { removed } = await removeCertificates(ids);
+      setSelected(new Set());
+      setNotice(`Удалено записей: ${removed}`);
+      await load(query);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось удалить');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleSample = async () => {
     setBusy(true);
     setError('');
@@ -235,8 +271,11 @@ export function CertificateList({ onEdit, onCreate, onOpenChanges, refreshToken 
               {locale.title}
             </label>
           ))}
-          <button style={s.button} onClick={handleSample} disabled={busy} title="PDF с текущей печатью и подписью">
+          <button style={s.button} onClick={handleSample} disabled={busy} title="Бланк со всеми заполненными полями">
             Образец
+          </button>
+          <button style={s.button} onClick={handleExport} disabled={busy} title="Весь реестр одним листом Excel">
+            Выгрузить таблицу
           </button>
         </div>
 
@@ -252,7 +291,12 @@ export function CertificateList({ onEdit, onCreate, onOpenChanges, refreshToken 
             {busy ? 'Собираем…' : 'Скачать PDF'}
           </button>
           {selected.size > 0 && (
-            <button style={s.button} onClick={() => setSelected(new Set())}>Снять отметки</button>
+            <>
+              <button style={s.button} onClick={() => setSelected(new Set())}>Снять отметки</button>
+              <button style={s.danger} onClick={handleDeleteSelected} disabled={busy}>
+                Удалить ({selected.size})
+              </button>
+            </>
           )}
         </div>
       </div>
