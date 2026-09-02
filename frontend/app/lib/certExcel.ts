@@ -267,8 +267,11 @@ function text(value: ExcelJS.CellValue): string {
  * Дата из ячейки. Excel отдаёт настоящую дату объектом, но в выгрузках из
  * других систем она часто оказывается текстом — принимаем оба вида,
  * а также ISO, потому что так выглядят даты в старом архиве.
+ *
+ * Возвращает 'american', если запись явно в порядке «месяц, день»: такую
+ * строку нужно показать человеку, а не угадывать за него.
  */
-function readDate(value: ExcelJS.CellValue): string | null | 'bad' {
+function readDate(value: ExcelJS.CellValue): string | null | 'bad' | 'american' {
   if (value === null || value === undefined || value === '') return null;
 
   if (value instanceof Date) {
@@ -281,9 +284,17 @@ function readDate(value: ExcelJS.CellValue): string | null | 'bad' {
   const raw = text(value);
   if (!raw) return null;
 
-  const dotted = /^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{4})$/.exec(raw);
-  if (dotted) {
-    return `${dotted[3]}-${dotted[2].padStart(2, '0')}-${dotted[1].padStart(2, '0')}`;
+  // Порядок «день, месяц, год» — так написано в шапке шаблона. Если на месте
+  // месяца стоит число больше двенадцати, это американская запись 03/15/2021:
+  // молча прочитать её нельзя, потому что 03/09/2022 при этом разошлось бы
+  // на четыре месяца и никто бы не заметил.
+  const parts = /^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{4})$/.exec(raw);
+  if (parts) {
+    const day = Number(parts[1]);
+    const month = Number(parts[2]);
+    if (month > 12) return 'american';
+    if (day < 1 || day > 31 || month < 1) return 'bad';
+    return `${parts[3]}-${parts[2].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
   }
 
   const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
@@ -454,10 +465,18 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
     const from = readDate(row.getCell(8).value);
     const to = readDate(row.getCell(9).value);
     const issued = readDate(row.getCell(12).value);
-    if (from === 'bad') fail('Обучение с', 'дату не удалось прочитать, нужен вид 31.12.2026');
-    if (to === 'bad') fail('Обучение по', 'дату не удалось прочитать, нужен вид 31.12.2026');
-    if (issued === 'bad') fail('Дата выдачи', 'дату не удалось прочитать, нужен вид 31.12.2026');
-    if (from !== 'bad' && to !== 'bad' && from && to && to < from) {
+    const dateProblem = (column: string, result: typeof from) => {
+      if (result === 'bad') fail(column, 'дату не удалось прочитать, нужен вид 31.12.2026');
+      if (result === 'american') {
+        fail(column, 'дата записана как «месяц/день/год» — переведите её в вид 31.12.2026');
+      }
+    };
+    dateProblem('Обучение с', from);
+    dateProblem('Обучение по', to);
+    dateProblem('Дата выдачи', issued);
+
+    const usable = (v: typeof from) => (v === 'bad' || v === 'american' ? null : v);
+    if (usable(from) && usable(to) && usable(to)! < usable(from)!) {
       fail('Обучение по', 'конец обучения раньше начала');
     }
 
@@ -498,10 +517,8 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
     const locationRu = values[9] || null;
     const city = locationRu ? cityIndex.get(refKey(locationRu)) : undefined;
 
-    const issuedAt = (issued as string | null)
-      || (to as string | null)
-      || (from as string | null)
-      || today();
+    // Непрочитанные даты сюда не доходят: строка с ними уже отсеяна выше
+    const issuedAt = usable(issued) || usable(to) || usable(from) || today();
 
     rows.push({
       code,
@@ -531,8 +548,8 @@ export async function parseWorkbook(file: ArrayBuffer, refs: CertRefs): Promise<
       location_kz: hasKz ? kzRow!.location || city?.kz || null : null,
       completed_kz: hasKz ? completion.kz || completion.ru : null,
 
-      training_from: (from as string | null) ?? null,
-      training_to: (to as string | null) ?? null,
+      training_from: usable(from),
+      training_to: usable(to),
       hours,
       issued_at: issuedAt,
       perpetual: course.perpetual,
