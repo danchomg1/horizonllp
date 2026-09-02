@@ -119,6 +119,50 @@ export interface SyncResult {
   courses: number;
   instructors: number;
   completions: number;
+  /** Сколько правок справочника попало в журнал. */
+  changes: number;
+}
+
+export type ChangeField = 'nameRu' | 'nameEn' | 'nameKz' | 'validity';
+
+export interface ChangeEntry {
+  id: number;
+  kind: 'course' | 'instructor' | 'completion';
+  ref_id: string;
+  field: ChangeField;
+  /** Название элемента справочника на момент правки. */
+  title: string;
+  old_value: string | null;
+  new_value: string | null;
+  affected: number;
+  created_at: string;
+  acknowledged_at: string | null;
+}
+
+export interface ChangedRow {
+  id: number;
+  code: string;
+  first_name_ru: string;
+  last_name_ru: string;
+  course_ru: string;
+  issued_at: string | null;
+  valid_until: string | null;
+  perpetual: boolean;
+}
+
+/** Журнал правок справочника; open — только неотмеченные. */
+export function listChanges(open = false): Promise<{ changes: ChangeEntry[] }> {
+  return request<{ changes: ChangeEntry[] }>(`/changes${open ? '?open=1' : ''}`);
+}
+
+/** Одна правка вместе со списком задетых сертификатов. */
+export function getChange(id: number): Promise<{ change: ChangeEntry; rows: ChangedRow[] }> {
+  return request<{ change: ChangeEntry; rows: ChangedRow[] }>(`/changes/${id}`);
+}
+
+/** Отметка «просмотрено»: предупреждение гаснет у всех записей этой правки. */
+export function acknowledgeChange(id: number): Promise<{ ok: true; changed: boolean }> {
+  return request<{ ok: true; changed: boolean }>(`/changes/${id}`, { method: 'POST' });
 }
 
 /**
@@ -219,9 +263,12 @@ export interface Certificate {
   valid_until: string | null;
   course_ref: string | null;
   instructor_ref: string | null;
+  completed_ref: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
+  /** Неотмеченные правки справочника, задевшие эту запись. */
+  change_ids?: number[];
 }
 
 export interface ListResult {

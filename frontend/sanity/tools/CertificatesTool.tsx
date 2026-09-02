@@ -3,9 +3,14 @@ import { checkKey, getKey, setKey, syncRegistry, type Certificate } from './api'
 import { CertificateList } from './CertificateList';
 import { CertificateForm } from './CertificateForm';
 import { CertificateImport } from './CertificateImport';
+import { CertificateChanges } from './CertificateChanges';
 import { s } from './styles';
 
-type View = { name: 'list' } | { name: 'form'; row: Certificate | null } | { name: 'import' };
+type View =
+  | { name: 'list' }
+  | { name: 'form'; row: Certificate | null }
+  | { name: 'import' }
+  | { name: 'changes' };
 
 /** Экран ввода ключа доступа. */
 function KeyGate({ onUnlock }: { onUnlock: () => void }) {
@@ -103,6 +108,24 @@ export default function CertificatesTool() {
 
   if (!unlocked) return <KeyGate onUnlock={() => setUnlocked(true)} />;
 
+  if (view.name === 'changes') {
+    return (
+      <div style={s.page}>
+        <div style={{ ...s.spread, marginBottom: '20px' }}>
+          <div>
+            <h1 style={s.h1}>Изменения справочника</h1>
+            <p style={{ ...s.muted, margin: '4px 0 0' }}>
+              Что правили в курсах, преподавателях и текстах — и каких записей это коснулось
+            </p>
+          </div>
+          <button style={s.button} onClick={() => setView({ name: 'list' })}>К реестру</button>
+        </div>
+
+        <CertificateChanges onChanged={() => setRefreshToken((n) => n + 1)} />
+      </div>
+    );
+  }
+
   if (view.name === 'import') {
     return (
       <div style={s.page}>
@@ -146,6 +169,9 @@ export default function CertificatesTool() {
           </p>
         </div>
         <div style={s.row}>
+          <button style={s.button} onClick={() => setView({ name: 'changes' })}>
+            Изменения справочника
+          </button>
           <button style={s.button} onClick={() => setView({ name: 'import' })}>
             Загрузить из Excel
           </button>
@@ -162,6 +188,7 @@ export default function CertificatesTool() {
       <CertificateList
         refreshToken={refreshToken}
         onCreate={() => setView({ name: 'form', row: null })}
+        onOpenChanges={() => setView({ name: 'changes' })}
         onEdit={(row) => setView({ name: 'form', row })}
       />
     </div>

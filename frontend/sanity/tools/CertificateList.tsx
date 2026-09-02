@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   listCertificates, removeCertificate, downloadCertificates, downloadSample,
-  type Certificate, type SortKey, type CertLocale,
+  listChanges, acknowledgeChange,
+  type Certificate, type SortKey, type CertLocale, type ChangeEntry,
 } from './api';
+import { ChangeAlerts } from './CertificateChanges';
 import { s } from './styles';
 
 const COLUMNS: { key: SortKey; title: string }[] = [
@@ -37,11 +39,13 @@ function validity(row: Certificate): { text: string; tone: 'ok' | 'warn' | 'off'
 interface Props {
   onEdit: (row: Certificate) => void;
   onCreate: () => void;
+  /** Открыть журнал правок справочника. */
+  onOpenChanges: () => void;
   /** Меняется после сохранения формы, чтобы список перечитался. */
   refreshToken: number;
 }
 
-export function CertificateList({ onEdit, onCreate, refreshToken }: Props) {
+export function CertificateList({ onEdit, onCreate, onOpenChanges, refreshToken }: Props) {
   const [query, setQuery] = useState('');
   const [rows, setRows] = useState<Certificate[]>([]);
   const [total, setTotal] = useState(0);
@@ -57,6 +61,9 @@ export function CertificateList({ onEdit, onCreate, refreshToken }: Props) {
   const [locales, setLocales] = useState<CertLocale[]>(['ru']);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
+
+  // Неотмеченные правки справочника: по ним строка рисует предупреждение
+  const [changes, setChanges] = useState<Map<number, ChangeEntry>>(new Map());
 
   // Запросы могут вернуться не в том порядке, в каком ушли; помечаем актуальный
   const requestId = useRef(0);
@@ -83,6 +90,38 @@ export function CertificateList({ onEdit, onCreate, refreshToken }: Props) {
     const timer = setTimeout(() => load(query), 300);
     return () => clearTimeout(timer);
   }, [query, load, refreshToken]);
+
+  // Правки справочника читаем разом: строки ссылаются на них по id
+  const loadChanges = useCallback(async () => {
+    try {
+      const result = await listChanges(true);
+      setChanges(new Map(result.changes.map((c) => [c.id, c])));
+    } catch {
+      // Журнал недоступен — список всё равно должен работать
+    }
+  }, []);
+
+  useEffect(() => { void loadChanges(); }, [loadChanges, refreshToken]);
+
+  const ackChange = async (id: number) => {
+    setBusy(true);
+    try {
+      await acknowledgeChange(id);
+      await loadChanges();
+      await load(query);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось отметить изменение');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** Правки, задевшие конкретную строку. */
+  const alertsFor = (row: Certificate): ChangeEntry[] =>
+    (row.change_ids ?? []).map((id) => changes.get(id)).filter((c): c is ChangeEntry => Boolean(c));
+
+  const openChanges = [...changes.values()];
+  const affectedTotal = rows.filter((row) => alertsFor(row).length > 0).length;
 
   const toggleSort = (key: SortKey) => {
     if (sort === key) setDir(dir === 'asc' ? 'desc' : 'asc');
@@ -220,6 +259,20 @@ export function CertificateList({ onEdit, onCreate, refreshToken }: Props) {
       {error && <div style={{ ...s.error, marginBottom: '14px' }}>{error}</div>}
       {notice && <div style={{ ...s.notice, marginBottom: '14px' }}>{notice}</div>}
 
+      {/* Правка справочника уже разошлась по реестру — говорим об этом прямо */}
+      {openChanges.length > 0 && (
+        <div style={{ ...s.spread, ...s.bar, marginBottom: '14px',
+          borderColor: 'rgba(210,160,40,0.45)', background: 'rgba(210,160,40,0.09)' }}>
+          <span>
+            <span style={{ color: '#d2a028', fontWeight: 700, marginRight: '8px' }}>⚠</span>
+            {openChanges.length === 1 ? 'Правка справочника затронула' : `Правок справочника: ${openChanges.length}, затронуто`}{' '}
+            {openChanges.reduce((n, c) => n + c.affected, 0)} записей
+            {affectedTotal > 0 && <span style={s.muted}> · на этой странице {affectedTotal}</span>}
+          </span>
+          <button style={s.button} onClick={onOpenChanges}>Просмотреть эти записи</button>
+        </div>
+      )}
+
       <div style={{ ...s.muted, marginBottom: '10px' }}>
         {loading ? 'Загрузка…' : `Найдено: ${total}`}
       </div>
@@ -264,7 +317,10 @@ export function CertificateList({ onEdit, onCreate, refreshToken }: Props) {
                       onChange={() => toggleRow(row.id)}
                     />
                   </td>
-                  <td style={{ ...s.td, ...s.code }}>{row.code}</td>
+                  <td style={{ ...s.td, ...s.code, whiteSpace: 'nowrap' }}>
+                    <ChangeAlerts changes={alertsFor(row)} onAck={ackChange} busy={busy} />
+                    {row.code}
+                  </td>
                   <td style={s.td}>{row.last_name_ru}</td>
                   <td style={s.td}>{row.first_name_ru}</td>
                   <td style={s.td}>{row.company_ru || '—'}</td>

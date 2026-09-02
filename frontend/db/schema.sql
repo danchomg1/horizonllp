@@ -105,3 +105,51 @@ ALTER TABLE certificates ADD COLUMN IF NOT EXISTS completed_ref text;
 CREATE INDEX IF NOT EXISTS certificates_course_ref     ON certificates (course_ref);
 CREATE INDEX IF NOT EXISTS certificates_instructor_ref ON certificates (instructor_ref);
 CREATE INDEX IF NOT EXISTS certificates_completed_ref  ON certificates (completed_ref);
+
+/* ------------------------------------------------------------------ *
+ * Журнал правок справочника                                           *
+ * ------------------------------------------------------------------ */
+
+-- Слепок справочника на момент прошлой синхронизации. По нему считается,
+-- что именно изменилось: сравнивать записи реестра между собой для этого
+-- недостаточно — из даты «действует до» не восстановить срок курса.
+CREATE TABLE IF NOT EXISTS certificate_ref_state (
+  ref_id          text PRIMARY KEY,
+  kind            text NOT NULL,          -- course | instructor | completion
+  name_ru         text,
+  name_en         text,
+  name_kz         text,
+  perpetual       boolean,
+  validity_years  integer,
+  updated_at      timestamptz NOT NULL DEFAULT now()
+);
+
+-- Одна строка на одно изменённое свойство: правка сразу трёх написаний
+-- даёт три записи, и снять их можно по отдельности.
+CREATE TABLE IF NOT EXISTS certificate_changes (
+  id              bigserial PRIMARY KEY,
+  kind            text NOT NULL,
+  ref_id          text NOT NULL,
+  -- Что именно поменялось: nameRu | nameEn | nameKz | validity
+  field           text NOT NULL,
+  title           text NOT NULL,          -- название элемента на момент правки
+  old_value       text,
+  new_value       text,
+  affected        integer NOT NULL DEFAULT 0,
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  -- Отметка «просмотрено» снимает предупреждение сразу со всех записей
+  acknowledged_at timestamptz
+);
+
+CREATE INDEX IF NOT EXISTS certificate_changes_open
+  ON certificate_changes (created_at DESC) WHERE acknowledged_at IS NULL;
+
+-- Какие именно сертификаты задело каждое изменение.
+CREATE TABLE IF NOT EXISTS certificate_change_rows (
+  change_id       bigint NOT NULL REFERENCES certificate_changes(id) ON DELETE CASCADE,
+  certificate_id  bigint NOT NULL REFERENCES certificates(id) ON DELETE CASCADE,
+  PRIMARY KEY (change_id, certificate_id)
+);
+
+CREATE INDEX IF NOT EXISTS certificate_change_rows_cert
+  ON certificate_change_rows (certificate_id);
