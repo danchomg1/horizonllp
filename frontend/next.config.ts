@@ -25,6 +25,12 @@ const nextConfig: NextConfig = {
 
     return [
       { source: '/:path*', has: [{ type: 'host', value: 'www.horizon-llp.com' }], destination: 'https://horizon-llp.com/:path*', permanent: true },
+      // Старый адрес проверки сертификата. Он же зашит в QR на бланках,
+      // но там другой домен — horizon-university.kz, и редирект оттуда
+      // настраивается на самом том сайте. Здесь ловим только тех, кто
+      // наберёт прежний путь уже на horizon-llp.com.
+      { source: '/check-certificate', destination: '/verify', permanent: true },
+      { source: '/:locale(en|kz)/check-certificate', destination: '/:locale/verify', permanent: true },
       { source: '/nebosh-landing', destination: '/ru/nebosh-igc', permanent: true },
       { source: '/blog', destination: '/ru/news', permanent: true },
       { source: '/rospa', destination: '/ru/level-2-defensive-driving-iogp', permanent: true },
