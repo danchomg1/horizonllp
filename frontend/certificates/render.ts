@@ -3,9 +3,10 @@ import path from 'path';
 import { LineCapStyle, PDFDocument, rgb, setCharacterSpacing, type PDFFont, type PDFPage } from 'pdf-lib';
 import realFontkit from '@pdf-lib/fontkit';
 import {
-  LAYOUTS, CAP_HALF, INFO, INFO_ROW, NAVY, BLUE, WHITE,
+  LAYOUTS, CAP_HALF, INFO, INFO_ROW, QR, NAVY, BLUE, WHITE,
   type FieldSpec, type FontKey, type InfoField,
 } from './layout';
+import QRCode from 'qrcode';
 import { ICONS, type Icon } from './icons';
 import type { CertLocale } from '../app/lib/certificates';
 
@@ -158,6 +159,40 @@ function drawIcon(page: PDFPage, icon: Icon, x: number, top: number) {
   }
 }
 
+/**
+ * Рисует проверочный QR прямоугольниками-модулями.
+ *
+ * Вектором, а не картинкой: при печати и увеличении квадраты остаются
+ * чёткими, а файл прибавляет считанные килобайты. Подряд идущие тёмные
+ * модули в ряду сливаются в один прямоугольник — так операций в разы
+ * меньше, а рисунок тот же.
+ */
+function drawQr(page: PDFPage, url: string) {
+  const { modules } = QRCode.create(url, { errorCorrectionLevel: 'M' });
+  const count = modules.size;
+  const step = QR.size / count;
+  const left = QR.centerX - QR.size / 2;
+  const color = rgb(NAVY.r, NAVY.g, NAVY.b);
+
+  for (let row = 0; row < count; row++) {
+    let run = 0;
+    for (let col = 0; col <= count; col++) {
+      const dark = col < count && modules.data[row * count + col];
+      if (dark) { run++; continue; }
+      if (run) {
+        page.drawRectangle({
+          x: left + (col - run) * step,
+          y: QR.top - (row + 1) * step,
+          width: run * step,
+          height: step,
+          color,
+        });
+        run = 0;
+      }
+    }
+  }
+}
+
 export interface CertificateData {
   code: string;
   name: string;
@@ -171,6 +206,8 @@ export interface CertificateData {
   instructor?: string;
   director: string;
   validUntil?: string;
+  /** Адрес проверки: попадает в QR. Не задан — QR не рисуется. */
+  verifyUrl?: string;
 }
 
 /** Собирает готовый PDF сертификата на бланке нужного языка. */
@@ -234,6 +271,9 @@ export async function renderCertificate(
     });
     drawField(page, onestRegular, column.value, cell.text, NAVY);
   }
+
+  // QR у каждого сертификата свой: он ведёт на проверку по его номеру
+  if (data.verifyUrl) drawQr(page, data.verifyUrl);
 
   return doc.save();
 }

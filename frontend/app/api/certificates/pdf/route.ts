@@ -6,6 +6,7 @@ import {
 } from '../../../lib/certificates';
 import { renderCertificate, type CertificateData } from '../../../../certificates/render';
 import { getCertSettings } from '../../../lib/certSettings';
+import { SITE_URL } from '../../../lib/locale';
 import { applyRefs, loadRefIndex } from '../../../lib/certResolve';
 
 export const runtime = 'nodejs';
@@ -25,6 +26,16 @@ const LABELS: Record<CertLocale, { until: (d: string) => string; perpetual: stri
   en: { until: (d) => d, perpetual: 'unlimited' },
   kz: { until: (d) => d, perpetual: 'мерзімсіз' },
 };
+
+/**
+ * Адрес проверки для QR: у каждого сертификата свой, с его номером.
+ * Страница открывается на языке бланка — тому, кто сканирует казахский
+ * сертификат, английская страница ни к чему.
+ */
+function verifyUrl(code: string, locale: CertLocale): string {
+  const prefix = locale === 'ru' ? '' : `/${locale}`;
+  return `${SITE_URL}${prefix}/verify?code=${encodeURIComponent(code)}`;
+}
 
 /** Значение поля на нужном языке с откатом на русское. */
 function pickField(row: CertificateRow, base: string, locale: CertLocale): string {
@@ -66,6 +77,7 @@ function toCertificateData(row: CertificateRow, locale: CertLocale, director: st
     instructor: pickField(row, 'instructor', locale) || undefined,
     director,
     validUntil,
+    verifyUrl: verifyUrl(row.code, locale),
   };
 }
 
