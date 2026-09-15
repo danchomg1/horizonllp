@@ -66,13 +66,14 @@ export function localePath(locale?: string): string {
 
 /** Ссылка внутри сайта с учётом языка: href('nebosh-igc', 'kz') -> '/kz/nebosh-igc'. */
 export function href(path: string, locale?: string): string {
-  const clean = path.startsWith('/') ? path : `/${path}`;
+  const clean = '/' + path.replace(/^\/+|\/+$/g, '');
   return `${localePath(locale)}${clean}` || '/';
 }
 
 /** Абсолютный адрес страницы для нужного языка. */
 export function localeUrl(locale?: string, path = ''): string {
-  const clean = path && !path.startsWith('/') ? `/${path}` : path;
+  const trimmed = path.replace(/^\/+|\/+$/g, '');
+  const clean = trimmed ? `/${trimmed}` : '';
   return `${SITE_URL}${localePath(locale)}${clean}`;
 }
 

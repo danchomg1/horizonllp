@@ -2,7 +2,7 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { client } from '../../lib/sanity';
 import NewsList from '../../components/NewsList';
-import { loc, pick, alternatesFor } from '../../lib/locale';
+import { loc, pick, alternatesFor, localeUrl } from '../../lib/locale';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -20,6 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     }, locale),
     alternates: alternatesFor(locale, '/news'),
     openGraph: {
+      url: localeUrl(locale, '/news'),
       title,
       description: pick({
         ru: 'Последние новости и события Horizon LLP.',

@@ -82,7 +82,7 @@ export async function generateMetadata(
   return {
     title: t.title,
     description: t.meta,
-    ...alternatesFor(locale, '/verify'),
+    alternates: alternatesFor(locale, '/verify'),
   };
 }
 

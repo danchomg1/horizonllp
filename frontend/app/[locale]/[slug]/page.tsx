@@ -6,7 +6,7 @@ import TabsSection from '../../components/TabsSection';
 import { notFound } from 'next/navigation';
 import { textComponents } from '../../components/RichTextComponents';
 import Button from '../../components/Button';
-import { loc, pick, alternatesFor } from '../../lib/locale';
+import { loc, pick, alternatesFor, localeUrl } from '../../lib/locale';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +16,7 @@ interface Props {
 
 async function getData(slug: string) {
   return client.fetch(
-    `*[_type in ["consultingItem","explosionItem","emergencyItem","engineeringItem","ppeItem","aboutItem","course"] && slug.current == $slug][0] {
+    `*[_type in ["consultingItem","explosionItem","emergencyItem","engineeringItem","ppeItem","aboutItem","course"] && slug.current in [$slug, "/" + $slug]][0] {
       title, titleEn, titleKz,
       heroImage,
       introTitle, introTitleEn, introTitleKz,
@@ -34,7 +34,7 @@ async function getData(slug: string) {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, locale } = await params;
   const data = await client.fetch(
-    `*[_type in ["consultingItem","explosionItem","emergencyItem","engineeringItem","ppeItem","aboutItem","course"] && slug.current == $slug][0] { title, titleEn, titleKz, description, descriptionEn, descriptionKz, heroImage }`,
+    `*[_type in ["consultingItem","explosionItem","emergencyItem","engineeringItem","ppeItem","aboutItem","course"] && slug.current in [$slug, "/" + $slug]][0] { title, titleEn, titleKz, description, descriptionEn, descriptionKz, heroImage }`,
     { slug: decodeURIComponent(slug) }
   );
   if (!data) return { title: pick({ ru: 'Страница не найдена', en: 'Page not found', kz: 'Бет табылмады' }, locale) };
@@ -48,7 +48,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       kz: `${title} туралы толығырақ — Horizon LLP`,
     }, locale),
     alternates: alternatesFor(locale, `/${slug}`),
+    twitter: { card: 'summary_large_image', title, description, images: data.heroImage ? [urlFor(data.heroImage).url()] : ['/og.jpg'] },
     openGraph: {
+      url: localeUrl(locale, `/${slug}`),
       title,
       description,
       images: data.heroImage ? [urlFor(data.heroImage).url()] : [{ url: '/og.jpg', width: 1200, height: 630 }],

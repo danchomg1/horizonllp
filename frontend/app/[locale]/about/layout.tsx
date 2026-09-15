@@ -67,7 +67,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     title: m.title,
     description: m.description,
     alternates: alternatesFor(locale, '/about'),
-    openGraph: { title: m.ogTitle, description: m.description, images: [{ url: '/og.jpg', width: 1200, height: 630, alt: 'Horizon LLP' }] },
+    twitter: { card: 'summary_large_image', title: m.title, description: m.description, images: ['/og.jpg'] },
+    openGraph: { url: localeUrl(locale, '/about'), title: m.ogTitle, description: m.description, images: [{ url: '/og.jpg', width: 1200, height: 630, alt: 'Horizon LLP' }] },
   };
 }
 

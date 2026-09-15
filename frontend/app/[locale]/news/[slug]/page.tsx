@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { client, urlFor } from '../../../lib/sanity';
@@ -10,7 +11,7 @@ import { loc, pick, alternatesFor, intlLocale, localeUrl, href as hrefFor } from
 async function getPost(slug: string) {
   return client.fetch(
     `*[_type == "news" && slug.current == $slug][0] {
-      title, titleEn, titleKz, publishedAt, mainImage,
+      title, titleEn, titleKz, publishedAt, _updatedAt, mainImage,
       body, bodyEn, bodyKz, description, descriptionEn, descriptionKz
     }`,
     { slug }
@@ -36,7 +37,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     { slug }
   );
 
-  if (!post) return { title: pick({ ru: 'Новость не найдена', en: 'Article not found', kz: 'Жаңалық табылмады' }, locale) };
+  if (!post) notFound();
 
   const title = loc(post, 'title', locale);
   const desc = loc(post, 'description', locale);
@@ -51,6 +52,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description: desc || fallbackDesc,
     alternates: alternatesFor(locale, `/news/${slug}`),
     openGraph: {
+      url: localeUrl(locale, `/news/${slug}`),
       title,
       description: desc || fallbackDesc,
       images: post.mainImage ? [urlFor(post.mainImage).url()] : [{ url: '/og.jpg', width: 1200, height: 630 }],
@@ -65,13 +67,7 @@ export default async function NewsPostPage({ params }: PageProps) {
   const t = await getTranslations('News');
   const post = await getPost(slug);
 
-  if (!post) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F4F4F4]">
-        <h1 className="text-2xl text-gray-500">{t('notFound')}</h1>
-      </div>
-    );
-  }
+  if (!post) notFound();
 
   const title = loc(post, 'title', locale);
   const body = loc(post, 'body', locale);
@@ -90,6 +86,7 @@ export default async function NewsPostPage({ params }: PageProps) {
       headline: title,
       description: desc || fallbackDesc,
       datePublished: post.publishedAt,
+      dateModified: post._updatedAt || post.publishedAt,
       url: pageUrl,
       image: post.mainImage ? urlFor(post.mainImage).url() : undefined,
       publisher: {
