@@ -1,313 +1,78 @@
-import Image from 'next/image';
+import { HeroVideo, LearningScenes, TeamProgress, CourseRibbon } from './UniversityScenes';
 import { setRequestLocale } from 'next-intl/server';
-import {
-  MonitorPlay, WifiOff, LineChart, FolderCog,
-  SlidersHorizontal, Award, Check, ShieldCheck, ArrowRight,
-} from 'lucide-react';
+import { ArrowUpRight,  Search, Trophy, Palette, Languages, Plug, MonitorPlay, ChartNoAxesCombined, CalendarDays, ScanLine, Award } from 'lucide-react';
 import Button from '../../components/Button';
 import { pick } from '../../lib/locale';
+import s from './university.module.css';
+import UniversityMotion from './UniversityMotion';
+import LearningJourney from './LearningJourney';
+import UniversityHeader from './UniversityHeader';
+import Footer from '../../components/Footer';
 
-const content = {
+const copy = {
   ru: {
-    eyebrow: 'Обучающая платформа Horizon',
-    heroTitle: 'Horizon University',
-    heroSub: 'Дистанционное обучение сотрудников, контроль прогресса и управление учебными программами в одной системе.',
-    stat1n: '2007', stat1l: 'опыт Horizon в HSE',
-    stat2n: '100%', stat2l: 'контроль прохождения',
-    stat3n: 'Offline', stat3l: 'доступ без интернета',
-    missionEyebrow: 'Какие задачи решает платформа',
-    missionText: (
-      <>
-        On-Line Платформа Horizon University помогает компаниям организовать обучение сотрудников по{' '}
-        <strong>охране труда, технике безопасности и внутренним корпоративным программам</strong>{' '}
-        — без отрыва от производства, в удобное время и с любого устройства.
-      </>
-    ),
-    featuresEyebrow: 'Возможности',
-    featuresTitle: 'Технические возможности платформы',
+    label: 'Цифровая платформа для вашей команды', nav: ['Возможности', 'Траектория обучения', 'Экосистема'], cta: 'Запросить демо',
+    title: 'Развивайте людей.\nУсиливайте производство.', sub: 'Обучение, которое работает вместе с вашей командой. На объекте, в офисе и в любой точке мира.',
+    card: 'Вся команда.\nОдна платформа.', cardSub: 'От первого инструктажа до развития компетенций', scroll: 'Откройте возможности',
+    introLabel: 'Обучение с результатом', intro: 'Знания становятся навыками.\nНавыки — культурой безопасности.', introSub: 'Horizon University объединяет обучение сотрудников и управление развитием в одной системе. Меньше организационной работы — больше внимания людям и безопасности.',
     features: [
-      { Icon: MonitorPlay, title: 'Дистанционное обучение', desc: 'Сотрудники проходят курсы онлайн в удобном формате — с любого устройства и в удобное время.' },
-      { Icon: WifiOff, title: 'Обучение без интернета', desc: 'Доступ к материалам возможен даже при отсутствии подключения к сети — важно для удалённых объектов.' },
-      { Icon: LineChart, title: 'Контроль прогресса', desc: 'Руководители и HSE-специалисты видят статус прохождения, результаты и активность обучающихся.' },
-      { Icon: FolderCog, title: 'Управление материалами', desc: 'Учебные курсы, программы, тесты и инструкции хранятся централизованно в единой системе.' },
-      { Icon: SlidersHorizontal, title: 'Под задачи компании', desc: 'Вводное обучение, повторный инструктаж, HSE-курсы и внутренние программы — в одном пространстве.' },
-      { Icon: Award, title: 'Сертификаты и отчёты', desc: 'Автоматическая выдача сертификатов и выгрузка отчётности по итогам обучения сотрудников.' },
+      ['Обучение без отрыва от производства', 'Курсы, тесты и лонгриды доступны с любого устройства. Сотрудник на объекте в Атырау или Аксае проходит инструктаж в удобное время — без поездки в учебный центр.', 'На объекте · В офисе · В пути'],
+      ['Полный контроль прогресса команды', 'Прогресс по подразделениям, группам и каждому сотруднику, результаты тестов и анализ ответов — перед глазами руководителя. Сертификаты выдаются автоматически: для HSE это доказательство обученности при проверках и аудитах.', 'Прозрачность на каждом уровне'],
+      ['Траектории обучения и адаптация новичков', 'Собирайте курсы в последовательные программы. Ведите онбординг и индивидуальные планы развития в той же системе — от первого рабочего дня до новых профессиональных задач.', 'Понятный путь к новым навыкам'],
+      ['Очное + онлайн в одном окне', 'Календарь мероприятий, тренеры, площадки и запись через каталог. Международные курсы NEBOSH, IOSH, CompEx и внутренние тренинги планируются и учитываются вместе с e-learning.', 'Единый календарь обучения'],
+      ['Компетенции, которые видны в работе', 'Оценка 360°, профили компетенций и листы наблюдения помогают проверять рабочие стандарты прямо на площадке. Обучение замыкается на реальное поведение, а не только на тесты.', 'От знаний — к действию'],
     ],
-    audienceEyebrow: 'Для кого',
-    audienceTitle: 'Кому подойдёт Horizon University:',
-    audienceItems: [
-      'Компаниям с сотрудниками на нескольких объектах или в разных городах',
-      'Предприятиям, где HSE-отдел перегружен очными инструктажами',
-      'Организациям, которым важна прозрачная отчётность по обучению',
-      'Бизнесу, который хочет быстро запускать новые курсы и программы',
-      'Компаниям, системно выстраивающим культуру безопасного труда',
-    ],
-    quoteTitle: 'Horizon — опыт в обучении. Теперь — в цифровом формате.',
-    quoteText: 'Мы развиваем культуру безопасного труда с 2007 года. Horizon University переносит эту экспертизу в удобную цифровую платформу для всей компании.',
-    ctaAccent: 'Начните с демонстрации',
-    ctaTitle: 'Покажем платформу под задачи вашей компании',
-    ctaDesc: 'Оставьте заявку — продемонстрируем функционал платформы и возможные сценарии использования для вашего бизнеса.',
-    cta: 'Оставить заявку',
+    routeLabel: 'Развитие шаг за шагом', routeTitle: 'Первый день.\nУверенный старт.', routeSub: 'Единая траектория помогает новичку освоиться, а руководителю — видеть, что сотрудник готов к работе.', steps: ['Вводный инструктаж', 'Охрана труда и промышленная безопасность', 'Идентификация рисков', 'Итоговый тест', 'Сертификат'], routeNote: 'Пример программы адаптации',
+    ecosystem: 'Больше возможностей.\nМеньше рутины.', ecoLabel: 'Платформа под вашу компанию', extras: [['Умная база знаний', 'Все инструкции, регламенты и ответы на частые вопросы собраны в одном месте и быстро находятся через поиск по смыслу.'], ['Геймификация', 'Баллы, бейджи и рейтинги делают обучение заметнее, понятнее и помогают поддерживать вовлечённость сотрудников.'], ['Ваш бренд', 'Платформа оформляется в фирменном стиле вашей компании: с логотипом, цветами и привычным для сотрудников интерфейсом.'], ['Мультиязычность', 'Обучение удобно для команд, где сотрудники работают на разных языках.'], ['API-интеграции', 'Связывайте обучение с корпоративными системами: 1С:ЗУП, Битрикс24, Microsoft Teams, Zoom, МТС Линк, Google Meet, Tilda, Outlook Calendar, а также с SSO через SAML 2.0, JWT и OpenID.']],
+    endLabel: 'Следующий шаг — за вами', endTitle: 'Новый горизонт\nдля вашей команды.', endSub: 'Покажем, как Horizon University решает задачи обучения именно вашей компании.', endNote: 'Демонстрация платформы · Сценарии для вашего бизнеса',
   },
   en: {
-    eyebrow: 'Horizon Learning Platform',
-    heroTitle: 'Horizon University',
-    heroSub: 'Remote employee training, progress tracking, and educational programme management — all in one system.',
-    stat1n: '2007', stat1l: 'Horizon HSE experience',
-    stat2n: '100%', stat2l: 'completion control',
-    stat3n: 'Offline', stat3l: 'access without internet',
-    missionEyebrow: 'What challenges does the platform solve',
-    missionText: (
-      <>
-        The Horizon University On-Line Platform helps companies organise employee training in{' '}
-        <strong>occupational health, safety and internal corporate programmes</strong>{' '}
-        — without disrupting operations, at a convenient time and from any device.
-      </>
-    ),
-    featuresEyebrow: 'Features',
-    featuresTitle: 'Platform capabilities',
-    features: [
-      { Icon: MonitorPlay, title: 'Remote Learning', desc: 'Employees complete courses online at their own pace — from any device, at any time.' },
-      { Icon: WifiOff, title: 'Offline Access', desc: 'Materials are accessible even without an internet connection — essential for remote sites.' },
-      { Icon: LineChart, title: 'Progress Tracking', desc: 'Managers and HSE specialists see completion status, results and learner activity.' },
-      { Icon: FolderCog, title: 'Content Management', desc: 'Courses, programmes, tests and instructions are stored centrally in a single system.' },
-      { Icon: SlidersHorizontal, title: 'Tailored to Your Needs', desc: 'Induction, refresher training, HSE courses and internal programmes — all in one space.' },
-      { Icon: Award, title: 'Certificates & Reports', desc: 'Automatic certificate issuance and reporting upon completion of employee training.' },
-    ],
-    audienceEyebrow: "Who it's for",
-    audienceTitle: 'Who is Horizon University for:',
-    audienceItems: [
-      'Companies with employees across multiple sites or cities',
-      'Organisations where the HSE team is overloaded with in-person briefings',
-      'Businesses that need transparent, real-time training reports',
-      'Companies looking to launch new courses and induction programmes quickly',
-      'Organisations building a systematic culture of workplace safety',
-    ],
-    quoteTitle: 'Horizon — expertise in training. Now in digital format.',
-    quoteText: 'We have been building a culture of safe work since 2007. Horizon University brings this expertise into a convenient digital platform for your entire company.',
-    ctaAccent: 'Start with a demo',
-    ctaTitle: "We'll show you the platform tailored to your company's needs",
-    ctaDesc: "Submit a request — we'll demonstrate the platform's features and possible use cases for your business.",
-    cta: 'Submit Request',
+    label: 'A digital learning platform for your team', nav: ['Capabilities', 'Learning journey', 'Ecosystem'], cta: 'Request a demo', title: 'Develop your people.\nStrengthen your operations.', sub: 'Learning that works alongside your team. On site, in the office and anywhere in the world.', card: 'Every team.\nOne platform.', cardSub: 'From induction to competency development', scroll: 'Explore the possibilities', introLabel: 'Learning with an impact', intro: 'Knowledge becomes skill.\nSkill becomes a safety culture.', introSub: 'Horizon University brings employee learning and development together. Less administration, more attention to people and safety.',
+    features: [ ['Learning without interrupting operations', 'Courses, tests and long reads are available on any device. Employees in Atyrau or Aksai can complete briefings when convenient, without travelling to a training centre.', 'On site · In the office · On the move'], ['Full visibility of team progress', 'Track departments, groups and individual employees, review test results and analyse answers. Certificates are issued automatically, giving HSE teams evidence of training for inspections and audits.', 'Clarity at every level'], ['Learning paths and onboarding', 'Build courses into structured programmes. Manage onboarding and individual development plans in the same system, from the first day to new professional challenges.', 'A clear path to new skills'], ['In-person + online, together', 'A shared calendar, trainers, venues and catalogue registration. Plan and track NEBOSH, IOSH, CompEx and internal training alongside e-learning.', 'One training calendar'], ['Competence that shows at work', '360° assessments, competency profiles and observation checklists help verify work standards on site. Connect learning to real behaviour, beyond test results.', 'From knowledge to action'] ],
+    routeLabel: 'Development, step by step', routeTitle: 'Day one.\nA confident start.', routeSub: 'A shared learning path helps new hires settle in and managers understand their readiness for work.', steps: ['Induction', 'Occupational health and industrial safety', 'Risk identification', 'Final assessment', 'Certificate'], routeNote: 'Example onboarding programme', ecosystem: 'More possibilities.\nLess routine.', ecoLabel: 'Built around your company', extras: [['Smart knowledge base', 'Keep instructions and answers close with intelligent search.'], ['Gamification', 'Rankings and game mechanics keep employees engaged.'], ['Your brand', 'Bring your company’s visual identity to the platform.'], ['Multilingual learning', 'Support teams that speak different languages.'], ['API integrations', 'Connect learning with your other business systems.']], endLabel: 'Take the next step', endTitle: 'A new horizon\nfor your team.', endSub: 'Discover how Horizon University can support your company’s learning needs.', endNote: 'Platform demonstration · Scenarios for your business',
   },
-
   kz: {
-    eyebrow: 'Horizon оқу платформасы',
-    heroTitle: 'Horizon University',
-    heroSub: 'Қызметкерлерді қашықтан оқыту, үлгерімді бақылау және оқу бағдарламаларын басқару — бір жүйеде.',
-    stat1n: '2007', stat1l: 'Horizon-ның HSE тәжірибесі',
-    stat2n: '100%', stat2l: 'өтуді бақылау',
-    stat3n: 'Offline', stat3l: 'интернетсіз қолжетімділік',
-    missionEyebrow: 'Платформа қандай міндеттерді шешеді',
-    missionText: (
-      <>
-        Horizon University On-Line платформасы компанияларға қызметкерлерді{' '}
-        <strong>еңбекті қорғау, қауіпсіздік техникасы және ішкі корпоративтік бағдарламалар</strong>{' '}
-        бойынша оқытуды ұйымдастыруға көмектеседі — өндірістен қол үзбей, ыңғайлы уақытта және кез келген құрылғыдан.
-      </>
-    ),
-    featuresEyebrow: 'Мүмкіндіктер',
-    featuresTitle: 'Платформаның техникалық мүмкіндіктері',
-    features: [
-      { Icon: MonitorPlay, title: 'Қашықтан оқыту', desc: 'Қызметкерлер курстардан ыңғайлы форматта өтеді — кез келген құрылғыдан және ыңғайлы уақытта.' },
-      { Icon: WifiOff, title: 'Интернетсіз оқыту', desc: 'Материалдарға желіге қосылмаған кезде де қол жеткізуге болады — шалғай объектілер үшін маңызды.' },
-      { Icon: LineChart, title: 'Үлгерімді бақылау', desc: 'Басшылар мен HSE мамандары өту мәртебесін, нәтижелерді және оқушылардың белсенділігін көреді.' },
-      { Icon: FolderCog, title: 'Материалдарды басқару', desc: 'Оқу курстары, бағдарламалар, тесттер мен нұсқаулықтар бірыңғай жүйеде орталықтандырылып сақталады.' },
-      { Icon: SlidersHorizontal, title: 'Компания міндеттеріне сай', desc: 'Кіріспе оқыту, қайталама нұсқама, HSE курстары және ішкі бағдарламалар — бір кеңістікте.' },
-      { Icon: Award, title: 'Сертификаттар мен есептер', desc: 'Сертификаттарды автоматты беру және қызметкерлерді оқыту қорытындысы бойынша есептілікті жүктеу.' },
-    ],
-    audienceEyebrow: 'Кімге арналған',
-    audienceTitle: 'Horizon University кімге қолайлы:',
-    audienceItems: [
-      'Бірнеше объектіде немесе әртүрлі қалада қызметкерлері бар компанияларға',
-      'HSE бөлімі күндізгі нұсқамалармен шамадан тыс жүктелген кәсіпорындарға',
-      'Оқыту бойынша ашық есептілік маңызды ұйымдарға',
-      'Жаңа курстар мен бағдарламаларды жылдам іске қосқысы келетін бизнеске',
-      'Қауіпсіз еңбек мәдениетін жүйелі құрып жатқан компанияларға',
-    ],
-    quoteTitle: 'Horizon — оқытудағы тәжірибе. Енді — цифрлық форматта.',
-    quoteText: 'Біз 2007 жылдан бері қауіпсіз еңбек мәдениетін дамытып келеміз. Horizon University осы сараптаманы бүкіл компания үшін ыңғайлы цифрлық платформаға көшіреді.',
-    ctaAccent: 'Демонстрациядан бастаңыз',
-    ctaTitle: 'Платформаны компанияңыздың міндеттеріне сай көрсетеміз',
-    ctaDesc: 'Өтінім қалдырыңыз — платформаның функционалын және бизнесіңіз үшін ықтимал қолдану сценарийлерін көрсетеміз.',
-    cta: 'Өтінім қалдыру',
+    label: 'Командаңызға арналған цифрлық оқу платформасы', nav: ['Мүмкіндіктер', 'Оқу траекториясы', 'Экожүйе'], cta: 'Демоға өтінім беру', title: 'Адамдарды дамытыңыз.\nӨндірісті күшейтіңіз.', sub: 'Командаңызбен бірге жұмыс істейтін оқыту. Объектіде, кеңседе және әлемнің кез келген жерінде.', card: 'Бүкіл команда.\nБір платформа.', cardSub: 'Алғашқы нұсқамадан құзыреттерді дамытуға дейін', scroll: 'Мүмкіндіктерді ашыңыз', introLabel: 'Нәтижелі оқыту', intro: 'Білім дағдыға айналады.\nДағды — қауіпсіздік мәдениетіне.', introSub: 'Horizon University қызметкерлерді оқыту мен дамытуды бір жүйеге біріктіреді. Ұйымдастыру жұмысы азайып, адамдар мен қауіпсіздікке көбірек көңіл бөлінеді.',
+    features: [['Өндірістен қол үзбей оқыту', 'Курстар, тесттер және лонгридтер кез келген құрылғыда қолжетімді. Атыраудағы немесе Ақсайдағы қызметкер оқу орталығына бармай, нұсқамадан ыңғайлы уақытта өтеді.', 'Объектіде · Кеңседе · Жолда'], ['Команданың үлгерімін толық бақылау', 'Басшы бөлімшелер, топтар және әр қызметкердің үлгерімін, тест нәтижелері мен жауаптар талдауын көреді. Сертификаттар автоматты түрде беріледі — тексерулер мен аудиттер үшін оқытудың дәлелі.', 'Әр деңгейдегі ашықтық'], ['Оқу траекториялары және бейімдеу', 'Курстарды жүйелі бағдарламаларға біріктіріңіз. Жаңа қызметкерлерді бейімдеу мен жеке даму жоспарларын бір жүйеде жүргізіңіз.', 'Жаңа дағдыларға нақты жол'], ['Күндізгі + онлайн бір терезеде', 'Іс-шаралар күнтізбесі, тренерлер, алаңдар және каталог арқылы тіркелу. NEBOSH, IOSH, CompEx пен ішкі тренингтерді e-learning-пен бірге жоспарлап, есепке алыңыз.', 'Бірыңғай оқу күнтізбесі'], ['Жұмыста көрінетін құзыреттер', '360° бағалау, құзырет профильдері және бақылау парақтары жұмыс стандарттарын тікелей алаңда тексеруге көмектеседі. Оқыту тестпен ғана шектелмей, нақты мінез-құлықпен байланысады.', 'Білімнен — әрекетке']],
+    routeLabel: 'Қадам сайын даму', routeTitle: 'Алғашқы күн.\nСенімді бастама.', routeSub: 'Бірыңғай траектория жаңа қызметкердің бейімделуіне, ал басшыға оның жұмысқа дайындығын көруге көмектеседі.', steps: ['Кіріспе нұсқама', 'Еңбекті қорғау және өнеркәсіптік қауіпсіздік', 'Қауіптерді анықтау', 'Қорытынды тест', 'Сертификат'], routeNote: 'Бейімдеу бағдарламасының мысалы', ecosystem: 'Көбірек мүмкіндік.\nАзырақ күнделікті жұмыс.', ecoLabel: 'Компанияңызға сай платформа', extras: [['Ақылды білім базасы', 'Зияткерлік іздеу арқылы нұсқаулықтар мен жауаптарды табыңыз.'], ['Геймификация', 'Рейтингтер мен ойын тетіктері оқуға қызығушылықты арттырады.'], ['Сіздің брендіңіз', 'Платформаны компанияның фирмалық стилінде безендіру.'], ['Көптілділік', 'Әртүрлі тілде сөйлейтін командаларға арналған оқыту.'], ['API интеграциялары', 'Оқытуды компанияның басқа жүйелерімен байланыстырыңыз.']], endLabel: 'Келесі қадам — сізден', endTitle: 'Командаңыз үшін\nжаңа көкжиек.', endSub: 'Horizon University компанияңыздың оқу міндеттерін қалай шешетінін көрсетеміз.', endNote: 'Платформа демонстрациясы · Бизнесіңізге арналған сценарийлер',
   },
 };
 
-export default async function HorizonUniversityPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function UniversityPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = pick(content, locale);
+  const t = pick(copy, locale);
+  const icons = [MonitorPlay, ChartNoAxesCombined, CalendarDays, ScanLine];
+  const extraIcons = [Search, Trophy, Palette, Languages, Plug];
+  const cta = <Button className={s.cta}>{t.cta}<span className={s.arrow}><ArrowUpRight size={18} /></span></Button>;
+  return <UniversityMotion className={s.page}>
+    <UniversityHeader/>
+    <section data-hero className={s.hero} aria-labelledby="university-title">
+      <HeroVideo className={s.heroImage} />
+      <div className={s.heroShade} />
+      <div className={s.nav}><span className={s.label}><span className={s.dot}/>{t.label}</span></div>
+      <h1 id="university-title" className={s.wordmark}>HORIZON<span>UNIVERSITY</span></h1>
+      <div className={s.heroBottom}><div><p className={s.heroSub}>{t.sub}</p><h2>{t.title}</h2>{cta}</div><aside className={s.heroCard}><span className={s.cardIcon}><MonitorPlay size={26}/></span><h3>{t.card}</h3><p>{t.cardSub}</p><div className={s.cardFoot}>HORIZON UNIVERSITY<ArrowUpRight size={18}/></div></aside></div>
+      <a href="#capabilities" className={s.scroll}>{t.scroll}<span>↓</span></a>
+    </section>
 
-  return (
-    <main className="bg-[#F4F4F4] min-h-screen">
+    <CourseRibbon/>
+    <section id="capabilities" className={s.section}>
+      <div className={s.sectionHead}><p className={s.kicker}>✳ &nbsp; {t.introLabel}</p><div><h2>{t.intro}</h2><p className={s.description}>{t.introSub}</p></div></div>
+      <LearningScenes title={t.features[0][0]} description={t.features[0][1]} label={t.features[0][2]} locale={locale}/>
+      <TeamProgress title={t.features[1][0]} description={t.features[1][1]} label={t.features[1][2]} locale={locale}/>
+    </section>
 
-      {/* ── HERO ── */}
-      <section className="relative min-h-[680px] flex items-center overflow-hidden bg-[#061B33]">
-        <Image
-          src="/assets/horizon-university/hero-bg-2.jpg"
-          alt="Horizon University"
-          fill
-          priority
-          className="object-cover object-center"
-        />
-        <div
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(275deg, rgba(7,0,55,.92) 0%, rgba(11,0,115,.74) 36%, rgba(6,20,45,.30) 64%, rgba(6,20,45,.05) 100%)' }}
-        />
+    <section id="journey" className={s.journey}>
+      <div className={s.sectionHead}><p className={s.kicker}>✳ &nbsp; {t.routeLabel}</p><div><h2>{t.routeTitle}</h2><p className={s.description}>{t.routeSub}</p></div></div>
+      <div className={s.journeyGrid}><article className={s.journeyCopy}><span className={s.number}>03</span><h3>{t.features[2][0]}</h3>{locale === 'ru' ? <div className={s.journeyDetails}><p>Траектория обучения — это готовый маршрут из курсов и этапов, который помогает провести сотрудника через обучение по шагам. Её используют, когда нужно не просто дать один курс, а выстроить понятный путь: сначала базовые знания, потом более сложные темы, затем итоговая проверка.</p><p>Чтобы создать траекторию, в разделе <strong>Учебные материалы</strong> нажмите <strong>Создать → Траектория обучения</strong>, добавьте курсы и при необходимости разделите их на этапы. После этого назначьте траекторию сотрудникам вручную, по правилам автоматического назначения или через Каталог.</p><p>Такой формат удобен для <strong>онбординга, адаптации новичков и поэтапного обучения</strong>, а руководителю позволяет видеть прогресс и результат прохождения.</p></div> : <p>{t.features[2][1]}</p>}<span className={s.tag}>{t.features[2][2]}<ArrowUpRight size={18}/></span></article><LearningJourney locale={locale}/></div>
+    </section>
 
-        <div className="relative z-10 w-full max-w-[1180px] mx-auto px-6 md:px-10 pt-28 pb-20 flex justify-end">
-          <div className="max-w-[560px]">
-            <div className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.18em] uppercase text-white/80 mb-6">
-              <span className="w-1.5 h-1.5 rounded-full bg-white" />
-              {t.eyebrow}
-            </div>
+    <section className={s.section}><div className={s.featureGrid}>{[3, 4].map((index) => {const Icon = icons[index - 1]; return <article key={index} className={`${s.feature} ${s.compactFeature}`}><div className={s.featureTop}><span>0{index + 1}</span><Icon size={25}/></div><div className={s.featureCopy}><p className={s.mini}>{t.features[index][2]}</p><h3>{t.features[index][0]}</h3><p>{t.features[index][1]}</p></div><div className={s.tags}>{(index === 3 ? ['NEBOSH', 'IOSH', 'CompEx', 'e-learning'] : ['360°', 'HSE', 'On-the-job']).map(tag => <span key={tag}>{tag}</span>)}</div></article>;})}</div></section>
 
-            <h1 className="font-black text-[48px] md:text-[60px] leading-[1.05] tracking-[-0.025em] text-white mb-5">
-              {t.heroTitle}
-            </h1>
-
-            <p className="text-[18px] md:text-[20px] leading-[1.65] text-white/80 font-normal mb-10 max-w-[460px]">
-              {t.heroSub}
-            </p>
-
-            <Button className="!w-auto !px-8 gap-2">
-              {t.cta}
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-
-            <div className="flex gap-10 md:gap-14 mt-14">
-              {[
-                { n: t.stat1n, l: t.stat1l },
-                { n: t.stat2n, l: t.stat2l },
-                { n: t.stat3n, l: t.stat3l },
-              ].map((s, i) => (
-                <div key={i}>
-                  <div className="text-[28px] font-black text-white tracking-tight">{s.n}</div>
-                  <div className="text-[13px] text-white/60 font-medium mt-1">{s.l}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── MISSION ── */}
-      <section className="bg-[#0B0073] py-24 px-6 md:px-10">
-        <div className="max-w-[880px] mx-auto">
-          <div className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.18em] uppercase text-white/70 mb-7">
-            <span className="w-1.5 h-1.5 rounded-full bg-white" />
-            {t.missionEyebrow}
-          </div>
-          <p className="text-[22px] md:text-[27px] font-medium leading-[1.5] tracking-[-0.01em] text-white">
-            {t.missionText}
-          </p>
-        </div>
-      </section>
-
-      {/* ── FEATURES ── */}
-      <section className="py-28 px-6 md:px-10">
-        <div className="max-w-[1180px] mx-auto">
-          <div className="mb-14">
-            <div className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.18em] uppercase text-[#0B0073] mb-4">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0B0073]" />
-              {t.featuresEyebrow}
-            </div>
-            <h2 className="text-[32px] md:text-[38px] font-bold text-black tracking-tight leading-[1.15]">
-              {t.featuresTitle}
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {t.features.map(({ Icon, title, desc }, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-2xl p-8 border border-black/8 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200"
-              >
-                <div className="w-12 h-12 rounded-xl bg-[#0B0073]/8 text-[#0B0073] flex items-center justify-center mb-5">
-                  <Icon className="w-6 h-6" />
-                </div>
-                <h3 className="text-[17px] font-bold text-black mb-2">{title}</h3>
-                <p className="text-[14px] leading-[1.6] text-black/60">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── AUDIENCE ── */}
-      <section className="bg-white py-28 px-6 md:px-10">
-        <div className="max-w-[1180px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.18em] uppercase text-[#0B0073] mb-4">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0B0073]" />
-              {t.audienceEyebrow}
-            </div>
-            <h2 className="text-[32px] md:text-[36px] font-bold text-black tracking-tight leading-[1.15] mb-8">
-              {t.audienceTitle}
-            </h2>
-
-            <div className="flex flex-col gap-4">
-              {t.audienceItems.map((item, i) => (
-                <div key={i} className="flex gap-4 items-start">
-                  <span className="flex-none w-7 h-7 rounded-lg bg-[#0B0073] text-white flex items-center justify-center mt-0.5">
-                    <Check className="w-4 h-4" />
-                  </span>
-                  <span className="text-[17px] leading-[1.5] text-black font-medium">{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="relative rounded-3xl overflow-hidden min-h-[420px] lg:min-h-[460px] bg-[#061B33]">
-            <Image
-              src="/assets/horizon-university/worker-portrait.jpg"
-              alt="HSE professional"
-              fill
-              className="object-cover object-top"
-            />
-            <div
-              className="absolute inset-0"
-              style={{ background: 'linear-gradient(0deg, rgba(7,0,55,.92) 0%, rgba(11,0,115,.45) 42%, rgba(11,0,115,0) 70%)' }}
-            />
-            <div className="absolute inset-x-0 bottom-0 z-10 p-8 md:p-10 text-white">
-              <ShieldCheck className="w-8 h-8 mb-4 opacity-90" />
-              <h3 className="text-[22px] font-bold leading-snug mb-3">{t.quoteTitle}</h3>
-              <p className="text-[14px] leading-[1.6] text-white/80">{t.quoteText}</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA ── */}
-      <section className="py-28 px-6 md:px-10">
-        <div className="max-w-[1180px] mx-auto">
-          <div className="relative bg-white rounded-3xl border border-black/8 shadow-md px-8 py-16 md:px-16 text-center overflow-hidden">
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{ background: 'radial-gradient(680px 280px at 50% -40%, rgba(11,0,115,0.06), transparent 70%)' }}
-            />
-            <div className="relative">
-              <p className="text-[13px] font-bold tracking-[0.12em] uppercase text-[#0B0073] mb-4">
-                {t.ctaAccent}
-              </p>
-              <h2 className="text-[32px] md:text-[40px] font-black text-[#0B0073] tracking-tight leading-[1.12] max-w-[680px] mx-auto mb-5">
-                {t.ctaTitle}
-              </h2>
-              <p className="text-[17px] text-black/60 leading-[1.55] max-w-[580px] mx-auto mb-8">
-                {t.ctaDesc}
-              </p>
-              <div className="flex justify-center">
-                <Button className="!w-auto !px-10 gap-2">
-                  {t.cta}
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-    </main>
-  );
+    <section className={`${s.section} ${s.customCourses}`}><div><p className={s.kicker}>{pick({ru:'Разработка курсов для вашей компании',en:'Custom course development',kz:'Компанияңызға арналған курстар'},locale)}</p><h2>{pick({ru:'Ваши задачи.\nВаши стандарты.\nВаш курс.',en:'Your challenges.\nYour standards.\nYour course.',kz:'Сіздің міндеттеріңіз.\nСіздің стандарттарыңыз.\nСіздің курсыңыз.'},locale)}</h2></div><div><p>{pick({ru:'Создаём уникальные курсы под требования каждой компании — с учётом её процессов, рабочих задач и внутренних стандартов. Сотрудники получают знания, которые могут применять в своей работе.',en:'We create unique courses tailored to each company’s requirements, processes and internal standards, with knowledge employees can apply at work.',kz:'Әр компанияның талаптарына, жұмыс процестері мен ішкі стандарттарына сай бірегей курстар әзірлейміз.'},locale)}</p><div className={s.instructorNote}><Award size={34}/><div><h3>{pick({ru:'Практический опыт. Международная квалификация.',en:'Practical experience. International qualifications.',kz:'Практикалық тәжірибе. Халықаралық біліктілік.'},locale)}</h3><p>{pick({ru:'Наши инструкторы обладают обширным практическим опытом и глубокими профессиональными знаниями. Все инструкторы имеют международные сертификаты и помогают связать обучение с реальными задачами вашей команды.',en:'Our instructors bring extensive practical experience and deep professional knowledge. All hold international certifications and connect learning with your team’s real tasks.',kz:'Нұсқаушыларымыздың практикалық тәжірибесі мол, кәсіби білімі терең. Барлық нұсқаушылар халықаралық сертификаттарға ие.'},locale)}</p></div></div></div></section>
+    <section id="ecosystem" className={`${s.section} ${s.ecosystem}`}><div className={s.sectionHead}><p className={s.kicker}>✳ &nbsp; {t.ecoLabel}</p><h2>{t.ecosystem}</h2></div><div className={s.extras}>{t.extras.map(([title, desc], index) => {const Icon = extraIcons[index]; return <article key={title}><Icon size={23}/><h3>{title}</h3><p>{desc}</p></article>;})}</div></section>
+    <section className={s.final}><div><p className={s.kicker}>✳ &nbsp; {t.endLabel}</p><h2>{t.endTitle}</h2><p>{t.endSub}</p>{cta}<small>{t.endNote}</small></div><span className={s.orbit} aria-hidden="true"><ArrowUpRight/></span><div className={s.signature}>HORIZON <span>UNIVERSITY</span></div></section>
+    <div id="contact" className={s.mainFooter}><Footer/></div>
+  </UniversityMotion>;
 }

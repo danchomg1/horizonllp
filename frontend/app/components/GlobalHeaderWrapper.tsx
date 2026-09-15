@@ -8,7 +8,7 @@ export default function GlobalHeaderWrapper({ children }: { children: React.Reac
   const pathname = usePathname();
 
   // Если мы на главной странице (RU или EN), возвращаем null (ничего не рисуем)
-  if (pathname === '/' || pathname === '/en' || pathname === '/en/') {
+  if (/\/horizon-university\/?$/.test(pathname) || pathname === '/' || pathname === '/en' || pathname === '/en/') {
     return null;
   }
 

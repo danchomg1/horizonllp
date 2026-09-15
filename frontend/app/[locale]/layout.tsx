@@ -1,3 +1,4 @@
+import GlobalFooterWrapper from '../components/GlobalFooterWrapper';
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
@@ -131,7 +132,7 @@ export default async function LocaleLayout({
             <Header />
           </GlobalHeaderWrapper>
           <main className="flex-grow w-full">{children}</main>
-          <Footer />
+          <GlobalFooterWrapper><Footer /></GlobalFooterWrapper>
         </ModalProvider>
       </NextIntlClientProvider>
     </>
