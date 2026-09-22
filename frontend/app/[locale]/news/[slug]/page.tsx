@@ -108,7 +108,7 @@ export default async function NewsPostPage({ params }: PageProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F4F4F4]">
+    <div className="modern-article min-h-screen bg-[#F4F4F4]">
       <JsonLd data={articleJsonLd} />
       <main className="pb-20">
         <div className="relative w-full max-w-[1300px] mx-auto h-[400px] mb-12 -mt-[120px] rounded-b-[15px] overflow-hidden">

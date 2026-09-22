@@ -122,7 +122,7 @@ export default function ContactModal({ isOpen, onClose }: Props) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+    <div className="modern-contact-modal fixed inset-0 z-[100] flex items-center justify-center px-4">
       
       {/* Backdrop */}
       <div 

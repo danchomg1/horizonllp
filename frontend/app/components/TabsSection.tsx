@@ -26,7 +26,7 @@ export default function TabsSection({ tabs, locale }: Props) {
   if (!tabs || tabs.length === 0) return null;
 
   return (
-    <div className="w-full text-black"> 
+    <div className="interior-tabs w-full text-black">
       <div className="flex flex-col md:flex-row gap-6 lg:gap-12 items-start">
         
         {/* --- ЛЕВАЯ КОЛОНКА (МЕНЮ) --- */}
@@ -38,6 +38,7 @@ export default function TabsSection({ tabs, locale }: Props) {
             return (
               <button
                 key={tab._key}
+                aria-pressed={isActive}
                 onClick={() => setActiveTab(index)}
                 className={`
                   cursor-pointer flex items-center gap-2 md:gap-3 text-left py-2 px-4 md:px-3 rounded-full md:rounded-lg transition-all duration-200 font-sans whitespace-nowrap flex-shrink-0

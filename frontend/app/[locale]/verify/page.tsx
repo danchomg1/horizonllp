@@ -100,7 +100,7 @@ export default async function VerifyPage({
   const { code } = await searchParams;
 
   return (
-    <main className="w-full max-w-[1240px] mx-auto px-4 pt-16 pb-24 flex flex-col items-center">
+    <main className="interior-page verification-page">
       <h1 className="text-[26px] lg:text-[32px] font-semibold text-black opacity-90 mb-3 text-center">
         {t.title}
       </h1>

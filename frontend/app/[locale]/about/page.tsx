@@ -75,14 +75,14 @@ export default function AboutPage() {
   const [activeAccreditation, setActiveAccreditation] = useState(0);
 
   return (
-    <main className="bg-[#F4F4F4] min-h-screen pb-20">
+    <main className="modern-site modern-about">
       <section className="w-full max-w-[1280px] mx-auto pt-[80px] px-4">
         <div className="relative w-full h-[450px] lg:h-[500px] rounded-[15px] overflow-hidden">
           <Image src="/assets/about/hero-bg.jpg" alt="Horizon Background" fill className="object-cover" />
           <div className="absolute inset-0 bg-black/30"></div>
           <div className="absolute inset-0 p-8 lg:p-12 flex flex-col justify-between z-10">
             <div className="flex justify-end">
-              <h1 className="text-3xl lg:text-[42px] font-bold text-white leading-tight drop-shadow-md">Horizon INC</h1>
+              <h1 className="text-3xl lg:text-[42px] font-bold text-white leading-tight drop-shadow-md">{pick({ru:"О компании",en:"About Horizon",kz:"Компания туралы"},locale)}</h1>
             </div>
             <div className="flex flex-col items-start max-w-[700px]">
               <Image src="/assets/about/horizon-logo-white.png" alt="Horizon Logo" width={70} height={30} className="object-contain mb-6" />
@@ -124,10 +124,10 @@ export default function AboutPage() {
           <div className="lg:col-span-8 flex flex-col gap-8">
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-black/10 pb-6">
               {accrs.map((item, index) => (
-                <div key={item.id} onMouseEnter={() => setActiveAccreditation(index)}
+                <button type="button" aria-pressed={activeAccreditation === index} onClick={() => setActiveAccreditation(index)} key={item.id} onMouseEnter={() => setActiveAccreditation(index)}
                   className={`cursor-pointer transition-all duration-300 ease-in-out ${activeAccreditation === index ? 'opacity-100 scale-110 filter drop-shadow-md' : 'opacity-40 hover:opacity-80 grayscale hover:grayscale-0'}`}>
                   <img src={item.navLogo} alt={item.id} className="h-10 object-contain" />
-                </div>
+                </button>
               ))}
             </div>
             <div className="bg-transparent border border-black/30 rounded-[15px] p-6 flex flex-col md:flex-row items-center md:items-start gap-6 min-h-[160px] transition-all duration-300">

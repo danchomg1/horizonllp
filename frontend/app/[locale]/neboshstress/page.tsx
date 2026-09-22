@@ -134,7 +134,7 @@ export default async function NeboshStressPage({ params }: { params: Promise<{ l
   const t = pick(content, locale);
 
   return (
-    <main className="bg-[#F4F4F4] min-h-screen pb-20">
+    <main className="interior-page course-page">
       <section className="w-full max-w-[1280px] mx-auto pt-[80px] px-4">
         <div className="relative w-full h-[400px] lg:h-[450px] rounded-[15px] overflow-hidden">
           <Image src="/assets/nebosh-stress/hero-bg.jpg" alt="NEBOSH Managing Stress" fill className="object-cover" />

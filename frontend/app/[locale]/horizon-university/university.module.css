@@ -42,3 +42,4 @@
 .page{padding-top:146px}.cta,.cta *{cursor:pointer!important}.mainFooter{margin-top:20px;font-family:Onest,Arial,sans-serif}.mainFooter>div{padding:0}.mainFooter footer{max-width:1420px}.mainFooter footer>div{background:#0c1c36;border-radius:24px;padding:40px}.mainFooter footer *{font-family:inherit}.mainFooter footer a{cursor:pointer}.mainFooter footer a:hover{color:#a8c9ff}.mainFooter footer p{color:#a7b8d1}@media(max-width:1050px){.page{padding-top:98px}}@media(max-width:550px){.page{padding-top:82px}.mainFooter footer>div{padding:28px 22px}}
 
 .page{padding-top:72px}@media(max-width:550px){.page{padding-top:66px}}
+@media(max-width:700px){.page{padding-top:108px!important}}

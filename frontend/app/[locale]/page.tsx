@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { setRequestLocale } from 'next-intl/server';
 import { getTranslations } from 'next-intl/server';
 import Button from '../components/Button';
-import Header from '../components/Header';
+
 import { client, urlFor } from '../lib/sanity';
 import { loc, pick, alternatesFor, href as hrefFor } from '../lib/locale';
 
@@ -59,105 +59,13 @@ export default async function Home({
   const data = await getData();
 
 
-  return (
-    <div className="bg-[#F4F4F4] min-h-screen flex flex-col">
-      <div className="hidden lg:block h-[150px] w-full pointer-events-none" />
-      <Header />
 
-      <main className="mt-4 lg:-mt-[200px] relative z-0 flex-grow">
-        {/* HERO */}
-        <section className="relative w-full flex flex-col-reverse lg:flex-row lg:min-h-[800px] overflow-hidden">
-          <div className="w-full lg:w-[50%] lg:min-w-[500px] px-4 md:px-10 lg:pl-[6%] lg:pr-4 pt-10 lg:pt-[320px] pb-20 z-20 relative">
-            <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6">
-              <div className="flex-shrink-0 hidden md:block">
-                {data?.heroLogo ? (
-                  <div className="relative w-[60px] h-[60px] lg:w-[80px] lg:h-[80px] flex items-center justify-center">
-                    <Image src={urlFor(data.heroLogo).url()} alt="Hero Logo" fill className="object-contain" />
-                  </div>
-                ) : (
-                  <div className="w-[80px] h-[80px] border border-dashed border-horizon-blue flex items-center justify-center rounded-lg opacity-50">
-                    <span className="text-[10px] text-horizon-blue font-bold">LOGO</span>
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-col items-start w-full">
-                <h1 className="font-black text-[28px] md:text-[36px] text-horizon-blue uppercase leading-[1.1] mb-2 break-words max-w-full">
-                  {loc(data, 'title', locale) || 'HORIZON'}
-                </h1>
-                <h2 className="font-bold text-[20px] md:text-[28px] text-horizon-blue leading-tight mb-4 md:mb-6">
-                  {loc(data, 'subtitle', locale) || 'LLP Consulting'}
-                </h2>
-                <p className="font-normal text-[14px] md:text-[15px] text-black/80 leading-relaxed mb-8 max-w-md whitespace-pre-wrap">
-                  {loc(data, 'heroDescription', locale) || ''}
-                </p>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 w-full sm:w-auto">
-                  <Button className="w-full sm:w-[200px]">{t('cta')}</Button>
-                  <Link
-                    href={hrefFor('/about', locale)}
-                    className="font-normal text-[14px] md:text-[16px] text-black/80 flex items-center gap-2 hover:text-horizon-blue transition-colors"
-                  >
-                    {t('learnMore')}
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="relative w-full h-[300px] px-4 md:px-10 lg:px-0 lg:absolute lg:right-0 lg:-top-60 lg:w-[65%] lg:h-[950px] z-10">
-            <div className="relative w-full h-full">
-              <Image
-                src={data?.heroImage ? urlFor(data.heroImage).url() : 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070'}
-                alt="Hero"
-                fill
-                priority
-                className="object-cover rounded-[15px] lg:rounded-none lg:scale-[1.01] lg:[mask-image:url(/hero-mask.svg)] lg:[webkit-mask-image:url(/hero-mask.svg)] lg:[mask-size:100%_100%] lg:[webkit-mask-size:100%_100%] lg:[mask-repeat:no-repeat] lg:[webkit-mask-repeat:no-repeat] lg:[mask-position:right_top] lg:[webkit-mask-position:right_top]"
-              />
-              <div className="absolute inset-0 bg-black/10 rounded-[15px] lg:hidden pointer-events-none" />
-            </div>
-          </div>
-        </section>
-
-        {/* NEWS */}
-        <section className="max-w-[1250px] mx-auto px-4 md:px-10 relative z-20 pb-20 mt-10 lg:-mt-20">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 border-b border-gray-200 pb-4 gap-4">
-            <h2 className="font-bold text-[28px] md:text-[36px] text-horizon-blue">{t('newsTitle')}</h2>
-            <Link
-              href={hrefFor('/news', locale)}
-              className="font-normal text-[14px] text-black/60 hover:text-horizon-blue transition-colors leading-relaxed"
-            >
-              {t('viewAll')}
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {data?.latestNews?.length > 0 ? (
-              data.latestNews.map((item: any) => (
-                <Link key={item._id} href={hrefFor(`/news/${item.slug.current}`, locale)} className="group cursor-pointer block">
-                  <div className="relative aspect-square overflow-hidden rounded-[20px] md:rounded-[30px] mb-4 bg-white shadow-md">
-                    {item.mainImage ? (
-                      <Image
-                        src={urlFor(item.mainImage).url()}
-                        fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-700"
-                        alt={loc<string>(item, 'title', locale) ?? ''}
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400">
-                        {t('noPhoto')}
-                      </div>
-                    )}
-                  </div>
-                  <h3 className="font-normal text-[14px] md:text-[15px] text-black leading-snug pr-2 opacity-85 group-hover:text-horizon-blue transition-colors line-clamp-3">
-                    {loc(item, 'title', locale)}
-                  </h3>
-                </Link>
-              ))
-            ) : (
-              <p className="text-gray-400 col-span-full text-center py-10">{t('noNews')}</p>
-            )}
-          </div>
-        </section>
-      </main>
-    </div>
-  );
+  const areas=pick({ru:[['Обучение и компетенции','Международные программы и практические навыки для вашей команды.'],['Культура безопасности','Консалтинг и системный подход к управлению производственными рисками.'],['Взрывозащита','Подготовка специалистов для работы во взрывоопасных средах.'],['Аварийное реагирование','Подготовка предприятий и команд к нештатным ситуациям.'],['Инжиниринг','Технические решения и работы для промышленных объектов.'],['Средства защиты','Решения для безопасности людей на рабочем месте.']],en:[['Training & competence','International programmes and practical skills for your team.'],['Safety culture','Consulting and a systematic approach to operational risk.'],['Explosion protection','Competence for working in explosive atmospheres.'],['Emergency response','Preparing businesses and teams for emergencies.'],['Engineering','Technical solutions for industrial facilities.'],['Protective equipment','Workplace protection for your people.']],kz:[['Оқыту және құзыреттер','Командаға арналған халықаралық бағдарламалар мен практикалық дағдылар.'],['Қауіпсіздік мәдениеті','Өндірістік қауіптерді басқарудың жүйелі тәсілі.'],['Жарылыстан қорғау','Жарылыс қаупі бар ортада жұмыс істеуге дайындық.'],['Авариялық ден қою','Кәсіпорындар мен командаларды төтенше жағдайларға дайындау.'],['Инжиниринг','Өнеркәсіптік объектілерге арналған техникалық шешімдер.'],['Қорғаныс құралдары','Жұмыс орнындағы адамдардың қауіпсіздігі.']]},locale);
+  const links=['/nebosh-igc','/kultura-i-liderstvo','/compex-01-04','/razrabotka-sistem-upr-avariyami','/elektromontazhnye-raboty','/siz'];
+  return <div className="modern-site">
+    <section className="modern-hero"><Image src={data?.heroImage?urlFor(data.heroImage).width(1920).url():'/assets/about/hero-bg.jpg'} alt={pick({ru:'Промышленная безопасность Horizon',en:'Horizon industrial safety',kz:'Horizon өнеркәсіптік қауіпсіздігі'},locale)} fill priority sizes="100vw"/><div><div className="modern-eyebrow">HSE · TRAINING · CONSULTING</div><h1>HORIZON</h1></div><div><h2>{pick({ru:'Безопасность начинается\nс людей и знаний.',en:'Safety starts with\npeople and knowledge.',kz:'Қауіпсіздік адамдар\nмен білімнен басталады.'},locale)}</h2><p>{loc(data,'heroDescription',locale)}</p><div className="modern-actions"><Button className="modern-button">{t('cta')} ↗</Button><Link href={hrefFor('/about',locale)}>{t('learnMore')} ↗</Link></div></div></section>
+    <section className="modern-section"><div className="modern-section-head"><div><div className="modern-eyebrow">01 / {pick({ru:'Наши направления',en:'Our expertise',kz:'Біздің бағыттар'},locale)}</div><h2>{pick({ru:'Уверенность на каждом\nэтапе работы.',en:'Confidence at every\nstage of work.',kz:'Жұмыстың әр кезеңіндегі\nсенімділік.'},locale).split('\n').map((line,i)=><span key={i} style={{display:'block'}}>{line}</span>)}</h2></div></div><div className="modern-services">{areas.map(([title,desc],i)=><Link className="modern-service" key={title} href={hrefFor(links[i],locale)}><span>0{i+1}<span>↗</span></span><h3>{title}</h3><p>{desc}</p></Link>)}</div></section>
+    <section className="modern-section"><div className="modern-university"><div><div className="modern-eyebrow">HORIZON UNIVERSITY</div><h2>{pick({ru:'Обучение рядом.\nГде бы вы ни были.',en:'Learning with you.\nWherever you are.',kz:'Қайда болсаңыз да,\nбілім жаныңызда.'},locale).split('\n').map((line,i)=><span key={i} style={{display:'block'}}>{line}</span>)}</h2><p>{pick({ru:'Курсы, тестирование и развитие компетенций в одной платформе. Обучайте сотрудников и следите за прогрессом всей команды.',en:'Courses, assessments and skills development on one platform. Train your people and track team progress.',kz:'Курстар, тестілеу және құзыреттерді дамыту бір платформада. Қызметкерлерді оқытып, команда үлгерімін бақылаңыз.'},locale)}</p><Link href={hrefFor('/horizon-university',locale)}>{pick({ru:'Открыть платформу',en:'Explore the platform',kz:'Платформамен танысу'},locale)} ↗</Link></div><div className="modern-university-photo"><Image src="/assets/horizon-university/home-learning-blue.webp" alt="Horizon University" fill sizes="(max-width:900px) 100vw, 50vw"/></div></div></section>
+    <section className="modern-section"><div className="modern-section-head"><div><div className="modern-eyebrow">02 / HORIZON JOURNAL</div><h2>{t('newsTitle')}</h2></div><Link href={hrefFor('/news',locale)}>{t('viewAll')} ↗</Link></div><div className="modern-news-grid">{data.latestNews?.map((item:any)=><Link key={item._id} href={hrefFor('/news/'+item.slug.current,locale)}><div className="modern-news-photo">{item.mainImage&&<Image src={urlFor(item.mainImage).width(1100).url()} alt={loc<string>(item,'title',locale)||''} fill sizes="(max-width:600px) 100vw, 60vw"/>}</div><h3>{loc(item,'title',locale)}</h3></Link>)}</div></section>
+  </div>;
 }

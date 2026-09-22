@@ -51,7 +51,7 @@ export default async function ContactCardPage({ params }: Props) {
   };
 
   return (
-    <main className="bg-[#F4F4F4] min-h-screen pt-[90px] pb-16 px-4">
+    <main className="interior-page contact-card-page">
       <div className="w-full max-w-[440px] mx-auto">
         <div className="bg-white rounded-[24px] shadow-sm border border-black/5 overflow-hidden">
 

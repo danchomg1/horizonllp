@@ -69,55 +69,24 @@ export default async function DynamicPage({ params }: Props) {
   const introText = loc(data, 'introText', locale);
 
   return (
-    <main className="bg-[#F4F4F4] w-full flex flex-col items-center pb-20 min-h-screen" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-      <div className="w-full flex justify-center relative z-0">
-        <div className="w-full max-w-[1300px] px-4 md:px-10 lg:px-0 relative lg:h-[350px] flex flex-col lg:block items-center">
-          <div className="relative w-full h-[300px] md:h-[400px] lg:h-full lg:absolute lg:inset-0 rounded-[15px] lg:rounded-b-[30px] lg:rounded-t-none overflow-hidden shadow-sm lg:shadow-none">
-            {data.heroImage ? (
-              <img src={urlFor(data.heroImage).url()} alt={title} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-gray-200" />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 pointer-events-none" />
-          </div>
-          <div className="hidden lg:block absolute bottom-0 left-1/2 -translate-x-1/2 w-[300px] h-[71px] z-10 pointer-events-none">
-            <img src="/hero-cutout.svg" alt="" className="w-full h-full block" />
-          </div>
-          <div className="mt-6 lg:mt-0 lg:absolute lg:bottom-0 lg:left-1/2 lg:-translate-x-1/2 z-20">
-            <Button className="!w-[200px] !h-[50px] md:!h-[60px] !text-[16px]">
-              {pick({ ru: 'Оставить заявку', en: 'Submit Request', kz: 'Өтінім қалдыру' }, locale)}
-            </Button>
-          </div>
+    <main className="interior-page service-page">
+      <section className="service-hero">
+        {data.heroImage && <img src={urlFor(data.heroImage).width(1800).url()} alt="" className="service-hero-image" />}
+        <div className="service-hero-copy">
+          <span className="interior-eyebrow">HORIZON · {pick({ru:'Экспертиза и развитие',en:'Expertise and development',kz:'Сараптама және даму'},locale)}</span>
+          <h1>{title}</h1>
+          <Button>{pick({ru:'Обсудить задачу',en:'Discuss your needs',kz:'Міндетті талқылау'},locale)} <span aria-hidden="true">↗</span></Button>
         </div>
-      </div>
-
-      <div className="w-full flex justify-center relative z-10">
-        <section className="w-full max-w-[1250px] px-4 md:px-10 mt-16 md:mt-24 mb-12">
-          <div className="flex flex-col-reverse md:flex-row justify-between items-start gap-8 md:gap-12">
-            <div className="flex-1 max-w-[700px] min-w-0">
-              <h1 className="text-[22px] md:text-[28px] font-bold text-black mb-4 md:mb-6 uppercase break-words leading-tight">
-                {introTitle || title}
-              </h1>
-              <div className="max-w-none text-[#000000] text-[15px] md:text-[16px] break-words whitespace-normal">
-                {introText && <PortableText value={introText} components={textComponents} />}
-              </div>
-            </div>
-            {data.introIcon && (
-              <div className="w-[120px] md:w-[200px] flex-shrink-0 self-start md:self-auto mt-2">
-                <img src={urlFor(data.introIcon).url()} alt="Icon" className="w-full h-auto object-contain" />
-              </div>
-            )}
-          </div>
-        </section>
-      </div>
-
-      {data.pageTabs && (
-        <div className="w-full flex justify-center relative z-10">
-          <div className="w-full max-w-[1250px] px-4 md:px-10">
-            <TabsSection tabs={data.pageTabs} locale={locale} />
-          </div>
+      </section>
+      <section className="service-intro">
+        <div><span className="interior-eyebrow">HORIZON LLP</span><h2>{introTitle || title}</h2></div>
+        <div className="service-intro-body">
+          {data.introIcon && <img src={urlFor(data.introIcon).url()} alt="" className="service-intro-icon" />}
+          {introText ? <PortableText value={introText} components={textComponents}/> : loc(data,'description',locale) && <p>{loc(data,'description',locale)}</p>}
         </div>
-      )}
+      </section>
+      {data.pageTabs?.length > 0 && <section className="service-details"><TabsSection tabs={data.pageTabs} locale={locale}/></section>}
+      <section className="interior-contact"><div><span className="interior-eyebrow">HORIZON · {pick({ru:'Работаем вместе',en:'Work with us',kz:'Бірге жұмыс істейміз'},locale)}</span><h2>{pick({ru:'Решение для вашей команды.',en:'A solution for your team.',kz:'Командаңызға арналған шешім.'},locale)}</h2></div><Button>{pick({ru:'Оставить заявку',en:'Send a request',kz:'Өтінім қалдыру'},locale)} <span aria-hidden="true">↗</span></Button></section>
     </main>
   );
 }

@@ -59,11 +59,11 @@ export default async function NewsPage({
   }));
 
   return (
-    <div className="min-h-screen bg-[#F4F4F4]">
+    <div className="modern-site modern-news">
       <div className="h-[100px]" />
       <main className="w-full max-w-[1250px] mx-auto px-4 py-8">
         <h1 className="text-[36px] font-bold text-[#0B0073] mb-10">{t('pageTitle')}</h1>
-        <NewsList initialNews={normalizedNews} locale={locale} />
+        <p className="modern-news-intro">{pick({ru:'События, опыт нашей команды и знания, которые помогают делать работу безопаснее.',en:'Events, insights from our team and knowledge that makes work safer.',kz:'Оқиғалар, команда тәжірибесі және жұмысты қауіпсіз ететін білім.'},locale)}</p><NewsList initialNews={normalizedNews} locale={locale} />
       </main>
     </div>
   );

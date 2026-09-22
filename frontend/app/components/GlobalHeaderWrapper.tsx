@@ -1,17 +1,4 @@
 'use client';
-
-import { usePathname } from 'next/navigation';
-import React from 'react';
-
-// Принимаем children (это будет наш Header)
-export default function GlobalHeaderWrapper({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-
-  // Если мы на главной странице (RU или EN), возвращаем null (ничего не рисуем)
-  if (/\/horizon-university\/?$/.test(pathname) || pathname === '/' || pathname === '/en' || pathname === '/en/') {
-    return null;
-  }
-
-  // Если не на главной, рисуем то, что передали внутрь (Header)
-  return <>{children}</>;
-}
+import {usePathname} from 'next/navigation';
+import type {ReactNode} from 'react';
+export default function GlobalHeaderWrapper({modern}:{children:ReactNode;modern:ReactNode}){const p=usePathname().replace(/^\/(en|kz|ru)(?=\/|$)/,'').replace(/\/$/,'');return p==='/horizon-university'?null:<>{modern}</>;}

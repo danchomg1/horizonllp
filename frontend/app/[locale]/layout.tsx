@@ -1,3 +1,5 @@
+import ModernHeader from './horizon-university/UniversityHeader';
+import '../modern.css';
 import GlobalFooterWrapper from '../components/GlobalFooterWrapper';
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -128,7 +130,7 @@ export default async function LocaleLayout({
       <JsonLd data={organizationSchema(locale)} />
       <NextIntlClientProvider messages={messages}>
         <ModalProvider>
-          <GlobalHeaderWrapper>
+          <GlobalHeaderWrapper modern={<ModernHeader/>}>
             <Header />
           </GlobalHeaderWrapper>
           <main className="flex-grow w-full">{children}</main>
