@@ -2,6 +2,13 @@ import { MetadataRoute } from 'next';
 import { client } from './lib/sanity';
 import { LOCALES, localeUrl, languageAlternates } from './lib/locale';
 
+/**
+ * Без этого файл собирается один раз при деплое и новости, добавленные в
+ * Sanity после него, в карту не попадают. Раз в час — достаточно: роботы
+ * перечитывают карту реже.
+ */
+export const revalidate = 3600;
+
 type Entry = MetadataRoute.Sitemap[number];
 
 /** Один и тот же путь во всех языковых версиях. */
@@ -64,6 +71,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     'rospa_def',
     'sistemy-menedzhmenta',
     'horizon-university',
+    // Проверка сертификата: сюда ищут по номеру с бланка, страница публичная
+    'verify',
   ];
 
   const entries: MetadataRoute.Sitemap = [
