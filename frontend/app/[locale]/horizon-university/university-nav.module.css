@@ -35,3 +35,4 @@
 @keyframes menuReveal{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.panel{animation:none}.panel :global(.cursor-pointer){transition:none}}
 @media(max-width:700px){.panel{padding:8px}.panel :global(.p-6),.panel :global(.p-8){padding:16px}}
+.nav>.verify{display:flex;align-items:center;flex-shrink:0;height:38px;padding:0 10px;font-size:12px;white-space:nowrap;border-radius:20px}.nav>.verify:hover{color:#245caf;background:#eaf1fd}@media(max-width:1200px){.nav>.verify{font-size:11px;padding:0 8px}}@media(max-width:700px){.nav>.verify{height:32px}}
