@@ -18,10 +18,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
+    // Слоган компании — он же в layout: главная должна совпадать с тем,
+    // что подставляется по умолчанию.
     title: pick({
-      ru: 'Horizon LLP — Обучение охране труда и промышленной безопасности в Казахстане',
-      en: 'Horizon LLP — Health & Safety Training in Kazakhstan',
-      kz: 'Horizon LLP — Қазақстанда еңбекті қорғау және өнеркәсіптік қауіпсіздік бойынша оқыту',
+      ru: 'Horizon LLP — Управляем рисками. Защищаем людей. Обеспечиваем безопасность производства.',
+      en: 'Horizon LLP — Managing Risk. Protecting People. Safeguarding Operations',
+      kz: 'Horizon LLP — Тәуекелдерді басқарамыз. Адамдарды қорғаймыз. Өндіріс қауіпсіздігін қамтамасыз етеміз.',
     }, locale),
     description: pick({
       ru: 'Horizon LLP — аккредитованный учебный центр в Астане. Международные курсы NEBOSH, IOSH, RoSPA, CompEx. Консалтинг по БиОТ, диагностика систем безопасности, внедрение ISO 45001 для нефтегазового и промышленного секторов Казахстана.',
@@ -66,7 +68,7 @@ export default async function Home({
   return <div className="modern-site">
     <HomeHero
       videos={videos}
-      headline={pick({ru:'Безопасность начинается\nс людей и знаний.',en:'Safety starts with\npeople and knowledge.',kz:'Қауіпсіздік адамдар\nмен білімнен басталады.'},locale)}
+      headline={pick({ru:'Управляем рисками.\nЗащищаем людей.\nОбеспечиваем безопасность производства.',en:'Managing Risk.\nProtecting People.\nSafeguarding Operations',kz:'Тәуекелдерді басқарамыз.\nАдамдарды қорғаймыз.\nӨндіріс қауіпсіздігін қамтамасыз етеміз.'},locale)}
       description={loc<string>(data,'heroDescription',locale) || ''}
       requestLabel={t('cta')}
       aboutLabel={t('learnMore')}

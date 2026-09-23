@@ -8,7 +8,7 @@
 .content { display:grid; grid-template-columns:64% 36%; position:relative; padding:44px 4% 12px; }
 .content::before { content:''; position:absolute; top:-110px; bottom:0; left:64%; width:1px; background:#a6bade; pointer-events:none; }
 .lead { padding-right:7%; }
-.lead h2 { font-size:clamp(30px,3.6vw,54px); line-height:1.08; white-space:pre-line; margin:0; animation:appear .9s .2s both; }
+.lead h1 { font-size:clamp(26px,2.5vw,40px); line-height:1.08; white-space:pre-line; margin:0; animation:appear .9s .2s both; }
 .description { margin:0; padding:0 0 0 14%; font-size:14px; line-height:1.55; animation:appear .9s .35s both; }
 .actions { display:flex; flex-wrap:wrap; align-items:center; gap:24px; margin-top:52px; animation:appear .9s .45s both; }
 .actions a { font-size:12px; color:#6c7280; transition:color .2s; }
@@ -25,7 +25,7 @@
   .content { grid-template-columns:1fr; padding:30px 16px 0; gap:28px; }
   .content::before { display:none; }
   .lead { padding:0; }
-  .lead h2 { font-size:clamp(28px,7vw,42px); }
+  .lead h1 { font-size:clamp(28px,7vw,42px); }
   .description { padding:24px 0 0; border-top:1px solid #d4dfef; }
   .actions { margin-top:28px; gap:18px; }
 }

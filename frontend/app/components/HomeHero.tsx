@@ -54,11 +54,18 @@ export default function HomeHero(props: Props) {
         />}
         <div className={styles.fade} />
         <div className={styles.eyebrow}>HSE · TRAINING · CONSULTING</div>
-        <h1 id="home-heading" className={styles.title}><span ref={word}>HORIZON</span></h1>
+        {/*
+          Название компании — крупная надпись на баннере, но не заголовок
+          страницы: главным считается обещание под ним. Поисковик берёт из
+          заголовка текст, когда переписывает строку в выдаче, и слово
+          «HORIZON» ему там ничего не говорит. Внешний вид держится на классе,
+          поэтому смена тега ничего не двигает.
+        */}
+        <p className={styles.title}><span ref={word}>HORIZON</span></p>
       </div>
       <div className={styles.content}>
         <div className={styles.lead}>
-          <h2>{props.headline}</h2>
+          <h1 id="home-heading">{props.headline}</h1>
           <div className={styles.actions}>
             <Button className="modern-button">{props.requestLabel} ↗</Button>
             <Link href={props.aboutHref}>{props.aboutLabel} <span aria-hidden="true">↗</span></Link>

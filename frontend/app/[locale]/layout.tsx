@@ -45,10 +45,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
 
+  // Заголовок в выдаче и при пересылке ссылки. Ключевые слова — «охрана
+  // труда», «промышленная безопасность», города — держатся в описании ниже:
+  // в заголовке стоит слоган компании.
   const title = pick({
-    ru: 'Horizon LLP — Обучение охране труда и промышленной безопасности в Казахстане',
-    en: 'Horizon LLP — Health & Safety Training in Kazakhstan',
-    kz: 'Horizon LLP — Қазақстанда еңбекті қорғау және өнеркәсіптік қауіпсіздік бойынша оқыту',
+    ru: 'Horizon LLP — Управляем рисками. Защищаем людей. Обеспечиваем безопасность производства.',
+    en: 'Horizon LLP — Managing Risk. Protecting People. Safeguarding Operations',
+    kz: 'Horizon LLP — Тәуекелдерді басқарамыз. Адамдарды қорғаймыз. Өндіріс қауіпсіздігін қамтамасыз етеміз.',
   }, locale);
 
   const description = pick({
