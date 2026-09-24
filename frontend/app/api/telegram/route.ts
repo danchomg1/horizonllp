@@ -18,7 +18,19 @@ export async function POST(req: Request) {
     // Смотрим в терминале, что пришло
     console.log('📝 Данные формы:', body);
 
-    const { name, phone, question, company, email, comment } = body;
+    const { name, phone, question, company, email, comment, topic } = body;
+
+    /**
+     * Заявка по вакансии уходит ещё и рекрутёру: её оставляют со страницы
+     * вакансий, и в общем ящике продаж она теряется.
+     *
+     * Ключ приходит с формы. Подпись пункта проверяем вторым слоем — на
+     * случай, если у человека открыта вкладка с прежней версией страницы:
+     * такая форма ключа не пришлёт, а письмо рекрутёру нужно всё равно.
+     */
+    const CAREERS_LABELS = ['вакансии', 'careers', 'бос орындар'];
+    const isCareers = topic === 'careers'
+      || CAREERS_LABELS.includes(String(question ?? '').trim().toLowerCase());
 
     // 1. Ключи
     const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -106,7 +118,11 @@ ${safeComment}
                 </div>
             `;
 
-            const recipients = [EMAIL_TO, 'sales@horizon-llp.com']
+            const recipients = [
+                EMAIL_TO,
+                'sales@horizon-llp.com',
+                isCareers ? 'Recruiter@horizon-llp.com' : null,
+              ]
               .filter(Boolean)
               .filter((v, i, arr) => arr.indexOf(v) === i)
               .join(', ');

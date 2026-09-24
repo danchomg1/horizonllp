@@ -59,6 +59,18 @@ const t = {
   },
 } as const;
 
+/**
+ * Ключи пунктов «По какому вопросу» — по одному на пункт, в том же порядке,
+ * что и options у каждого языка. Человеку уходит подпись на его языке,
+ * серверу — ключ: разбирать на бэкенде «Вакансии» и «Careers» как одно и то
+ * же пришлось бы для каждого нового языка заново.
+ */
+const TOPIC_KEYS = ['courses', 'online', 'careers', 'consulting', 'ppe', 'other'] as const;
+const CAREERS_INDEX = TOPIC_KEYS.indexOf('careers');
+
+/** Страница вакансий: с неё заявку почти всегда оставляют по вакансии. */
+const CAREERS_PAGE = '/vakansii';
+
 // Типы статусов формы
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
@@ -70,6 +82,10 @@ export default function ContactModal({ isOpen, onClose }: Props) {
   const pathname = usePathname();
   const locale = pathname.startsWith('/en') ? 'en' : 'ru';
   const i = t[locale];
+
+  // Адрес без языкового префикса: /kz/vakansii и /en/vakansii — та же страница
+  const page = pathname.replace(/^\/(ru|en|kz)(?=\/|$)/, '').replace(/\/$/, '') || '/';
+  const careersOption = i.options[CAREERS_INDEX];
 
   // Сброс формы при закрытии/открытии
   useEffect(() => {
@@ -92,10 +108,15 @@ export default function ContactModal({ isOpen, onClose }: Props) {
 
     const formData = new FormData(e.currentTarget);
     
+    // Подпись пункта уходит как есть, для письма и Телеграма; рядом — ключ,
+    // по которому сервер решает, кому ещё отправить заявку.
+    const question = String(formData.get('question') ?? '');
+
     const data = {
         name: formData.get('name'),
-        phone: phoneValue, 
-        question: formData.get('question'),
+        phone: phoneValue,
+        question,
+        topic: TOPIC_KEYS[(i.options as readonly string[]).indexOf(question)] ?? 'other',
         company: formData.get('company'),
         email: formData.get('email'),
         comment: formData.get('comment'),
@@ -181,7 +202,13 @@ export default function ContactModal({ isOpen, onClose }: Props) {
                     <div className="flex flex-col gap-2 relative">
                         <label className="text-[14px] text-black pl-1">{i.labelQuestion}</label>
                         <div className="relative">
-                            <select name="question" required className="input-style appearance-none cursor-pointer" defaultValue="">
+                            {/* Со страницы вакансий пункт выбран заранее — но его можно сменить */}
+                            <select
+                                name="question"
+                                required
+                                className="input-style appearance-none cursor-pointer"
+                                defaultValue={page === CAREERS_PAGE ? careersOption : ''}
+                            >
                                 <option value="" disabled hidden>{i.placeholderQuestion}</option>
                                 {i.options.map((opt) => (
                                     <option key={opt} value={opt}>{opt}</option>
