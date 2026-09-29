@@ -4,10 +4,12 @@
  * Здесь только расчёты, без DOM — поэтому исходный кадр считается ещё на
  * сервере, и логотип виден до загрузки скриптов.
  *
- * Надпись HORIZON в обоих логотипах одна и та же, так что она не меняется,
- * а переезжает. Меняется треугольник: три уголка с глазом в Horizon и
- * сплошной ▶ в HSE. Он строится здесь по вершинам, а не берётся картинкой —
- * иначе между ними нечему было бы перетекать.
+ * Надпись в логотипах разная: HORIZON заглавными в Horizon и horizon
+ * строчными в HSE. Буквы те же и в том же порядке, поэтому каждая на ходу
+ * переворачивается из заглавной в строчную — волной, слева направо.
+ * Треугольник — три уголка с глазом в Horizon и сплошной ▶ в HSE — строится
+ * здесь по вершинам, а не берётся картинкой: иначе между ними нечему было
+ * бы перетекать.
  */
 
 type Pt = [number, number];
@@ -29,15 +31,13 @@ export const CYCLE = 2 * (HOLD + MORPH);
 
 /**
  * Логотип Horizon ставится в рамку HSE со сдвигом вниз на 9 — тогда его
- * HORIZON стоит на той же строке, что и в HSE (низ букв на 26). Надпись
- * при переходе едет строго по горизонтали, и в обоих логотипах её строка
- * совпадает со строкой пунктов меню в шапке.
+ * HORIZON стоит на той же строке, что и horizon в HSE (низ букв на 26), и
+ * в обоих логотипах эта строка совпадает со строкой меню в шапке.
  */
 export const H_DY = 9;
 
-/** Где HORIZON стоит в логотипе Horizon относительно HSE: только левее. */
-const WORD_DX = -29;
-const WORD_DY = 0;
+/** Линия, к которой буквы сжимаются, переворачиваясь: середина строки. */
+const FLIP_Y = 20.5;
 
 /**
  * Вершины треугольника по часовой: в Horizon — верх, правый низ, левый низ.
@@ -156,7 +156,6 @@ const solidPath = (V: Pt[]) => 'M' + V.map(fmt).join('L') + 'Z';
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 const seg = (p: number, a: number, b: number) => clamp01((p - a) / (b - a));
 const inOutCubic = (t: number) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2);
-const inOutQuart = (t: number) => (t < 0.5 ? 8 * t ** 4 : 1 - (-2 * t + 2) ** 4 / 2);
 const outCubic = (t: number) => 1 - (1 - t) ** 3;
 const inCubic = (t: number) => t ** 3;
 const inOutBack = (t: number, c1 = 1.2) => {
@@ -173,7 +172,7 @@ const outBack = (t: number, c1 = 1.9) => 1 + (c1 + 1) * (t - 1) ** 3 + c1 * (t -
 
 /**
  * Кадр анимации. Всё — от 0 до 1, где 1 означает «как в HSE»:
- * v — буквы подписи, w — «hse», k — буквы HORIZON на своём месте,
+ * v — буквы подписи, w — «hse», k — буквы слова (0 — HORIZON, 1 — horizon),
  * f* — полёт треугольника (сдвиг, поворот, масштаб), g — уголки
  * сомкнулись в сплошной, e — глаз открыт (тут 1 — как в Horizon).
  */
@@ -181,6 +180,8 @@ export interface Frame {
   v: number[];
   w: number[];
   k: number[];
+  /** Слово целиком: 0 — на месте HORIZON в Horizon, 1 — на месте horizon в HSE. */
+  move: number;
   fT: number; fR: number; fS: number;
   /** Сырой ход полёта — по нему строится шлейф. */
   fl: number;
@@ -194,11 +195,11 @@ export interface Frame {
 const all = (n: number, v: number) => Array.from({ length: n }, () => v);
 
 export const REST_HSE: Frame = {
-  v: all(16, 1), w: all(3, 1), k: all(7, 1),
+  v: all(16, 1), w: all(3, 1), k: all(7, 1), move: 1,
   fT: 1, fR: 1, fS: 1, fl: 0, dir: 0, g: 1, e: 0, pupil: 0,
 };
 export const REST_HORIZON: Frame = {
-  v: all(16, 0), w: all(3, 0), k: all(7, 0),
+  v: all(16, 0), w: all(3, 0), k: all(7, 0), move: 0,
   fT: 0, fR: 0, fS: 0, fl: 0, dir: 0, g: 0, e: 1, pupil: 1,
 };
 
@@ -213,9 +214,10 @@ function toHse(p: number): Frame {
     pupil: 1 - inCubic(seg(p, 0.00, 0.10)),
     g: inOutCubic(seg(p, 0.08, 0.40)),
     fT: inOutCubic(fl), fR: inOutBack(fl), fS: inOutCubic(fl), fl, dir: 1,
-    k: all(7, 0).map((_, i) => inOutQuart(seg(p, 0.26 + 0.006 * (6 - i), 0.66 + 0.006 * (6 - i)))),
+    move: inOutCubic(seg(p, 0.24, 0.70)),
+    k: all(7, 0).map((_, i) => seg(p, 0.26 + 0.03 * i, 0.44 + 0.03 * i)),
     w: [0, 1, 2].map((j) => outCubic(seg(p, 0.58 + 0.06 * j, 0.84 + 0.06 * j))),
-    v: all(16, 0).map((_, i) => outCubic(seg(p, 0.62 + 0.011 * i, 0.82 + 0.011 * i))),
+    v: all(16, 0).map((_, i) => outCubic(seg(p, 0.60 + 0.011 * i, 0.78 + 0.011 * i))),
   };
 }
 
@@ -228,7 +230,8 @@ function toHorizon(p: number): Frame {
   return {
     v: all(16, 0).map((_, i) => 1 - inCubic(seg(p, 0.011 * (15 - i), 0.16 + 0.011 * (15 - i)))),
     w: [0, 1, 2].map((j) => 1 - inCubic(seg(p, 0.08 + 0.06 * (2 - j), 0.30 + 0.06 * (2 - j)))),
-    k: all(7, 0).map((_, i) => 1 - inOutQuart(seg(p, 0.18 + 0.006 * i, 0.58 + 0.006 * i))),
+    move: 1 - inOutCubic(seg(p, 0.16, 0.62)),
+    k: all(7, 0).map((_, i) => 1 - seg(p, 0.18 + 0.03 * i, 0.36 + 0.03 * i)),
     fT: 1 - inOutCubic(fl), fR: 1 - inOutBack(fl), fS: 1 - inOutCubic(fl), fl, dir: -1,
     g: 1 - inOutCubic(seg(p, 0.56, 0.86)),
     e: outBack(seg(p, 0.80, 1.00)),
@@ -300,8 +303,37 @@ export function paintTriangle(f: Frame): TrianglePaint {
   };
 }
 
-/** Сдвиг буквы HORIZON: k = 1 — место в HSE, 0 — в Horizon. */
-export const wordShift = (k: number): Pt => [(1 - k) * WORD_DX, (1 - k) * WORD_DY];
+export interface LetterPaint {
+  caps: { transform: string; opacity: number };
+  lower: { transform: string; opacity: number };
+}
+
+/**
+ * Одна буква слова на ходу. Слово едет целиком (move — общий для всех
+ * букв), а по нему волной идёт переворот (q — у каждой буквы свой): через
+ * середину строки заглавная сжимается в линию, строчная из неё раскрывается.
+ * Если бы каждая буква и ехала в своё время, передние успевали бы доехать,
+ * пока задние стоят, и слово растягивалось бы на ходу.
+ *
+ * capsX и lowerX — середины букв по горизонтали в своих логотипах.
+ */
+export function paintLetter(q: number, move: number, capsX: number, lowerX: number): LetterPaint {
+  const dx = lowerX - capsX;
+  const capsY = 1 - inOutCubic(seg(q, 0, 0.5));
+  const lowerY = inOutCubic(seg(q, 0.5, 1));
+  const flip = (x: number, sy: number) =>
+    `translate(${x.toFixed(3)} ${FLIP_Y}) scale(1 ${sy.toFixed(3)}) translate(${(-x).toFixed(3)} ${-FLIP_Y})`;
+  return {
+    caps: {
+      transform: `translate(${(dx * move).toFixed(3)} 0) ${flip(capsX, capsY)}`,
+      opacity: capsY > 0.001 ? 1 : 0,
+    },
+    lower: {
+      transform: `translate(${(-dx * (1 - move)).toFixed(3)} 0) ${flip(lowerX, lowerY)}`,
+      opacity: lowerY > 0.001 ? 1 : 0,
+    },
+  };
+}
 
 /** Исходный кадр — тот, что уходит в разметку с сервера. */
 export const INITIAL = paintTriangle(REST_HSE);
