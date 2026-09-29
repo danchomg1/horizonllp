@@ -42,15 +42,19 @@
    возвращаем, поджимая пункты и промежутки. */
 .logoWide{flex:0 0 214px}
 /* Живой логотип — SVG, а не картинка; треугольник в полёте чуть выходит за рамку */
-.logoWide svg{display:block;width:214px;max-width:100%;height:auto;overflow:visible}
+.logoWide svg{display:block;width:214px;max-width:100%;height:auto;overflow:visible;transform:translateY(-4.4px)}
+/* Строка текста в логотипе лежит почти у его нижнего края, а шапка центрирует
+   логотип целиком — из-за этого меню стояло выше «safety excellence».
+   Подъём снят замером: строка логотипа на 4,4 px ниже строки меню, а на
+   средних экранах, где меню набрано мельче, — на 3,1 px. */
 .compact{gap:10px}
 .compact .bar{gap:4px}
 .compact .nav>button,.compact .nav>.verify{padding:0 7px}
 .compact .actions{gap:8px}
 @media(max-width:1200px){
-  .logoWide{flex-basis:176px}.logoWide svg{width:176px}
+  .logoWide{flex-basis:176px}.logoWide svg{width:176px;transform:translateY(-3.1px)}
   .compact .nav>button,.compact .nav>.verify{padding:0 5px}
 }
 @media(max-width:700px){
-  .logoWide{width:104px;flex-basis:104px}.logoWide svg{width:104px}
+  .logoWide{width:104px;flex-basis:104px}.logoWide svg{width:104px;transform:none}
 }
