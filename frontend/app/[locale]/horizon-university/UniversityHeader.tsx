@@ -65,7 +65,7 @@ async function getHeaderSettings() {
   return await client.fetch(`*[_type == "header"][0] { scrollLogo }`);
 }
 
-export default async function Header() {
+export default async function Header({ brand }: { brand?: 'site' | 'university' }) {
   // Загружаем все данные
   const categories = await getCategories();
   const consultingItems = await getConsultingItems();
@@ -81,7 +81,8 @@ export default async function Header() {
   const headerSettings = await getHeaderSettings();
 
   return (
-    <HeaderClient 
+    <HeaderClient
+      brand={brand}
       categories={categories}
       consultingItems={consultingItems}
       explosionItems={explosionItems}

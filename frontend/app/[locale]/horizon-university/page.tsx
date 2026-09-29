@@ -46,7 +46,8 @@ export default async function UniversityPage({ params }: { params: Promise<{ loc
   const extraIcons = [Search, Trophy, Palette, Languages, Plug];
   const cta = <Button className={s.cta}>{t.cta}<span className={s.arrow}><ArrowUpRight size={18} /></span></Button>;
   return <UniversityMotion className={s.page}>
-    <UniversityHeader/>
+    {/* Своя страница — свой знак: университетский логотип остаётся здесь */}
+    <UniversityHeader brand="university"/>
     <section data-hero className={s.hero} aria-labelledby="university-title">
       <HeroVideo className={s.heroImage} />
       <div className={s.heroShade} />

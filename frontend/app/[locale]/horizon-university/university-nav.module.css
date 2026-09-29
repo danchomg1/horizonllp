@@ -36,3 +36,20 @@
 @media(prefers-reduced-motion:reduce){.panel{animation:none}.panel :global(.cursor-pointer){transition:none}}
 @media(max-width:700px){.panel{padding:8px}.panel :global(.p-6),.panel :global(.p-8){padding:16px}}
 .nav>.verify{display:flex;align-items:center;flex-shrink:0;height:38px;padding:0 10px;font-size:12px;white-space:nowrap;border-radius:20px}.nav>.verify:hover{color:#245caf;background:#eaf1fd}@media(max-width:1200px){.nav>.verify{font-size:11px;padding:0 8px}}@media(max-width:700px){.nav>.verify{height:32px}}
+
+/* Основной логотип шире университетского: в нём строка «horizon safety
+   excellence», и на прежней ширине она нечитаема. Отобранное у меню место
+   возвращаем, поджимая пункты и промежутки. */
+.logoWide{flex:0 0 214px}
+.logoWide img{width:214px;max-width:100%;max-height:30px}
+.compact{gap:10px}
+.compact .bar{gap:4px}
+.compact .nav>button,.compact .nav>.verify{padding:0 7px}
+.compact .actions{gap:8px}
+@media(max-width:1200px){
+  .logoWide{flex-basis:176px}.logoWide img{width:176px;max-height:26px}
+  .compact .nav>button,.compact .nav>.verify{padding:0 5px}
+}
+@media(max-width:700px){
+  .logoWide{width:104px;flex-basis:104px}.logoWide img{width:104px;max-height:22px}
+}
