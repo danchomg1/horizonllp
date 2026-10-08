@@ -1,6 +1,7 @@
 import { HeroVideo, LearningScenes, TeamProgress, CourseRibbon } from './UniversityScenes';
 import { setRequestLocale } from 'next-intl/server';
-import { ArrowUpRight,  Search, Trophy, Palette, Languages, Plug, MonitorPlay, ChartNoAxesCombined, CalendarDays, ScanLine, Award } from 'lucide-react';
+import { ArrowUpRight,  Search, Trophy, Palette, Languages, Plug, MonitorPlay, ChartNoAxesCombined, CalendarDays, ScanLine, Award, LayoutDashboard, Smartphone, MessagesSquare } from 'lucide-react';
+import Image from 'next/image';
 import Button from '../../components/Button';
 import { pick, href } from '../../lib/locale';
 import s from './university.module.css';
@@ -38,10 +39,52 @@ const copy = {
   },
 };
 
+/** Платформа, приложение и чат — тот же блок, что в рассылке о платформе. */
+const devices = {
+  ru: {
+    label: 'Платформа, приложение и чат',
+    title: 'Удобно руководителю\nи сотрудникам.',
+    sub: 'Одна система на компьютере и в смартфоне: руководитель управляет обучением, сотрудники учатся там, где им удобно, и общаются прямо в платформе.',
+    platformAlt: 'Платформа Horizon University на компьютере',
+    appAlt: 'Приложение Horizon University и чат на смартфоне',
+    points: [
+      ['Удобная платформа', 'Руководитель видит обученность команды и прогресс каждого сотрудника, назначает курсы и выгружает отчёты — всё в одном окне.'],
+      ['Удобное приложение', 'Курсы на смартфоне: сотрудник учится на смене, в дороге или на объекте, где нет компьютера.'],
+      ['Полноценный чат', 'Сотрудники и руководители переписываются прямо в платформе: назначить курс, напомнить о сроке, задать вопрос — без сторонних мессенджеров.'],
+    ],
+  },
+  en: {
+    label: 'Platform, app and chat',
+    title: 'Convenient for managers\nand employees.',
+    sub: 'One system on desktop and mobile: managers run training, employees learn wherever suits them and talk right inside the platform.',
+    platformAlt: 'Horizon University platform on a desktop',
+    appAlt: 'Horizon University app and chat on a smartphone',
+    points: [
+      ['A convenient platform', 'Managers see the team’s training status and each employee’s progress, assign courses and export reports — all in one place.'],
+      ['A convenient app', 'Courses on a smartphone: employees learn on shift, on the road or on a site with no computer.'],
+      ['Full-featured chat', 'Employees and managers message each other inside the platform: assign a course, send a deadline reminder, ask a question — no third-party messengers.'],
+    ],
+  },
+  kz: {
+    label: 'Платформа, қосымша және чат',
+    title: 'Басшыға да,\nқызметкерге де ыңғайлы.',
+    sub: 'Компьютерде де, смартфонда да бір жүйе: басшы оқытуды басқарады, қызметкерлер өзіне ыңғайлы жерде оқиды және платформаның ішінде хат алмасады.',
+    platformAlt: 'Horizon University платформасы компьютерде',
+    appAlt: 'Horizon University қосымшасы және смартфондағы чат',
+    points: [
+      ['Ыңғайлы платформа', 'Басшы команданың оқытылу деңгейін және әр қызметкердің үлгерімін көреді, курстар тағайындайды және есептерді жүктеп алады — бәрі бір терезеде.'],
+      ['Ыңғайлы қосымша', 'Курстар смартфонда: қызметкер ауысымда, жолда немесе компьютер жоқ нысанда оқиды.'],
+      ['Толыққанды чат', 'Қызметкерлер мен басшылар платформаның ішінде хат алмасады: курс тағайындау, мерзімді еске салу, сұрақ қою — бөгде мессенджерлерсіз.'],
+    ],
+  },
+};
+
 export default async function UniversityPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = pick(copy, locale);
+  const d = pick(devices, locale);
+  const pointIcons = [LayoutDashboard, Smartphone, MessagesSquare];
   const icons = [MonitorPlay, ChartNoAxesCombined, CalendarDays, ScanLine];
   const extraIcons = [Search, Trophy, Palette, Languages, Plug];
   const cta = <Button className={s.cta}>{t.cta}<span className={s.arrow}><ArrowUpRight size={18} /></span></Button>;
@@ -59,6 +102,14 @@ export default async function UniversityPage({ params }: { params: Promise<{ loc
 
     <CourseRibbon/>
     <section className={s.section} aria-labelledby="university-purpose"><h2 id="university-purpose">{pick({ru:'Корпоративное обучение по охране труда и промышленной безопасности',en:'Corporate health and safety training',kz:'Еңбекті қорғау және өнеркәсіптік қауіпсіздік бойынша корпоративтік оқыту'},locale)}</h2><p className={s.description}>{pick({ru:'Horizon University — LMS-платформа для обучения сотрудников в Казахстане: от вводного инструктажа до развития компетенций. Объединяйте онлайн-курсы, тестирование и очное обучение в одной системе.',en:'Horizon University is an LMS for employee training in Kazakhstan, from induction to skills development. Bring online courses, assessments and in-person training together.',kz:'Horizon University — Қазақстандағы қызметкерлерді оқытуға арналған LMS-платформа. Онлайн курстарды, тестілеуді және күндізгі оқытуды бір жүйеге біріктіріңіз.'},locale)}</p><nav className={s.tags} aria-label={pick({ru:'Программы обучения',en:'Training programmes',kz:'Оқу бағдарламалары'},locale)}>{[['/nebosh-igc','NEBOSH IGC'],['/ioshms','IOSH Managing Safely'],['/compex-01-04','CompEx 01–04']].map(([url,label])=><a key={url} href={href(url,locale)}><span>{label} ↗</span></a>)}</nav></section>
+    <section className={s.section} aria-labelledby="university-devices">
+      <div className={s.sectionHead}><p className={s.kicker}>✳ &nbsp; {d.label}</p><div><h2 id="university-devices">{d.title}</h2><p className={s.description}>{d.sub}</p></div></div>
+      <div className={s.devices}>
+        <Image src="/assets/horizon-university/devices-platform.webp" alt={d.platformAlt} width={1536} height={1024} sizes="(max-width: 900px) 100vw, 780px" />
+        <Image className={s.devicesPhone} src="/assets/horizon-university/devices-app.webp" alt={d.appAlt} width={1122} height={1402} sizes="(max-width: 900px) 340px, 480px" />
+      </div>
+      <div className={s.devicePoints}>{d.points.map(([title, text], index) => { const Icon = pointIcons[index]; return <article key={title}><Icon size={26} aria-hidden="true" /><h3>{title}</h3><p>{text}</p></article>; })}</div>
+    </section>
     <section id="capabilities" className={s.section}>
       <div className={s.sectionHead}><p className={s.kicker}>✳ &nbsp; {t.introLabel}</p><div><h2>{t.intro}</h2><p className={s.description}>{t.introSub}</p></div></div>
       <LearningScenes title={t.features[0][0]} description={t.features[0][1]} label={t.features[0][2]} locale={locale}/>
