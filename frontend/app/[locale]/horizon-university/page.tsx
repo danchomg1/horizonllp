@@ -100,7 +100,7 @@ export default async function UniversityPage({ params }: { params: Promise<{ loc
       <a href="#capabilities" className={s.scroll}>{t.scroll}<span>↓</span></a>
     </section>
 
-    <CourseRibbon/>
+    <CourseRibbon locale={locale}/>
     <section className={s.section} aria-labelledby="university-purpose"><h2 id="university-purpose">{pick({ru:'Корпоративное обучение по охране труда и промышленной безопасности',en:'Corporate health and safety training',kz:'Еңбекті қорғау және өнеркәсіптік қауіпсіздік бойынша корпоративтік оқыту'},locale)}</h2><p className={s.description}>{pick({ru:'Horizon University — LMS-платформа для обучения сотрудников в Казахстане: от вводного инструктажа до развития компетенций. Объединяйте онлайн-курсы, тестирование и очное обучение в одной системе.',en:'Horizon University is an LMS for employee training in Kazakhstan, from induction to skills development. Bring online courses, assessments and in-person training together.',kz:'Horizon University — Қазақстандағы қызметкерлерді оқытуға арналған LMS-платформа. Онлайн курстарды, тестілеуді және күндізгі оқытуды бір жүйеге біріктіріңіз.'},locale)}</p><nav className={s.tags} aria-label={pick({ru:'Программы обучения',en:'Training programmes',kz:'Оқу бағдарламалары'},locale)}>{[['/nebosh-igc','NEBOSH IGC'],['/ioshms','IOSH Managing Safely'],['/compex-01-04','CompEx 01–04']].map(([url,label])=><a key={url} href={href(url,locale)}><span>{label} ↗</span></a>)}</nav></section>
     <section className={s.section} aria-labelledby="university-devices">
       <div className={s.sectionHead}><p className={s.kicker}>✳ &nbsp; {d.label}</p><div><h2 id="university-devices">{d.title}</h2><p className={s.description}>{d.sub}</p></div></div>

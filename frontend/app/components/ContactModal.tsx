@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { X, ChevronDown, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import PhoneInput from './PhoneInput';
+import { trackLead } from '../lib/analytics';
 
 interface Props {
   isOpen: boolean;
@@ -66,10 +67,15 @@ const t = {
  * же пришлось бы для каждого нового языка заново.
  */
 const TOPIC_KEYS = ['courses', 'online', 'careers', 'consulting', 'ppe', 'other'] as const;
-const CAREERS_INDEX = TOPIC_KEYS.indexOf('careers');
-
-/** Страница вакансий: с неё заявку почти всегда оставляют по вакансии. */
-const CAREERS_PAGE = '/vakansii';
+/**
+ * Страницы, где тема заявки понятна заранее: с вакансий пишут о вакансиях,
+ * с Horizon University — об онлайн-курсах. Пункт выбран сразу, но его можно
+ * сменить.
+ */
+const PAGE_TOPIC: Record<string, (typeof TOPIC_KEYS)[number]> = {
+  '/vakansii': 'careers',
+  '/horizon-university': 'online',
+};
 
 // Типы статусов формы
 type Status = 'idle' | 'loading' | 'success' | 'error';
@@ -85,7 +91,8 @@ export default function ContactModal({ isOpen, onClose }: Props) {
 
   // Адрес без языкового префикса: /kz/vakansii и /en/vakansii — та же страница
   const page = pathname.replace(/^\/(ru|en|kz)(?=\/|$)/, '').replace(/\/$/, '') || '/';
-  const careersOption = i.options[CAREERS_INDEX];
+  const preset = PAGE_TOPIC[page];
+  const presetOption = preset ? i.options[TOPIC_KEYS.indexOf(preset)] : '';
 
   // Сброс формы при закрытии/открытии
   useEffect(() => {
@@ -130,6 +137,8 @@ export default function ContactModal({ isOpen, onClose }: Props) {
         });
 
         if (!res.ok) throw new Error('send error');
+        // Конверсию считаем только когда сервер принял заявку — не по нажатию кнопки
+        trackLead();
         setStatus('success');
         setTimeout(() => { onClose(); }, 3000);
 
@@ -202,12 +211,11 @@ export default function ContactModal({ isOpen, onClose }: Props) {
                     <div className="flex flex-col gap-2 relative">
                         <label className="text-[14px] text-black pl-1">{i.labelQuestion}</label>
                         <div className="relative">
-                            {/* Со страницы вакансий пункт выбран заранее — но его можно сменить */}
                             <select
                                 name="question"
                                 required
                                 className="input-style appearance-none cursor-pointer"
-                                defaultValue={page === CAREERS_PAGE ? careersOption : ''}
+                                defaultValue={presetOption}
                             >
                                 <option value="" disabled hidden>{i.placeholderQuestion}</option>
                                 {i.options.map((opt) => (

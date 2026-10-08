@@ -15,6 +15,7 @@ import Footer from "../components/Footer";
 import { ModalProvider } from "../context/ModalContext";
 import JsonLd from "../components/JsonLd";
 import Script from "next/script";
+import { GA_ID, ADS_ID } from "../lib/analytics";
 
 const organizationSchema = (locale: string) => ({
   '@context': 'https://schema.org',
@@ -126,9 +127,10 @@ export default async function LocaleLayout({
 
   return (
     <>
-      <Script src="https://www.googletagmanager.com/gtag/js?id=G-577EM9ZKRS" strategy="afterInteractive" />
+      {/* gtag.js грузится один раз, счётчики — Analytics и Google Ads — подключаются своими config */}
+      <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
       <Script id="google-analytics" strategy="afterInteractive">
-        {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-577EM9ZKRS');`}
+        {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}');gtag('config','${ADS_ID}');`}
       </Script>
       <JsonLd data={organizationSchema(locale)} />
       <NextIntlClientProvider messages={messages}>
